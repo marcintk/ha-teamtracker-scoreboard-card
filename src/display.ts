@@ -4,6 +4,12 @@ export function isTeamSide(side: "home" | "away", attr: GameAttr): boolean {
   return side === "home" ? attr?.team_homeaway === "home" : attr?.team_homeaway !== "home";
 }
 
+/** `colors.<key>` config override, or the `--ttsc-*` custom property with its default —
+ *  the single source of truth for every colour's fallback chain. */
+export function colorVar(override: string | undefined, cssVar: string, fallback: string): string {
+  return override ?? `var(${cssVar}, ${fallback})`;
+}
+
 export function teamColor(
   side: "home" | "away",
   attr: GameAttr,
@@ -15,12 +21,13 @@ export function teamColor(
   flat = false
 ): string {
   if (!isTeamSide(side, attr)) {
-    if (opponentSpecial) return colors.special ?? "var(--ttsc-special-color, #2196F3)";
-    return colors.opponent ?? "var(--ttsc-opponent-color, #777)"; /* gray */
+    if (opponentSpecial) return colorVar(colors.special, "--ttsc-special-color", "#2196F3");
+    return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
   }
-  if (special) return colors.special ?? "var(--ttsc-special-color, #2196F3)"; /* Material Blue */
-  if (flat) return colors.opponent ?? "var(--ttsc-opponent-color, #777)"; /* gray */
-  return colors.team ?? "var(--ttsc-team-color, var(--primary-text-color, white))";
+  if (special)
+    return colorVar(colors.special, "--ttsc-special-color", "#2196F3"); /* Material Blue */
+  if (flat) return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  return colorVar(colors.team, "--ttsc-team-color", "var(--primary-text-color, white)");
 }
 
 export function scoreBg(gs: GameState): string {
@@ -41,13 +48,13 @@ export function scoreColor(
     const ts = parseFloat(String(attr.team_score ?? 0));
     const os = parseFloat(String(attr.opponent_score ?? 0));
     return (isSide ? ts >= os : os >= ts)
-      ? (colors.leading ?? "var(--ttsc-leading-color, brown)")
+      ? colorVar(colors.leading, "--ttsc-leading-color", "brown")
       : "black";
   }
   if (gs === "POST") {
     return (isSide ? attr.team_winner : attr.opponent_winner)
-      ? (colors.winner ?? "var(--ttsc-winner-color, orange)")
-      : (colors.loser ?? "var(--ttsc-loser-color, darkgray)");
+      ? colorVar(colors.winner, "--ttsc-winner-color", "orange")
+      : colorVar(colors.loser, "--ttsc-loser-color", "darkgray");
   }
   return "black";
 }

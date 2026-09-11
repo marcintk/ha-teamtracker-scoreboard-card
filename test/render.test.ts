@@ -121,7 +121,7 @@ describe("sectionHtml", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml(section, states));
     expect(el.querySelector(".section-header")).not.toBeNull();
-    expect(el.querySelector(".section-header")?.textContent).toBe("NBA");
+    expect(el.querySelector(".section-title")?.textContent).toBe("NBA");
   });
 
   it("renders a row for each matching entity", () => {
@@ -149,7 +149,7 @@ describe("sectionHtml", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml({ ...section, name: "<b>NBA</b>" }, states));
     expect(el.querySelector(".section-header b")).toBeNull();
-    expect(el.querySelector(".section-header")?.textContent).toBe("<b>NBA</b>");
+    expect(el.querySelector(".section-title")?.textContent).toBe("<b>NBA</b>");
   });
 
   it("marks special teams correctly using default CSS var color", () => {

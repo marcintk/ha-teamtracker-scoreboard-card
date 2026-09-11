@@ -11,7 +11,7 @@ import {
 } from "./display.js";
 import { deduplicate, resolveSortMode, sortKeyFor } from "./sorting.js";
 import type { ColorsConfig, GameState, HassEntity, HassStates, SectionConfig } from "./types.js";
-import { VALID_STATES } from "./utils.js";
+import { DEFAULT_LIMIT, DEFAULT_SCORE_BLINK, VALID_STATES } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
 // schedule view: live (IN) games always sit above everything else. Every other
@@ -75,11 +75,11 @@ export function sectionHtml(
   const {
     name,
     prefix = "",
-    limit = 10,
+    limit = DEFAULT_LIMIT,
     special_teams = [],
     rank_type = "win-draw-loss",
     view = "schedule",
-    score_blink = 5,
+    score_blink = DEFAULT_SCORE_BLINK,
     show_position = false,
   } = section;
   const blinkMs = score_blink * 1000;
@@ -87,9 +87,12 @@ export function sectionHtml(
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
   );
+  // the name always lives in .section-title, carousel controls or not — a stable
+  // node for tests to read, so a future stack-mode control doesn't grow the
+  // section's own textContent out from under them (see LESSONS.md)
   const header =
     controls === nothing
-      ? html`<div class="section-header" style=${colors.header ? `color:${colors.header}` : nothing}>${name}</div>`
+      ? html`<div class="section-header" style=${colors.header ? `color:${colors.header}` : nothing}><span class="section-title">${name}</span></div>`
       : html`<div class="section-header has-controls" style=${colors.header ? `color:${colors.header}` : nothing}><span class="section-title">${name}</span>${controls}</div>`;
   const emptyHtml = () =>
     html`${header}<div class="empty">No games found — check your section prefixes.</div>`;

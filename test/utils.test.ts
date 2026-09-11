@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { firstSegment, safeLogoUrl, VALID_STATES } from "../src/utils.js";
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_ROW_HEIGHT,
+  DEFAULT_ROW_PADDING,
+  DEFAULT_SCORE_BLINK,
+  DEFAULT_SLIDE_SEC,
+  firstSegment,
+  safeLogoUrl,
+  VALID_STATES,
+} from "../src/utils.js";
 
 describe("safeLogoUrl", () => {
   it("returns https URLs unchanged", () => {
@@ -44,5 +53,15 @@ describe("firstSegment", () => {
 
   it("returns an empty string for an empty input", () => {
     expect(firstSegment("", "/")).toBe("");
+  });
+});
+
+describe("shared defaults", () => {
+  it("matches the documented fallback values", () => {
+    expect(DEFAULT_LIMIT).toBe(10);
+    expect(DEFAULT_SCORE_BLINK).toBe(5);
+    expect(DEFAULT_SLIDE_SEC).toBe(45);
+    expect(DEFAULT_ROW_HEIGHT).toBe(28);
+    expect(DEFAULT_ROW_PADDING).toBe(5);
   });
 });
