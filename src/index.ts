@@ -55,12 +55,6 @@ export class SportScoreboardCard extends HTMLElement {
   }
 
   setConfig(config: CardConfig): void {
-    if (config.mode === "slide" && (config.sections?.length ?? 0) === 1) {
-      // biome-ignore lint/suspicious/noConsole: intentional misconfiguration warning
-      console.warn(
-        "ha-teamtracker-scoreboard-card: mode: slide needs at least 2 sections to rotate — showing the single section as a stack instead."
-      );
-    }
     this._config = config;
     this._clearSubscription();
     this._trackedIds = null;

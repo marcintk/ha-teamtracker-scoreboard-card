@@ -240,38 +240,6 @@ describe("SportScoreboardCard", () => {
       card.setConfig({ sections: [nbaSection] });
       expect(card._trackedIds).toBeNull();
     });
-
-    it("warns when mode: slide is set with only one section", () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const card = makeCard();
-      card.setConfig({ mode: "slide", sections: [nbaSection] });
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining("mode: slide needs at least 2"));
-      warn.mockRestore();
-    });
-
-    it("does not warn about slide mode with two or more sections", () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const card = makeCard();
-      card.setConfig({ mode: "slide", sections: [nbaSection, nbaSection] });
-      expect(warn).not.toHaveBeenCalled();
-      warn.mockRestore();
-    });
-
-    it("does not warn about slide mode when mode is not slide", () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const card = makeCard();
-      card.setConfig({ sections: [nbaSection] });
-      expect(warn).not.toHaveBeenCalled();
-      warn.mockRestore();
-    });
-
-    it("does not warn about slide mode when sections is omitted", () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const card = makeCard();
-      card.setConfig({ mode: "slide" });
-      expect(warn).not.toHaveBeenCalled();
-      warn.mockRestore();
-    });
   });
 
   describe("set hass", () => {
