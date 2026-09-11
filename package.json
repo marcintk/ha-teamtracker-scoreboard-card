@@ -2,6 +2,9 @@
   "name": "ha-teamtracker-scoreboard-card",
   "version": "1.4.0",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "build": "rollup -c",
     "build:prod": "NODE_ENV=production rollup -c",

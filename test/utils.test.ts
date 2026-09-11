@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeLogoUrl, VALID_STATES } from "../src/utils.js";
+import { firstSegment, safeLogoUrl, VALID_STATES } from "../src/utils.js";
 
 describe("safeLogoUrl", () => {
   it("returns https URLs unchanged", () => {
@@ -29,5 +29,20 @@ describe("VALID_STATES", () => {
     const states = VALID_STATES as ReadonlySet<string>;
     expect(states.has("UNKNOWN")).toBe(false);
     expect(states.has("")).toBe(false);
+  });
+});
+
+describe("firstSegment", () => {
+  it("returns the text before the first separator", () => {
+    expect(firstSegment("ESPN/ESPN2", "/")).toBe("ESPN");
+    expect(firstSegment("Houston, Texas, USA", ",")).toBe("Houston");
+  });
+
+  it("returns the whole string when the separator is absent", () => {
+    expect(firstSegment("ESPN", "/")).toBe("ESPN");
+  });
+
+  it("returns an empty string for an empty input", () => {
+    expect(firstSegment("", "/")).toBe("");
   });
 });

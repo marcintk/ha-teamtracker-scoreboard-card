@@ -91,6 +91,19 @@ describe("CARD_STYLES", () => {
     expect(CARD_STYLES).toContain("width: var(--ttsc-logo-width, 30px)");
   });
 
+  it("gives the logo cell and the logo image the same 30px fallback", () => {
+    // both `.logo` and `.logo img` fall back to the same width — a mismatch here
+    // leaves the image narrower than its cell when no layout.logo_width is set
+    expect(CARD_STYLES).toMatch(/\.logo\s*\{[^}]*[^-]width:\s*var\(--ttsc-logo-width, 30px\)/);
+    expect(CARD_STYLES).toMatch(/\.logo img\s*\{[^}]*[^-]width:\s*var\(--ttsc-logo-width, 30px\)/);
+  });
+
+  it("disables the score-fresh blink animation under prefers-reduced-motion", () => {
+    expect(CARD_STYLES).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.score-fresh\s*\{\s*animation:\s*none;/
+    );
+  });
+
   it("wires score width to the --ttsc-score-width custom property", () => {
     expect(CARD_STYLES).toContain("width: var(--ttsc-score-width, 34px)");
   });

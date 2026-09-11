@@ -4,8 +4,6 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022", "DOM"],
-    "allowJs": true,
-    "outDir": "dist",
     "noUncheckedIndexedAccess": true
   },
   "include": ["src/**/*", "test/**/*"]
