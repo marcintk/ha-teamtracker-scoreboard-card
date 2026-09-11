@@ -102,10 +102,10 @@ In the **standings** table teams are ordered by their win-loss record, best at t
 
 The card subscribes to Home Assistant state changes and re-renders when a tracked sensor updates.
 
-| Option          | Type   | Default | Description                                                                                                                               |
-| --------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `lazy_refresh`  | number | `5`     | Throttle window (seconds) after the first event before rendering — further events during the window don't extend it; `0` = render at once |
-| `fixed_refresh` | number | `60`    | Re-render every N seconds regardless of events; `0` = disabled                                                                            |
+| Option          | Type   | Default | Description                                                                    |
+| --------------- | ------ | ------- | ------------------------------------------------------------------------------ |
+| `lazy_refresh`  | number | `5`     | Throttle delay (seconds) before rendering after an event; `0` = render at once |
+| `fixed_refresh` | number | `60`    | Re-render every N seconds regardless of events; `0` = disabled                 |
 
 ### Section
 

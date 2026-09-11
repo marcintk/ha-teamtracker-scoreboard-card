@@ -120,8 +120,7 @@ export interface CardConfig {
   colors?: ColorsConfig;
   debug?: boolean;
   show_version?: boolean;
-  /** throttle window (seconds) after the first event before rendering; further events during
-   *  the window don't extend it (default 5; `0` = render at once) */
+  /** throttle delay (seconds) before rendering after an event (default 5; `0` = render at once) */
   lazy_refresh?: number;
   fixed_refresh?: number;
   /** `stack` (default) shows every section; `slide` rotates one at a time (needs ≥2 sections) */
