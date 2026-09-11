@@ -6,6 +6,13 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { sectionHtml } from "./render.js";
 import { CARD_STYLES } from "./styles.js";
 import type { CardConfig, HassStates, HomeAssistant, LayoutConfig } from "./types.js";
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_ROW_HEIGHT,
+  DEFAULT_ROW_PADDING,
+  DEFAULT_SCORE_BLINK,
+  DEFAULT_SLIDE_SEC,
+} from "./utils.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
 
@@ -15,6 +22,11 @@ const asPx = (v: string | undefined): number | null => {
   const m = /^\s*(\d+(?:\.\d+)?)\s*(?:px)?\s*$/.exec(v ?? "");
   return m ? Number(m[1]) : null;
 };
+
+// each row is row_height + padding above and below it — shared by the slide-mode
+// min-height calc and getCardSize so the two can't drift out of sync
+const rowGeometryPx = (row_height: string | undefined, row_padding: string | undefined): number =>
+  (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
@@ -151,7 +163,7 @@ export class SportScoreboardCard extends HTMLElement {
   /** seconds per section in slide mode; a missing / non-positive value falls back to 45. */
   _slideSec(): number {
     const s = this._config?.slide_sec;
-    return typeof s === "number" && s > 0 ? s : 45;
+    return typeof s === "number" && s > 0 ? s : DEFAULT_SLIDE_SEC;
   }
 
   _syncSlideTimer(): void {
@@ -256,7 +268,7 @@ export class SportScoreboardCard extends HTMLElement {
     const sections = this._config?.sections ?? [];
     for (const [id, changedAt] of this._scoreChangedAt) {
       const section = sections.find((s) => id.startsWith(s.prefix ?? ""));
-      const blinkMs = (section?.score_blink ?? 5) * 1000;
+      const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
       if (blinkMs <= 0 || now - changedAt >= blinkMs) {
         this._scoreChangedAt.delete(id);
       }
@@ -270,7 +282,7 @@ export class SportScoreboardCard extends HTMLElement {
     let minExpiry = Infinity;
     for (const [id, changedAt] of this._scoreChangedAt) {
       const section = sections.find((s) => id.startsWith(s.prefix ?? ""));
-      const blinkMs = (section?.score_blink ?? 5) * 1000;
+      const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
       if (blinkMs > 0) minExpiry = Math.min(minExpiry, changedAt + blinkMs);
     }
     if (minExpiry === Infinity) return;
@@ -365,9 +377,8 @@ export class SportScoreboardCard extends HTMLElement {
         : nothing;
       let slideMinH = "";
       if (carousel && !height) {
-        // each row is row_height + padding above and below it
-        const slideH = (asPx(row_height) ?? 28) + 2 * (asPx(row_padding) ?? 5);
-        const maxRows = Math.max(...sections.map((s) => 1 + (s.limit ?? 10)));
+        const slideH = rowGeometryPx(row_height, row_padding);
+        const maxRows = Math.max(...sections.map((s) => 1 + (s.limit ?? DEFAULT_LIMIT)));
         slideMinH = `min-height:${maxRows * slideH}px;`;
       }
 
@@ -455,10 +466,9 @@ export class SportScoreboardCard extends HTMLElement {
     const sections = this._config?.sections ?? [];
     const carousel = this._isSlideMode();
     const rows = carousel
-      ? Math.max(0, ...sections.map((s) => 1 + (s.limit ?? 10)))
-      : sections.reduce((n, s) => n + 1 + (s.limit ?? 10), 0);
-    // each row is row_height + padding above and below it — match slideMinH
-    const h = (asPx(row_height) ?? 28) + 2 * (asPx(row_padding) ?? 5);
+      ? Math.max(0, ...sections.map((s) => 1 + (s.limit ?? DEFAULT_LIMIT)))
+      : sections.reduce((n, s) => n + 1 + (s.limit ?? DEFAULT_LIMIT), 0);
+    const h = rowGeometryPx(row_height, row_padding);
     return Math.max(1, Math.ceil((rows * h) / 50));
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   colonColor,
+  colorVar,
   isTeamSide,
   nameText,
   rankText,
@@ -26,6 +27,18 @@ const homeAttr: GameAttr = {
 };
 
 const awayAttr: GameAttr = { ...homeAttr, team_homeaway: "away" };
+
+describe("colorVar", () => {
+  it("returns the override when one is given", () => {
+    expect(colorVar("gold", "--ttsc-winner-color", "orange")).toBe("gold");
+  });
+
+  it("falls back to the CSS custom property when no override is given", () => {
+    expect(colorVar(undefined, "--ttsc-winner-color", "orange")).toBe(
+      "var(--ttsc-winner-color, orange)"
+    );
+  });
+});
 
 describe("isTeamSide", () => {
   it("matches home side when team is home", () => {

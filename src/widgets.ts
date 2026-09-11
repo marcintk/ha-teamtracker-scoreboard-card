@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { isTeamSide } from "./display.js";
+import { colorVar, isTeamSide } from "./display.js";
 import type { ColorsConfig, GameAttr, GameState } from "./types.js";
 import { firstSegment, safeLogoUrl } from "./utils.js";
 
@@ -21,7 +21,7 @@ export function tvHtml(
   const first = firstSegment(tv, "/").trim();
   const truncated = first.substring(0, 3);
   const label = first.length > 3 || hasMultiple ? `${truncated}>` : truncated;
-  const bg = gs === "IN" ? (colors.live ?? "var(--ttsc-live-color, indianred)") : "#666";
+  const bg = gs === "IN" ? colorVar(colors.live, "--ttsc-live-color", "indianred") : "#666";
   const badge = html`<span class="tv-badge" style="background:${bg}">${label}</span>`;
   if (hasMultiple) {
     const tooltip = networks.join(" · ");
@@ -41,10 +41,10 @@ export function messageHtml(
       const city = firstSegment(String(attr.location ?? ""), ",").trim();
       const odds = attr.odds ?? "";
       const sub = city && odds ? `${city}, ${odds}` : city || odds;
-      return html`<span style="color:darkgray">${kickoff}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
+      return html`<span style="color:var(--ttsc-sub-color, darkgray)">${kickoff}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
     }
     case "BYE":
-      return html`<span style="color:darkgray">Bye</span>`;
+      return html`<span style="color:var(--ttsc-sub-color, darkgray)">Bye</span>`;
     case "IN": {
       const clock = attr.clock ?? "";
       const raw = String(attr.last_play ?? "");
@@ -57,12 +57,12 @@ export function messageHtml(
           subTemplate = html`<span class="msg-sub">${raw}</span>`;
         }
       }
-      return html`<span style="color:${colors.live ?? "var(--ttsc-live-color, indianred)"}">${clock}</span>${subTemplate}`;
+      return html`<span style="color:${colorVar(colors.live, "--ttsc-live-color", "indianred")}">${clock}</span>${subTemplate}`;
     }
     default: {
       const clock = attr.clock ?? "";
       const sub = attr.series_summary ?? "";
-      return html`<span style="color:${colors.winner ?? "var(--ttsc-winner-color, orange)"}">${clock}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
+      return html`<span style="color:${colorVar(colors.winner, "--ttsc-winner-color", "orange")}">${clock}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
     }
   }
 }

@@ -317,7 +317,7 @@ exports[`rowHtml structural snapshots > renders BYE markup 1`] = `
     <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->18-12</div>
   </div>
-  <div class="message"><!--?--><span style="color:darkgray">Bye</span></div>
+  <div class="message"><!--?--><span style="color:var(--ttsc-sub-color, darkgray)">Bye</span></div>
   <div class="tv"><!--?--></div>
 </div>"
 `;
@@ -405,7 +405,7 @@ exports[`rowHtml structural snapshots > renders PRE markup 1`] = `
     <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->18-12</div>
   </div>
-  <div class="message"><!--?--><span style="color:darkgray"><!--?--></span><!--?--><!--?--></div>
+  <div class="message"><!--?--><span style="color:var(--ttsc-sub-color, darkgray)"><!--?--></span><!--?--><!--?--></div>
   <div class="tv"><!--?--></div>
 </div>"
 `;
@@ -434,7 +434,7 @@ exports[`rowHtml structural snapshots > renders with showLogos enabled 1`] = `
 
 exports[`widget structural snapshots > logoHtml 1`] = `"<!----><img alt="" src="https://cdn.example.com/lal.png">"`;
 
-exports[`widget structural snapshots > messageHtml BYE 1`] = `"<!----><span style="color:darkgray">Bye</span>"`;
+exports[`widget structural snapshots > messageHtml BYE 1`] = `"<!----><span style="color:var(--ttsc-sub-color, darkgray)">Bye</span>"`;
 
 exports[`widget structural snapshots > messageHtml IN short 1`] = `"<!----><span style="color:var(--ttsc-live-color, indianred)"><!--?-->Q3 5:00</span><!--?--><span class="msg-sub"><!--?-->Touchdown - LAL</span><!--?-->"`;
 
@@ -442,7 +442,7 @@ exports[`widget structural snapshots > messageHtml IN truncated 1`] = `"<!----><
 
 exports[`widget structural snapshots > messageHtml POST 1`] = `"<!----><span style="color:var(--ttsc-winner-color, orange)"><!--?-->Final</span><!--?--><span class="msg-sub"><!--?-->LAL leads 2-1</span><!--?-->"`;
 
-exports[`widget structural snapshots > messageHtml PRE with sub 1`] = `"<!----><span style="color:darkgray"><!--?-->2h</span><!--?--><span class="msg-sub"><!--?-->Houston, LAL -3.5</span><!--?-->"`;
+exports[`widget structural snapshots > messageHtml PRE with sub 1`] = `"<!----><span style="color:var(--ttsc-sub-color, darkgray)"><!--?-->2h</span><!--?--><span class="msg-sub"><!--?-->Houston, LAL -3.5</span><!--?-->"`;
 
 exports[`widget structural snapshots > tvHtml IN 1`] = `"<!----><span class="tv-badge" style="background:var(--ttsc-live-color, indianred)"><!--?-->ESP&gt;</span>"`;
 
