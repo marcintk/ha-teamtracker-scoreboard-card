@@ -151,16 +151,17 @@ sections:
   - ...
 ```
 
-| Key                  | Type   | Default | CSS property                                          | Controls                                                                       |
-| -------------------- | ------ | ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `layout.height`      | string | auto    | — (plain `height` on `ha-card`)                       | Outer card height (any CSS length); omit to fit content                        |
-| `layout.row_height`  | string | `28px`  | `--ttsc-row-height`                                   | `.game-row` height, the logo / score / colon cell heights, the logo image      |
-| `layout.logo_width`  | string | `30px`  | `--ttsc-logo-width`                                   | Logo cell width and the logo image width (aspect ratio preserved)              |
-| `layout.score_width` | string | `34px`  | `--ttsc-score-width`                                  | Score cell width — widen for 3-digit totals                                    |
-| `layout.colon_width` | string | `9px`   | `--ttsc-colon-width`                                  | Centre colon cell width                                                        |
-| `layout.team_width`  | string | `99px`  | `--ttsc-team-col-a-width` / `--ttsc-team-col-b-width` | Team-name column width; one CSS length applied to both sides                   |
-| `layout.row_padding` | string | `5px`   | `--ttsc-row-padding`                                  | Padding above **and** below every game row (divider sits centred in the space) |
-| `layout.font_scale`  | number | `1`     | `--ttsc-font-scale`                                   | Uniform multiplier over every text size; raise `layout.row_height` too         |
+| Key                     | Type   | Default | CSS property                                          | Controls                                                                             |
+| ----------------------- | ------ | ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `layout.height`         | string | auto    | — (plain `height` on `ha-card`)                       | Outer card height (any CSS length); omit to fit content                              |
+| `layout.row_height`     | string | `28px`  | `--ttsc-row-height`                                   | `.game-row` height, the logo / score / colon cell heights, the logo image            |
+| `layout.logo_width`     | string | `30px`  | `--ttsc-logo-width`                                   | Logo cell width and the logo image width (aspect ratio preserved)                    |
+| `layout.score_width`    | string | `34px`  | `--ttsc-score-width`                                  | Score cell width — widen for 3-digit totals                                          |
+| `layout.colon_width`    | string | `9px`   | `--ttsc-colon-width`                                  | Centre colon cell width                                                              |
+| `layout.team_width`     | string | `99px`  | `--ttsc-team-col-a-width` / `--ttsc-team-col-b-width` | Team-name column width; one CSS length applied to both sides                         |
+| `layout.row_padding`    | string | `5px`   | `--ttsc-row-padding`                                  | Padding above **and** below every game row (divider sits centred in the space)       |
+| `layout.font_scale`     | number | `1`     | `--ttsc-font-scale`                                   | Uniform multiplier over every text size; raise `layout.row_height` too               |
+| `layout.position_width` | string | `24px`  | `--ttsc-position-width`                               | `show_position` rank gutter width — widen for 3-digit ranks or a larger `font_scale` |
 
 ### Colors
 

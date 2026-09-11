@@ -99,6 +99,7 @@ export function sectionHtml(
   if (!entities.length) return carousel ? emptyHtml() : nothing;
 
   const sortMode = resolveSortMode(entities, states, rank_type, view);
+  const now = Date.now();
 
   const items = entities.map((entityId) => {
     const attr = states[entityId]?.attributes;
@@ -106,11 +107,10 @@ export function sectionHtml(
       entityId,
       teamName: String(attr?.team_name ?? entityId),
       special: special_teams.includes(entityId.replace(prefix, "")),
-      key: sortKeyFor(attr, sortMode),
+      key: sortKeyFor(attr, sortMode, now),
     };
   });
 
-  const now = Date.now();
   items.sort((a, b) => {
     if (sortMode === "by-date") {
       // live games first

@@ -120,6 +120,7 @@ describe("SportScoreboardCard layout options", () => {
       { key: "colon_width", prop: "--ttsc-colon-width", value: "12px" },
       { key: "row_height", prop: "--ttsc-row-height", value: "40px" },
       { key: "row_padding", prop: "--ttsc-row-padding", value: "6px" },
+      { key: "position_width", prop: "--ttsc-position-width", value: "32px" },
     ] as const;
 
     for (const { key, prop, value } of cases) {
@@ -131,6 +132,14 @@ describe("SportScoreboardCard layout options", () => {
         expect(haCardStyle(card)).toContain(`${prop}:${value}`);
       });
     }
+
+    it("does not emit --ttsc-position-width when layout.position_width is omitted", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection] };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
+      card._render();
+      expect(haCardStyle(card)).not.toContain("--ttsc-position-width");
+    });
 
     it("layout.team_width sets both team columns", () => {
       const card = makeCard();

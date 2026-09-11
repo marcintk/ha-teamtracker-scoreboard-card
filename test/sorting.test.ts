@@ -33,6 +33,15 @@ describe("winRatio", () => {
     expect(winRatio(undefined, "win-loss")).toBe(0);
     expect(winRatio("", "win-loss")).toBe(0);
   });
+
+  it("treats a non-numeric segment as no games played (0), not NaN", () => {
+    // reachable via a forced `view: "standings"` section, which skips the
+    // NUMERIC_RECORD guard in resolveSortMode — see the describe below
+    expect(winRatio("12-4 (H: 6-2)", "win-loss")).toBe(0);
+    expect(winRatio("12-4 (H: 6-2)", "win-draw-loss")).toBe(0);
+    expect(winRatio("12-4 (H: 6-2)", "win-loss-otl")).toBe(0);
+    expect(Number.isNaN(winRatio("12-4 (H: 6-2)", "win-loss"))).toBe(false);
+  });
 });
 
 describe("sortKeyFor", () => {
@@ -41,12 +50,23 @@ describe("sortKeyFor", () => {
     expect(sortKeyFor({ date }, "by-date")).toBe(new Date(date).getTime());
   });
 
-  it("returns 0 timestamp when date is missing or non-parseable", () => {
-    expect(sortKeyFor({}, "by-date")).toBe(0);
-    expect(sortKeyFor(undefined, "by-date")).toBe(0);
+  it("keys a missing or non-parseable date to `now` instead of the epoch", () => {
+    // so it sorts near the top of the schedule band instead of sinking to the
+    // bottom, where a `limit` slice could hide it — see the `by-date` sort in render.ts
+    const now = Date.parse("2024-03-15T20:00:00Z");
+    expect(sortKeyFor({}, "by-date", now)).toBe(now);
+    expect(sortKeyFor(undefined, "by-date", now)).toBe(now);
     // Empty string and sentinel values must not leak NaN into the sort comparator.
-    expect(sortKeyFor({ date: "" }, "by-date")).toBe(0);
-    expect(sortKeyFor({ date: "TBD" }, "by-date")).toBe(0);
+    expect(sortKeyFor({ date: "" }, "by-date", now)).toBe(now);
+    expect(sortKeyFor({ date: "TBD" }, "by-date", now)).toBe(now);
+  });
+
+  it("defaults `now` to the current time when not supplied", () => {
+    const before = Date.now();
+    const key = sortKeyFor({}, "by-date");
+    const after = Date.now();
+    expect(key).toBeGreaterThanOrEqual(before);
+    expect(key).toBeLessThanOrEqual(after);
   });
 
   it("returns win ratio for win-loss", () => {
