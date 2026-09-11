@@ -181,7 +181,7 @@ export const CARD_STYLES = `
   .logo-a { padding-right: 3px; }
   .logo-b { padding-left:  3px; }
   .logo img {
-    width: var(--ttsc-logo-width, 28px);
+    width: var(--ttsc-logo-width, 30px);
     height: var(--ttsc-row-height, 28px);
     object-fit: contain;
     display: block;
@@ -286,5 +286,10 @@ export const CARD_STYLES = `
   }
   .score-fresh {
     animation: score-flash 0.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .score-fresh {
+      animation: none;
+    }
   }
 `;

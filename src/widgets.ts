@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { isTeamSide } from "./display.js";
 import type { ColorsConfig, GameAttr, GameState } from "./types.js";
-import { safeLogoUrl } from "./utils.js";
+import { firstSegment, safeLogoUrl } from "./utils.js";
 
 export function logoHtml(side: "home" | "away", attr: GameAttr): TemplateResult | typeof nothing {
   const url = safeLogoUrl(isTeamSide(side, attr) ? attr.team_logo : attr.opponent_logo);
@@ -18,7 +18,7 @@ export function tvHtml(
   if (!tv) return nothing;
   const networks = tv.split("/").map((n) => n.trim());
   const hasMultiple = networks.length > 1;
-  /* v8 ignore next */ const first = networks[0] ?? "";
+  const first = firstSegment(tv, "/").trim();
   const truncated = first.substring(0, 3);
   const label = first.length > 3 || hasMultiple ? `${truncated}>` : truncated;
   const bg = gs === "IN" ? (colors.live ?? "var(--ttsc-live-color, indianred)") : "#666";
@@ -38,7 +38,7 @@ export function messageHtml(
   switch (gs) {
     case "PRE": {
       const kickoff = attr.kickoff_in ?? "";
-      /* v8 ignore next */ const city = (String(attr.location ?? "").split(",")[0] ?? "").trim();
+      const city = firstSegment(String(attr.location ?? ""), ",").trim();
       const odds = attr.odds ?? "";
       const sub = city && odds ? `${city}, ${odds}` : city || odds;
       return html`<span style="color:darkgray">${kickoff}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
