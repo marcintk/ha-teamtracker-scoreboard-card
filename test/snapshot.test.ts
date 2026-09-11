@@ -98,6 +98,13 @@ describe("CARD_STYLES", () => {
     expect(CARD_STYLES).toMatch(/\.logo img\s*\{[^}]*[^-]width:\s*var\(--ttsc-logo-width, 30px\)/);
   });
 
+  it("wires the position gutter width to the --ttsc-position-width custom property", () => {
+    expect(CARD_STYLES).toMatch(/\.team-pos\s*\{[^}]*width:\s*var\(--ttsc-position-width, 24px\)/);
+    expect(CARD_STYLES).toMatch(
+      /\.team-pos\s*\{[^}]*min-width:\s*var\(--ttsc-position-width, 24px\)/
+    );
+  });
+
   it("disables the score-fresh blink animation under prefers-reduced-motion", () => {
     expect(CARD_STYLES).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.score-fresh\s*\{\s*animation:\s*none;/

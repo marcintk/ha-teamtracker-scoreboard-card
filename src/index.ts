@@ -334,6 +334,7 @@ export class SportScoreboardCard extends HTMLElement {
       row_height: l.row_height ?? c?.row_height,
       row_padding: l.row_padding,
       font_scale: l.font_scale ?? c?.font_scale,
+      position_width: l.position_width,
     };
   }
 
@@ -349,6 +350,7 @@ export class SportScoreboardCard extends HTMLElement {
         row_height,
         row_padding,
         font_scale,
+        position_width,
       } = this._layout();
       const states = (this._hass as HomeAssistant).states;
       const stateKeys = Object.keys(states);
@@ -392,6 +394,7 @@ export class SportScoreboardCard extends HTMLElement {
         "--ttsc-colon-width": colon_width,
         "--ttsc-row-height": row_height,
         "--ttsc-row-padding": row_padding,
+        "--ttsc-position-width": position_width,
         "--ttsc-font-scale":
           font_scale != null && font_scale !== 1 ? String(font_scale) : undefined,
       };

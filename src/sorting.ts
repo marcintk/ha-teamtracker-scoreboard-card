@@ -11,21 +11,36 @@ export function winRatio(record: unknown, sortMode: SortMode): number {
     .split("-")
     .map(Number);
   const p = (i: number): number => parts[i] ?? 0;
+  // a record with a non-numeric segment (e.g. "12-4 (H: 6-2)" from `view: "standings"`
+  // bypassing the NUMERIC_RECORD guard below) makes `total` NaN — treat that the same
+  // as "no games played" (ratio 0, sorts last) instead of letting NaN reach the caller
+  const ratio = (total: number, points: number): number =>
+    total && !Number.isNaN(total) ? points / total : 0;
 
   if (sortMode === "win-draw-loss") {
     const [w, d, l] = [p(0), p(1), p(2)]; // W-D-L
-    return w + d + l ? (3 * w + d) / (3 * (w + d + l)) : 0;
+    return ratio(3 * (w + d + l), 3 * w + d);
   }
   if (sortMode === "win-loss-otl") {
     const [w, l, otl] = [p(0), p(1), p(2)]; // W-L-OTL
-    return w + l + otl ? (2 * w + otl) / (2 * (w + l + otl)) : 0;
+    return ratio(2 * (w + l + otl), 2 * w + otl);
   }
   const [w, l] = [p(0), p(1)]; // win-loss: W-L
-  return w + l ? w / (w + l) : 0;
+  return ratio(w + l, w);
 }
 
-export function sortKeyFor(attr: GameAttr | null | undefined, sortMode: SortMode): number {
-  if (sortMode === "by-date") return Date.parse(attr?.date ?? "") || 0;
+export function sortKeyFor(
+  attr: GameAttr | null | undefined,
+  sortMode: SortMode,
+  now: number = Date.now()
+): number {
+  if (sortMode === "by-date") {
+    const parsed = Date.parse(attr?.date ?? "");
+    // a missing/unparseable date has no real position — key it to `now` so it
+    // lands near the top of the schedule (next-up / just-finished band) instead
+    // of sinking to the epoch-distant bottom, where a `limit` slice could hide it
+    return Number.isNaN(parsed) ? now : parsed;
+  }
   return winRatio(attr?.team_record, sortMode);
 }
 

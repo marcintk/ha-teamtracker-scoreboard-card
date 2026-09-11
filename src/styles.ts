@@ -125,8 +125,8 @@ export const CARD_STYLES = `
   .team-pos {
     box-sizing: border-box;
     display: block;
-    width: 24px;
-    min-width: 24px;
+    width: var(--ttsc-position-width, 24px);
+    min-width: var(--ttsc-position-width, 24px);
     /* balance the card's 6px left padding so the number sits an equal gap from
        the card edge and from the next cell */
     padding-right: 6px;
