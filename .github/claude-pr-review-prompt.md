@@ -14,8 +14,8 @@ REPO: {{REPO}} PR NUMBER: {{PR_NUMBER}}
    diff yourself.
 2. This repo's `CLAUDE.md` is already in your project instructions — apply its Design Invariants
    (schedule vs. standings sort semantics, `by-date` dedup/ordering, team-name and logo rendering
-   rules, `show_position`, `mode: slide` behavior) and Architecture Notes as review criteria, plus the
-   100% statement/branch/function/line coverage requirement enforced by `npm run test:coverage`.
+   rules, `show_position`, `mode: slide` behavior) and Architecture Notes as review criteria, plus
+   the 100% statement/branch/function/line coverage requirement enforced by `npm run test:coverage`.
 
 ## Decision rule
 
