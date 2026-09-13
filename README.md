@@ -13,7 +13,7 @@ discussion][discussions].
 [![Coverage][coverage-shield]][ci] [![Downloads][downloads-shield]][releases]
 
 [![CI][ci-shield]][ci] [![CodeQL][codeql-shield]][codeql]
-[![OpenSSF Scorecard][scorecard-shield]][scorecard]
+[![OpenSSF Scorecard][scorecard-shield]][scorecard] [![Socket.dev][socket-shield]][socket]
 
 ## Requirements
 
@@ -221,5 +221,7 @@ sections:
   https://securityscorecards.dev/viewer/?uri=github.com/marcintk/ha-teamtracker-scoreboard-card
 [scorecard-shield]:
   https://img.shields.io/ossf-scorecard/github.com/marcintk/ha-teamtracker-scoreboard-card?label=OpenSSF&style=flat
+[socket]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/blob/main/socket.yml
+[socket-shield]: https://img.shields.io/badge/Socket.dev-Firewall%20%2B%20Scanning-fb3387.svg
 [demo-img]:
   https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
