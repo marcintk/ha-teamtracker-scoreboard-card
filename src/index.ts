@@ -17,10 +17,10 @@ import {
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
 
-// a bare pixel length ("34" or "34px") → its number; anything else (rem, %, auto,
+// a pixel length ("34px") → its number; anything else (a bare number, rem, %, auto,
 // undefined) → null, so callers fall back to their default instead of a wrong number
 const asPx = (v: string | undefined): number | null => {
-  const m = /^\s*(\d+(?:\.\d+)?)\s*(?:px)?\s*$/.exec(v ?? "");
+  const m = /^(\d+(?:\.\d+)?)px$/.exec((v ?? "").trim());
   return m ? Number(m[1]) : null;
 };
 
