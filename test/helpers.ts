@@ -1,8 +1,9 @@
-import { snapHtml } from "ha-card-shared/test-utils";
 import { render } from "lit";
 import { afterEach, beforeEach, vi } from "vitest";
 
-export { snapHtml };
+export function snapHtml(html: string): string {
+  return html.replace(/<!--\?lit\$\d+\$-->/g, "<!--?-->").replace(/lit\$\d+\$/g, "lit$");
+}
 
 export function doc(template: unknown): HTMLElement {
   const el = document.createElement("div");

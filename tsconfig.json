@@ -1,10 +1,13 @@
 {
-  "extends": "ha-card-shared/tsconfig.base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022", "DOM"],
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["src/**/*", "test/**/*", "globals.d.ts"]
 }

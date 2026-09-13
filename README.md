@@ -10,7 +10,10 @@ discussion][discussions].
 
 [![hacs_badge][hacs-shield]][hacs] [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]][license] ![Maintenance][maintenance-shield]
-[![Coverage][coverage-shield]][ci] [![Downloads][downloads-shield]][releases] [![CI][ci-shield]][ci]
+[![Coverage][coverage-shield]][ci] [![Downloads][downloads-shield]][releases]
+
+[![CI][ci-shield]][ci] [![CodeQL][codeql-shield]][codeql]
+[![OpenSSF Scorecard][scorecard-shield]][scorecard]
 
 ## Requirements
 
@@ -211,5 +214,12 @@ sections:
 [coverage-shield]: https://img.shields.io/badge/coverage-100%25-brightgreen
 [downloads-shield]:
   https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/total?label=downloads
+[codeql]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/security/code-scanning
+[codeql-shield]:
+  https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql.yml?branch=main&label=CodeQL
+[scorecard]:
+  https://securityscorecards.dev/viewer/?uri=github.com/marcintk/ha-teamtracker-scoreboard-card
+[scorecard-shield]:
+  https://img.shields.io/ossf-scorecard/github.com/marcintk/ha-teamtracker-scoreboard-card?label=OpenSSF&style=flat
 [demo-img]:
   https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
