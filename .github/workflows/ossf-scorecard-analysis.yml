@@ -1,4 +1,4 @@
-name: Scorecard
+name: OSSF Scorecard Analysis
 
 on:
   branch_protection_rule:

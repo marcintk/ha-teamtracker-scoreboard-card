@@ -208,15 +208,15 @@ sections:
 [license-shield]: https://img.shields.io/github/license/marcintk/ha-teamtracker-scoreboard-card.svg
 [maintenance-shield]: https://img.shields.io/maintenance/yes/2026
 [ci]:
-  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/build-and-test.yml
+  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml
 [ci-shield]:
-  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/build-and-test.yml/badge.svg
+  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml/badge.svg
 [coverage-shield]: https://img.shields.io/badge/coverage-100%25-brightgreen
 [downloads-shield]:
   https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/total?label=downloads
 [codeql]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/security/code-scanning
 [codeql-shield]:
-  https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql.yml?branch=main&label=CodeQL
+  https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql-analysis.yml?branch=main&label=CodeQL
 [scorecard]:
   https://securityscorecards.dev/viewer/?uri=github.com/marcintk/ha-teamtracker-scoreboard-card
 [scorecard-shield]:
