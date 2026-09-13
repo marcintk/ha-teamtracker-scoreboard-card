@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -69,11 +71,29 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
 
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: dist/card.js
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+
+      - name: Sign release artifact (keyless)
+        run: |
+          cosign sign-blob --yes \
+            --output-signature dist/card.js.sig \
+            --output-certificate dist/card.js.pem \
+            dist/card.js
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/card.js
+          files: |
+            dist/card.js
+            dist/card.js.sig
+            dist/card.js.pem
           generate_release_notes: true
           draft: true # always a draft — a human publishes from the Releases UI after review
           prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
