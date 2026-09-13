@@ -4,9 +4,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    ignore:
-      # publish-release.yml is intentionally held at v1.4.1 (see the comment there).
-      - dependency-name: "marcintk/ha-card-shared/.github/workflows/shared-publish-release.yml"
   - package-ecosystem: npm
     directory: /
     schedule:

@@ -40,7 +40,7 @@ export interface HassEntity {
 
 export type HassStates = Record<string, HassEntity>;
 
-import type { HasSubscribeEvents } from "ha-card-shared/runtime";
+import type { HasSubscribeEvents } from "./runtime/subscription.js";
 export type HassConnection = HasSubscribeEvents;
 
 export interface HomeAssistant {

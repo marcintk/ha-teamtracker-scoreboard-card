@@ -1,9 +1,10 @@
-/// <reference path="../node_modules/ha-card-shared/globals.d.ts" />
+/// <reference path="../globals.d.ts" />
 
-import { DebugMetrics, SubscriptionManager } from "ha-card-shared/runtime";
 import { html, nothing, render, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { sectionHtml } from "./render.js";
+import { DebugMetrics } from "./runtime/debug.js";
+import { SubscriptionManager } from "./runtime/subscription.js";
 import { CARD_STYLES } from "./styles.js";
 import type { CardConfig, HassStates, HomeAssistant, LayoutConfig } from "./types.js";
 import {
