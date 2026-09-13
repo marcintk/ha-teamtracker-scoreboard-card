@@ -1,4 +1,4 @@
-name: Claude Code Agent
+name: Claude PR Review
 
 on:
   issues:
