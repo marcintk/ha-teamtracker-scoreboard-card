@@ -20,15 +20,8 @@ discussion][discussions].
 Requires [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) (HACS Integration) — it
 provides the `sensor.<sport>_<team>` entities this card reads.
 
-**Ready-made sensor configs** live in [`docs/sensors/`][sensors] — one drop-in `sensor:` package per
-league, all rosters verified against ESPN for the 2026/27 season:
-
-- **NBA** — all 30 teams
-- **NHL** — all 32 teams
-- **NFL** — all 32 teams
-- **Premier League** (England) — all 20 clubs
-- **La Liga / Primera División** (Spain) — all 20 clubs
-- **Serie A** (Italy) — all 20 clubs
+To help with setup, [`docs/sensors/`][sensors] has example sensor definitions for several leagues
+(NBA, NHL, NFL, Premier League, La Liga, Serie A) you can use as a starting point for your own.
 
 ## Installation
 
@@ -62,30 +55,16 @@ sections:
   - name: Primera Division
     prefix: sensor.liga_
     limit: 5
-    view: standings
   - name: NBA Scoreboard
     prefix: sensor.nba_
     limit: 5
 ```
 
-## Schedule vs standings
+## Schedule
 
-A section renders as one of two ways:
-
-- **schedule** _(default)_ — one row per game: live games first, then every other game by nearness
-  to now, so the next kick-off and the just-finished game sit near the top; the two sensors for a
-  game are merged into one row
-- **standings table** — one row per team, ranked by record (see [Rank type](#rank-type))
-
-## Rank type
-
-In the **standings** table teams are ordered by their win-loss record, best at the top.
-
-| Value           | Points system   | Record format | Use for                              |
-| --------------- | --------------- | ------------- | ------------------------------------ |
-| `win-loss`      | W=2, L=0        | `W-L`         | NBA and other W/L-only leagues       |
-| `win-draw-loss` | W=3, D=1, L=0   | `W-D-L`       | Soccer leagues, MLS, …               |
-| `win-loss-otl`  | W=2, OTL=1, L=0 | `W-L-OTL`     | NHL and leagues with overtime losses |
+A section renders one row per game: live games first, then every other game by nearness to now, so
+the next kick-off and the just-finished game sit near the top; the two sensors for a game are merged
+into one row.
 
 ## Configuration
 
@@ -118,25 +97,19 @@ sections:
   - name: Premier League
     prefix: sensor.epl_
     limit: 12
-    view: standings
-    rank_type: win-draw-loss
     score_blink: 5
-    show_position: true
     special_teams:
       - liv
   - ...
 ```
 
-| Field                   | Type    | Default         | Description                                                                                                                                                                                                                                                              |
-| ----------------------- | ------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `section.name`          | string  | required        | Header label shown above the section                                                                                                                                                                                                                                     |
-| `section.prefix`        | string  | required        | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                                                                                                                     |
-| `section.limit`         | number  | `10`            | Max rows to show                                                                                                                                                                                                                                                         |
-| `section.view`          | string  | `schedule`      | What the section shows (see [Schedule vs standings](#schedule-vs-standings)). `schedule` = list, live games first then every other game by nearness to now; `standings` = standings table; `auto` = standings when every team has a numeric record, else schedule        |
-| `section.rank_type`     | string  | `win-draw-loss` | Ranking formula for the standings table — see [Rank type](#rank-type)                                                                                                                                                                                                    |
-| `section.score_blink`   | number  | `5`             | Seconds to blink the score after a goal/basket; `0` disables                                                                                                                                                                                                             |
-| `section.show_position` | boolean | `false`         | Draw the position gutter — the rank in a `standings` view (a blank cell in `schedule`, for aligning a mixed card). It's the rank among **tracked** teams, so it matches the real league table only if every team is tracked. Left `false`, the gutter isn't drawn at all |
-| `section.special_teams` | list    | `[]`            | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos`                                                                                                                                                                                  |
+| Field                   | Type   | Default  | Description                                                                             |
+| ----------------------- | ------ | -------- | --------------------------------------------------------------------------------------- |
+| `section.name`          | string | required | Header label shown above the section                                                    |
+| `section.prefix`        | string | required | Entity ID prefix, e.g. `sensor.nba_`                                                    |
+| `section.limit`         | number | `10`     | Max rows to show                                                                        |
+| `section.score_blink`   | number | `5`      | Seconds to blink the score after a goal/basket; `0` disables                            |
+| `section.special_teams` | list   | `[]`     | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos` |
 
 ### Layout
 
@@ -154,24 +127,22 @@ sections:
   - ...
 ```
 
-| Key                     | Type   | Default | CSS property                                          | Controls                                                                             |
-| ----------------------- | ------ | ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `layout.height`         | string | auto    | — (plain `height` on `ha-card`)                       | Outer card height (any CSS length); omit to fit content                              |
-| `layout.row_height`     | string | `28px`  | `--ttsc-row-height`                                   | `.game-row` height, the logo / score / colon cell heights, the logo image            |
-| `layout.logo_width`     | string | `30px`  | `--ttsc-logo-width`                                   | Logo cell width and the logo image width (aspect ratio preserved)                    |
-| `layout.score_width`    | string | `34px`  | `--ttsc-score-width`                                  | Score cell width — widen for 3-digit totals                                          |
-| `layout.colon_width`    | string | `9px`   | `--ttsc-colon-width`                                  | Centre colon cell width                                                              |
-| `layout.team_width`     | string | `99px`  | `--ttsc-team-col-a-width` / `--ttsc-team-col-b-width` | Team-name column width; one CSS length applied to both sides                         |
-| `layout.row_padding`    | string | `5px`   | `--ttsc-row-padding`                                  | Padding above **and** below every game row (divider sits centred in the space)       |
-| `layout.font_scale`     | number | `1`     | `--ttsc-font-scale`                                   | Uniform multiplier over every text size; raise `layout.row_height` too               |
-| `layout.position_width` | string | `24px`  | `--ttsc-position-width`                               | `show_position` rank gutter width — widen for 3-digit ranks or a larger `font_scale` |
+| Key                  | Type   | Default | CSS property                                          | Controls                                                                       |
+| -------------------- | ------ | ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `layout.height`      | string | auto    | — (plain `height` on `ha-card`)                       | Outer card height (any CSS length); omit to fit content                        |
+| `layout.row_height`  | string | `28px`  | `--ttsc-row-height`                                   | `.game-row` height, the logo / score / colon cell heights, the logo image      |
+| `layout.logo_width`  | string | `30px`  | `--ttsc-logo-width`                                   | Logo cell width and the logo image width (aspect ratio preserved)              |
+| `layout.score_width` | string | `34px`  | `--ttsc-score-width`                                  | Score cell width — widen for 3-digit totals                                    |
+| `layout.colon_width` | string | `9px`   | `--ttsc-colon-width`                                  | Centre colon cell width                                                        |
+| `layout.team_width`  | string | `99px`  | `--ttsc-team-col-a-width` / `--ttsc-team-col-b-width` | Team-name column width; one CSS length applied to both sides                   |
+| `layout.row_padding` | string | `5px`   | `--ttsc-row-padding`                                  | Padding above **and** below every game row (divider sits centred in the space) |
+| `layout.font_scale`  | number | `1`     | `--ttsc-font-scale`                                   | Uniform multiplier over every text size; raise `layout.row_height` too         |
 
 ### Colors
 
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:
-  team: white
   opponent: gray
   special: "#2196F3" # Material Blue
   header: "#2196F3" # Material Blue
@@ -183,16 +154,15 @@ sections:
   - ...
 ```
 
-| Key               | Default                            | CSS property            | Applies to                                 |
-| ----------------- | ---------------------------------- | ----------------------- | ------------------------------------------ |
-| `colors.team`     | `var(--primary-text-color, white)` | `--ttsc-team-color`     | Your tracked team name                     |
-| `colors.opponent` | `#‌777` (grey)                     | `--ttsc-opponent-color` | Opponent name                              |
-| `colors.special`  | `#2196F3` (Material Blue)          | `--ttsc-special-color`  | `special_teams` highlight                  |
-| `colors.header`   | `#2196F3` (Material Blue)          | `--ttsc-header-color`   | Section header label                       |
-| `colors.winner`   | `orange`                           | `--ttsc-winner-color`   | POST winner score and final clock          |
-| `colors.loser`    | `darkgray`                         | `--ttsc-loser-color`    | POST loser score                           |
-| `colors.live`     | `indianred`                        | `--ttsc-live-color`     | IN game clock text and TV badge background |
-| `colors.leading`  | `brown`                            | `--ttsc-leading-color`  | IN score for the currently leading team    |
+| Key               | Default                   | CSS property            | Applies to                                 |
+| ----------------- | ------------------------- | ----------------------- | ------------------------------------------ |
+| `colors.opponent` | `#‌777` (grey)            | `--ttsc-opponent-color` | Both team names                            |
+| `colors.special`  | `#2196F3` (Material Blue) | `--ttsc-special-color`  | `special_teams` highlight                  |
+| `colors.header`   | `#2196F3` (Material Blue) | `--ttsc-header-color`   | Section header label                       |
+| `colors.winner`   | `orange`                  | `--ttsc-winner-color`   | POST winner score and final clock          |
+| `colors.loser`    | `darkgray`                | `--ttsc-loser-color`    | POST loser score                           |
+| `colors.live`     | `indianred`               | `--ttsc-live-color`     | IN game clock text and TV badge background |
+| `colors.leading`  | `brown`                   | `--ttsc-leading-color`  | IN score for the currently leading team    |
 
 <!-- Reference links -->
 
