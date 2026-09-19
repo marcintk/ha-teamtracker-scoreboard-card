@@ -57,15 +57,9 @@ describe("rowHtml inline styles — score text color", () => {
 });
 
 describe("rowHtml inline styles — team name font-weight", () => {
-  it("bolds the tracked team name", () => {
-    expect(doc(rowHtml(makeState("PRE", baseAttrs), false)).innerHTML).toContain(
-      "font-weight:bold"
-    );
-  });
-  it("uses normal weight for the opponent name", () => {
-    expect(doc(rowHtml(makeState("PRE", baseAttrs), false)).innerHTML).toContain(
-      "font-weight:normal"
-    );
+  it("uses normal weight for both team names", () => {
+    const html = doc(rowHtml(makeState("PRE", baseAttrs), false)).innerHTML;
+    expect(html.match(/font-weight:normal/g)?.length).toBe(2);
   });
 });
 
