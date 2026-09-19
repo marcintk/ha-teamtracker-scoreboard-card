@@ -82,7 +82,7 @@ describe("teamColor", () => {
   });
 
   it("uses config colors when provided", () => {
-    const colors = { team: "cyan", special: "gold", opponent: "gray" };
+    const colors = { special: "gold", opponent: "gray" };
     expect(teamColor("home", homeAttr, false, colors)).toBe("gray");
     expect(teamColor("home", homeAttr, true, colors)).toBe("gold");
     expect(teamColor("away", homeAttr, false, colors)).toBe("gray");

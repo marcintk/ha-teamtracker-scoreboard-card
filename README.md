@@ -143,7 +143,6 @@ sections:
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:
-  team: white
   opponent: gray
   special: "#2196F3" # Material Blue
   header: "#2196F3" # Material Blue
@@ -155,16 +154,15 @@ sections:
   - ...
 ```
 
-| Key               | Default                            | CSS property            | Applies to                                 |
-| ----------------- | ---------------------------------- | ----------------------- | ------------------------------------------ |
-| `colors.team`     | `var(--primary-text-color, white)` | `--ttsc-team-color`     | Your tracked team name                     |
-| `colors.opponent` | `#‌777` (grey)                     | `--ttsc-opponent-color` | Opponent name                              |
-| `colors.special`  | `#2196F3` (Material Blue)          | `--ttsc-special-color`  | `special_teams` highlight                  |
-| `colors.header`   | `#2196F3` (Material Blue)          | `--ttsc-header-color`   | Section header label                       |
-| `colors.winner`   | `orange`                           | `--ttsc-winner-color`   | POST winner score and final clock          |
-| `colors.loser`    | `darkgray`                         | `--ttsc-loser-color`    | POST loser score                           |
-| `colors.live`     | `indianred`                        | `--ttsc-live-color`     | IN game clock text and TV badge background |
-| `colors.leading`  | `brown`                            | `--ttsc-leading-color`  | IN score for the currently leading team    |
+| Key               | Default                   | CSS property            | Applies to                                 |
+| ----------------- | ------------------------- | ----------------------- | ------------------------------------------ |
+| `colors.opponent` | `#‌777` (grey)            | `--ttsc-opponent-color` | Both team names                            |
+| `colors.special`  | `#2196F3` (Material Blue) | `--ttsc-special-color`  | `special_teams` highlight                  |
+| `colors.header`   | `#2196F3` (Material Blue) | `--ttsc-header-color`   | Section header label                       |
+| `colors.winner`   | `orange`                  | `--ttsc-winner-color`   | POST winner score and final clock          |
+| `colors.loser`    | `darkgray`                | `--ttsc-loser-color`    | POST loser score                           |
+| `colors.live`     | `indianred`               | `--ttsc-live-color`     | IN game clock text and TV badge background |
+| `colors.leading`  | `brown`                   | `--ttsc-leading-color`  | IN score for the currently leading team    |
 
 <!-- Reference links -->
 
