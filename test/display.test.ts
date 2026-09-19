@@ -86,6 +86,12 @@ describe("teamColor", () => {
     expect(teamColor("away", "POST", awayAttr)).toBe("var(--ttsc-winner-color, orange)");
   });
 
+  it("colors both names leading on an exact tie during IN (mirrors scoreColor)", () => {
+    const tied: GameAttr = { ...homeAttr, team_score: "90", opponent_score: "90" };
+    expect(teamColor("home", "IN", tied)).toBe("var(--ttsc-leading-color, brown)");
+    expect(teamColor("away", "IN", tied)).toBe("var(--ttsc-leading-color, brown)");
+  });
+
   it("uses config colors when provided", () => {
     const colors = { leading: "gold", winner: "lime", opponent: "gray" };
     expect(teamColor("home", "PRE", homeAttr, colors)).toBe("gray");
