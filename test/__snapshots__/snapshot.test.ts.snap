@@ -394,7 +394,7 @@ exports[`rowHtml structural snapshots > renders with showLogos enabled 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-leading-color, brown);font-weight:normal"><!--?-->Lakers<!--?--> ★</div>
+    <div class="team-name" style="color:var(--ttsc-leading-color, brown);font-weight:normal"><!--?-->Lakers<!--?-->★</div>
     <div class="team-rank" style="color:var(--ttsc-leading-color, brown)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>

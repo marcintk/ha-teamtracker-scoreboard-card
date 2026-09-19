@@ -33,8 +33,8 @@ export function rowHtml(
 
   const homeColor = teamColor("home", gs, attr, colors);
   const awayColor = teamColor("away", gs, attr, colors);
-  const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? " ★" : "";
-  const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? " ★" : "";
+  const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? "★" : "";
+  const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? "★" : "";
 
   return html`
 <div class="game-row">
