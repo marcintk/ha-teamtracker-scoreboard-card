@@ -55,10 +55,8 @@ export interface SectionConfig {
 export interface ColorsConfig {
   header?: string;
   opponent?: string;
-  special?: string;
   winner?: string;
   loser?: string;
-  leading?: string;
   live?: string;
 }
 
@@ -107,6 +105,8 @@ export interface CardConfig {
   /** @deprecated use `layout.font_scale` */
   font_scale?: number;
   colors?: ColorsConfig;
+  /** color + bold the leading (IN) / winning (POST) team's name; on by default, `false` leaves both names plain */
+  highlight_winner?: boolean;
   debug?: boolean;
   show_version?: boolean;
   /** throttle delay (seconds) before rendering after an event (default 5; `0` = render at once) */

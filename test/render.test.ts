@@ -75,11 +75,77 @@ describe("rowHtml", () => {
     expect(away?.style.color).toContain("--ttsc-opponent-color");
   });
 
-  it("keeps the special-team blue", () => {
+  it("appends a star marker for a special team, without changing its color", () => {
     const el = doc(rowHtml(makeState("PRE", baseAttrs), true));
     const [home] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.color).toContain("--ttsc-special-color");
+    expect(home?.textContent).toContain("★");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
     expect(home?.style.fontWeight).toBe("normal");
+  });
+
+  it("colors and bolds the leading name by default (highlightWinner defaults to true)", () => {
+    // home leads 95 vs 90
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-live-color");
+    expect(home?.style.fontWeight).toBe("bold");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
+
+  it("does not color or bold the leading name when highlightWinner is explicitly off", () => {
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
+
+  it("colors and bolds the winning name during POST by default", () => {
+    const el = doc(rowHtml(makeState("POST", baseAttrs), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-winner-color");
+    expect(home?.style.fontWeight).toBe("bold");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
+
+  it("colors and bolds the away name when the away side leads/wins", () => {
+    const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" as const };
+    const el = doc(rowHtml(makeState("IN", awayAttrs), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(away?.style.color).toContain("--ttsc-live-color");
+    expect(away?.style.fontWeight).toBe("bold");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+  });
+
+  it("never bolds or colors the record, even when highlightWinner is on", () => {
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false));
+    const [homeRank, awayRank] = el.querySelectorAll<HTMLElement>(".team-rank");
+    expect(homeRank?.style.color).toContain("--ttsc-opponent-color");
+    expect(awayRank?.style.color).toContain("--ttsc-opponent-color");
+  });
+
+  it("does not highlight either name on a POST draw", () => {
+    const draw: GameAttr = { ...baseAttrs, team_winner: false, opponent_winner: false };
+    const el = doc(rowHtml(makeState("POST", draw), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
+
+  it("does not highlight either name on an exact tie during IN", () => {
+    const tied: GameAttr = { ...baseAttrs, team_score: "90", opponent_score: "90" };
+    const el = doc(rowHtml(makeState("IN", tied), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
   });
 });
 
@@ -142,20 +208,10 @@ describe("sectionHtml", () => {
     expect(el.querySelector(".section-title")?.textContent).toBe("<b>NBA</b>");
   });
 
-  it("marks special teams correctly using default CSS var color", () => {
+  it("marks special teams with a star marker, not a color change", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
-    expect(el.innerHTML).toContain("ttsc-special-color");
-  });
-
-  it("applies config colors to special teams", () => {
-    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(
-      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states), {
-        special: "gold",
-      })
-    );
-    expect(el.innerHTML).toContain("gold");
+    expect(el.innerHTML).toContain("★");
     expect(el.innerHTML).not.toContain("ttsc-special-color");
   });
 
@@ -165,15 +221,12 @@ describe("sectionHtml", () => {
     expect(el.querySelector(".game-row")).not.toBeNull();
   });
 
-  it("accepts pre-filtered entity IDs and still applies colors", () => {
+  it("accepts pre-filtered entity IDs and still marks special teams", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states), {
-        special: "gold",
-      })
+      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states))
     );
-    expect(el.innerHTML).toContain("gold");
-    expect(el.innerHTML).not.toContain("ttsc-special-color");
+    expect(el.innerHTML).toContain("★");
   });
 
   it("applies config opponent color to both team names (no highlight)", () => {
@@ -378,8 +431,8 @@ describe("sectionHtml", () => {
       }),
     };
     const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
-    expect(el.innerHTML).toContain("ttsc-special-color");
-    // the tracked-team bold/colour is never applied, but the special team stays blue
+    expect(el.innerHTML).toContain("★");
+    // the tracked-team bold/colour is never applied, but the special team keeps its marker
     expect(el.innerHTML).not.toContain("font-weight:bold");
   });
 

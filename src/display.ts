@@ -10,21 +10,55 @@ export function colorVar(override: string | undefined, cssVar: string, fallback:
   return override ?? `var(${cssVar}, ${fallback})`;
 }
 
-// No tracked-team highlight — both names fall back to the opponent gray, and only
-// an explicit special_teams entry still stands out.
+/** Shared leading/winner side-check used by both `scoreColor()` and `teamColor()` —
+ *  callers only invoke this once they've already gated on `gs === "IN" | "POST"`. */
+export function isSideAheadOrWinning(
+  side: "home" | "away",
+  gs: GameState,
+  attr: GameAttr
+): boolean {
+  const isSide = isTeamSide(side, attr);
+  if (gs === "IN") {
+    const ts = parseFloat(String(attr.team_score ?? 0));
+    const os = parseFloat(String(attr.opponent_score ?? 0));
+    return isSide ? ts >= os : os >= ts;
+  }
+  return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
+}
+
+/** Like `isSideAheadOrWinning()`, but a tied score during IN counts as neither
+ *  side leading — matching how a POST draw (no `team_winner`/`opponent_winner`)
+ *  already highlights neither side. Used for the `.team-name` highlight, which
+ *  should only call out a side with a clear edge, not the score cell. */
+export function isSideOutrightWinning(
+  side: "home" | "away",
+  gs: GameState,
+  attr: GameAttr
+): boolean {
+  const isSide = isTeamSide(side, attr);
+  if (gs === "IN") {
+    const ts = parseFloat(String(attr.team_score ?? 0));
+    const os = parseFloat(String(attr.opponent_score ?? 0));
+    return isSide ? ts > os : os > ts;
+  }
+  return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
+}
+
+// Both names fall back to the opponent gray by default; the outright leading
+// (IN) or winning (POST) side takes the live/winner colour — the same colour
+// already used for the score cell and, during IN, the live clock/TV badge. A
+// tie/draw highlights neither side. A special_teams entry no longer affects
+// colour — it drives the ★ marker in render.ts instead.
 export function teamColor(
   side: "home" | "away",
+  gs: GameState,
   attr: GameAttr,
-  special: boolean,
-  colors: ColorsConfig = {},
-  opponentSpecial = false
+  colors: ColorsConfig = {}
 ): string {
-  if (!isTeamSide(side, attr)) {
-    if (opponentSpecial) return colorVar(colors.special, "--ttsc-special-color", "#2196F3");
-    return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
-  }
-  if (special)
-    return colorVar(colors.special, "--ttsc-special-color", "#2196F3"); /* Material Blue */
+  if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
+    return colorVar(colors.live, "--ttsc-live-color", "indianred");
+  if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
+    return colorVar(colors.winner, "--ttsc-winner-color", "orange");
   return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
 }
 
@@ -40,17 +74,14 @@ export function scoreColor(
   attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  const isSide = isTeamSide(side, attr);
   if (gs === "PRE") return "black";
   if (gs === "IN") {
-    const ts = parseFloat(String(attr.team_score ?? 0));
-    const os = parseFloat(String(attr.opponent_score ?? 0));
-    return (isSide ? ts >= os : os >= ts)
-      ? colorVar(colors.leading, "--ttsc-leading-color", "brown")
+    return isSideAheadOrWinning(side, gs, attr)
+      ? colorVar(colors.live, "--ttsc-live-color", "indianred")
       : "black";
   }
   if (gs === "POST") {
-    return (isSide ? attr.team_winner : attr.opponent_winner)
+    return isSideAheadOrWinning(side, gs, attr)
       ? colorVar(colors.winner, "--ttsc-winner-color", "orange")
       : colorVar(colors.loser, "--ttsc-loser-color", "darkgray");
   }

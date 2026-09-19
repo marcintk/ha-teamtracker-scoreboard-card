@@ -340,7 +340,13 @@ export class SportScoreboardCard extends HTMLElement {
 
   _render(): void {
     try {
-      const { sections, colors = {}, debug, show_version } = this._config as CardConfig;
+      const {
+        sections,
+        colors = {},
+        debug,
+        show_version,
+        highlight_winner = true,
+      } = this._config as CardConfig;
       const {
         height,
         team_width,
@@ -420,7 +426,8 @@ export class SportScoreboardCard extends HTMLElement {
           colors,
           this._scoreChangedAt,
           carousel,
-          slideControls
+          slideControls,
+          highlight_winner
         )
       );
       const hasContent = sectionTemplates.some((t) => t !== nothing);

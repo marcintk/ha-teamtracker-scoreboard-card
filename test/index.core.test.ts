@@ -337,12 +337,32 @@ describe("SportScoreboardCard core", () => {
     it("passes colors config through to row rendering", () => {
       const card = makeCard();
       card._config = {
-        sections: [{ ...nbaSection, special_teams: ["lal"] }],
-        colors: { special: "gold" },
+        sections: [nbaSection],
+        colors: { opponent: "gold" },
       };
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(card.shadowRoot?.innerHTML).toContain("gold");
+    });
+
+    it("colors and bolds the leading team's name by default when highlight_winner is unset", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection] };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
+      card._render();
+      const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
+      expect(name?.style.color).toContain("--ttsc-live-color");
+      expect(name?.style.fontWeight).toBe("bold");
+    });
+
+    it("leaves team names uncolored and normal-weight when highlight_winner is false", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], highlight_winner: false };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
+      card._render();
+      const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
+      expect(name?.style.color).toContain("--ttsc-opponent-color");
+      expect(name?.style.fontWeight).toBe("normal");
     });
 
     it("applies header color as inline style on section header element", () => {
