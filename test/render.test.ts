@@ -178,18 +178,14 @@ describe("sectionHtml", () => {
 
   it("applies config opponent color to both team names (no highlight)", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(
-      sectionHtml(section, states, Object.keys(states), { team: "cyan", opponent: "dimgray" })
-    );
+    const el = doc(sectionHtml(section, states, Object.keys(states), { opponent: "dimgray" }));
     expect(el.innerHTML).toContain("dimgray");
-    expect(el.innerHTML).not.toContain("cyan");
   });
 
   it("renders both team names normal-weight in the opponent color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
       sectionHtml(section, states, Object.keys(states), {
-        team: "cyan",
         opponent: "dimgray",
       })
     );
@@ -199,7 +195,6 @@ describe("sectionHtml", () => {
       expect(n.style.fontWeight).toBe("normal");
       expect(n.style.color).toBe("dimgray");
     }
-    expect(el.innerHTML).not.toContain("cyan");
   });
 
   it("sorts upcoming games by soonest kick-off first", () => {

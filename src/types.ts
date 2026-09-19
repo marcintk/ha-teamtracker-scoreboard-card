@@ -56,7 +56,6 @@ export interface ColorsConfig {
   header?: string;
   opponent?: string;
   special?: string;
-  team?: string;
   winner?: string;
   loser?: string;
   leading?: string;
@@ -85,7 +84,6 @@ export interface SortItem {
   special?: boolean;
   key?: number;
   opponentSpecial?: boolean;
-  position?: number;
 }
 
 export interface CardConfig {
