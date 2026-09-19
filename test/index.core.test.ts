@@ -345,6 +345,26 @@ describe("SportScoreboardCard core", () => {
       expect(card.shadowRoot?.innerHTML).toContain("gold");
     });
 
+    it("leaves team names uncolored and normal-weight when highlight_winner is unset", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection] };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
+      card._render();
+      const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
+      expect(name?.style.color).toContain("--ttsc-opponent-color");
+      expect(name?.style.fontWeight).toBe("normal");
+    });
+
+    it("colors and bolds the leading team's name when highlight_winner is true", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], highlight_winner: true };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
+      card._render();
+      const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
+      expect(name?.style.color).toContain("--ttsc-leading-color");
+      expect(name?.style.fontWeight).toBe("bold");
+    });
+
     it("applies header color as inline style on section header element", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection], colors: { header: "tomato" } };

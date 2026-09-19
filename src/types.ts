@@ -106,6 +106,8 @@ export interface CardConfig {
   /** @deprecated use `layout.font_scale` */
   font_scale?: number;
   colors?: ColorsConfig;
+  /** color + bold the leading (IN) / winning (POST) team's name; off by default (no distinction) */
+  highlight_winner?: boolean;
   debug?: boolean;
   show_version?: boolean;
   /** throttle delay (seconds) before rendering after an event (default 5; `0` = render at once) */

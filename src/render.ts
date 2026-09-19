@@ -2,6 +2,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import {
   colonColor,
   colorVar,
+  isSideAheadOrWinning,
   isTeamSide,
   nameText,
   rankText,
@@ -25,24 +26,31 @@ export function rowHtml(
   special: boolean,
   colors: ColorsConfig = {},
   opponentSpecial = false,
-  isFresh = false
+  isFresh = false,
+  highlightWinner = false
 ): TemplateResult {
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
   const bg = scoreBg(gs);
   const freshClass = isFresh ? " score-fresh" : "";
 
-  const homeColor = teamColor("home", gs, attr, colors);
-  const awayColor = teamColor("away", gs, attr, colors);
-  const rankColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  const opponentColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  const homeAhead =
+    highlightWinner && (gs === "IN" || gs === "POST") && isSideAheadOrWinning("home", gs, attr);
+  const awayAhead =
+    highlightWinner && (gs === "IN" || gs === "POST") && isSideAheadOrWinning("away", gs, attr);
+  const homeColor = homeAhead ? teamColor("home", gs, attr, colors) : opponentColor;
+  const awayColor = awayAhead ? teamColor("away", gs, attr, colors) : opponentColor;
+  const homeWeight = homeAhead ? "bold" : "normal";
+  const awayWeight = awayAhead ? "bold" : "normal";
   const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? "★" : "";
   const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? "★" : "";
 
   return html`
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:${homeColor};font-weight:normal">${nameText("home", attr)}${homeStar}</div>
-    <div class="team-rank" style="color:${rankColor}">${rankText("home", attr)}</div>
+    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr)}${homeStar}</div>
+    <div class="team-rank" style="color:${opponentColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
   <div class="score score-a${freshClass}" style="background:${bg};color:${scoreColor("home", gs, attr, colors)}">${scoreText("home", gs, attr)}</div>
@@ -50,8 +58,8 @@ export function rowHtml(
   <div class="score score-b${freshClass}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}">${scoreText("away", gs, attr)}</div>
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:${awayColor};font-weight:normal">${nameText("away", attr)}${awayStar}</div>
-    <div class="team-rank" style="color:${rankColor}">${rankText("away", attr)}</div>
+    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr)}${awayStar}</div>
+    <div class="team-rank" style="color:${opponentColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>
   <div class="tv">${tvHtml(gs, attr, colors)}</div>
@@ -65,7 +73,8 @@ export function sectionHtml(
   colors: ColorsConfig = {},
   scoreChangedAt: Map<string, number> = new Map(),
   carousel = false,
-  controls: TemplateResult | typeof nothing = nothing
+  controls: TemplateResult | typeof nothing = nothing,
+  highlightWinner = false
 ): TemplateResult | typeof nothing {
   const {
     name,
@@ -119,7 +128,14 @@ export function sectionHtml(
     .slice(0, limit)
     .map(({ entityId, special = false, opponentSpecial = false }) => {
       const isFresh = blinkMs > 0 && now - (scoreChangedAt.get(entityId) ?? -Infinity) < blinkMs;
-      return rowHtml(states[entityId] as HassEntity, special, colors, opponentSpecial, isFresh);
+      return rowHtml(
+        states[entityId] as HassEntity,
+        special,
+        colors,
+        opponentSpecial,
+        isFresh,
+        highlightWinner
+      );
     });
 
   if (!rows.length) return carousel ? emptyHtml() : nothing;

@@ -70,15 +70,16 @@ into one row.
 
 ### Card
 
-| Option         | Type    | Default  | Description                                                                                                                                |
-| -------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sections`     | list    | required | One entry per league — see [Section](#section)                                                                                             |
-| `layout`       | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                  |
-| `colors`       | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                              |
-| `mode`         | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls |
-| `slide_sec`    | number  | `45`     | Seconds per section while `mode: slide`                                                                                                    |
-| `debug`        | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                |
-| `show_version` | boolean | `false`  | Show the card version badge, centred at the top                                                                                            |
+| Option             | Type    | Default  | Description                                                                                                                                |
+| ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                             |
+| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                  |
+| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                              |
+| `highlight_winner` | boolean | `false`  | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.leading` / `colors.winner`); off leaves both names plain          |
+| `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls |
+| `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                    |
+| `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                |
+| `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                            |
 
 ### Refresh
 

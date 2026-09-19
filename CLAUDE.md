@@ -27,13 +27,14 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 - The schedule shows one entry per game (home sensor wins over away when both exist). `IN` (live)
   games sort first; every other state (`PRE`/`BYE`/`POST`) shares one band ordered by
   `|date − now|`, so the next kick-off and the just-finished game sit near the top
-- Team-name rendering: both names render normal-weight in the `opponent` colour by default; the side
-  that is `>=` on score during `IN` takes the `leading` colour (an exact tie colours both names
-  `leading`, mirroring `scoreColor()`'s score-cell comparison) and the winning side during `POST`
-  takes the `winner` colour (the losing/trailing side stays `opponent`). This highlight applies only
-  to the `.team-name` text — the `.team-rank` (record) stays in the plain `opponent` colour
-  regardless of leading/winner state. A `special_teams` entry appends a ★ marker after the name,
-  independent of colour.
+- Team-name rendering: both names render normal-weight in the `opponent` colour by default. With
+  `highlight_winner: true` (off by default — no distinction), the side that is `>=` on score during
+  `IN` takes the `leading` colour and bold (an exact tie highlights both names, mirroring
+  `scoreColor()`'s score-cell comparison), and the winning side during `POST` takes the `winner`
+  colour and bold (the losing/trailing side stays plain `opponent`/normal-weight). This highlight
+  applies only to the `.team-name` text — the `.team-rank` (record) always stays in the plain
+  `opponent` colour, never bold. A `special_teams` entry appends a ★ marker after the name,
+  independent of colour/`highlight_winner`.
 - Team logos render only for HTTPS URLs; non-HTTPS is silently dropped
 - With `mode: slide` and **≥ 2 sections**, the card shows one section at a time and auto-advances
   every `slide_sec` seconds (default 45; `≤ 0` ⇒ 45; hard swap, wraps, empty sections take their
