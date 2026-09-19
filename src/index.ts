@@ -345,7 +345,7 @@ export class SportScoreboardCard extends HTMLElement {
         colors = {},
         debug,
         show_version,
-        highlight_winner = false,
+        highlight_winner = true,
       } = this._config as CardConfig;
       const {
         height,

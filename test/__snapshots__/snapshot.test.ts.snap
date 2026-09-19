@@ -310,7 +310,7 @@ exports[`rowHtml structural snapshots > renders IN markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Lakers<!--?--></div>
+    <div class="team-name" style="color:var(--ttsc-live-color, indianred);font-weight:bold"><!--?-->Lakers<!--?--></div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
@@ -331,7 +331,7 @@ exports[`rowHtml structural snapshots > renders IN with fresh score 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Lakers<!--?--></div>
+    <div class="team-name" style="color:var(--ttsc-live-color, indianred);font-weight:bold"><!--?-->Lakers<!--?--></div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
@@ -352,7 +352,7 @@ exports[`rowHtml structural snapshots > renders POST markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Lakers<!--?--></div>
+    <div class="team-name" style="color:var(--ttsc-winner-color, orange);font-weight:bold"><!--?-->Lakers<!--?--></div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
@@ -394,7 +394,7 @@ exports[`rowHtml structural snapshots > renders with showLogos enabled 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-opponent-color, #777);font-weight:normal"><!--?-->Lakers<!--?-->★</div>
+    <div class="team-name" style="color:var(--ttsc-live-color, indianred);font-weight:bold"><!--?-->Lakers<!--?-->★</div>
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>

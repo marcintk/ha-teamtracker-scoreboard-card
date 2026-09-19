@@ -27,16 +27,17 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 - The schedule shows one entry per game (home sensor wins over away when both exist). `IN` (live)
   games sort first; every other state (`PRE`/`BYE`/`POST`) shares one band ordered by
   `|date − now|`, so the next kick-off and the just-finished game sit near the top
-- Team-name rendering: both names render normal-weight in the `opponent` colour by default. With
-  `highlight_winner: true` (off by default — no distinction), the side that is `>=` on score during
+- Team-name rendering: `highlight_winner` defaults to `true` — the side that is `>=` on score during
   `IN` takes the `live` colour and bold (an exact tie highlights both names, mirroring
   `scoreColor()`'s score-cell comparison) — the same `live` colour already used for the IN clock
   text and TV badge, so name/score/message stay in sync during a live game. The winning side during
-  `POST` takes the `winner` colour and bold, matching the score cell and final-clock message text
-  (the losing/trailing side stays plain `opponent`/normal-weight). This highlight applies only to
-  the `.team-name` text — the `.team-rank` (record) always stays in the plain `opponent` colour,
-  never bold. A `special_teams` entry appends a ★ marker after the name, independent of
-  colour/`highlight_winner`.
+  `POST` takes the `winner` colour and bold, matching the score cell and final-clock message text —
+  a `POST` draw (neither `team_winner`/`opponent_winner` set) highlights neither side. The
+  losing/trailing side always stays plain `opponent`/normal-weight; setting
+  `highlight_winner: false` drops the whole feature and leaves both names plain, always. This
+  highlight applies only to the `.team-name` text — the `.team-rank` (record) always stays in the
+  plain `opponent` colour, never bold. A `special_teams` entry appends a ★ marker after the name,
+  independent of colour/`highlight_winner`.
 - Team logos render only for HTTPS URLs; non-HTTPS is silently dropped
 - With `mode: slide` and **≥ 2 sections**, the card shows one section at a time and auto-advances
   every `slide_sec` seconds (default 45; `≤ 0` ⇒ 45; hard swap, wraps, empty sections take their

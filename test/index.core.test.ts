@@ -345,24 +345,24 @@ describe("SportScoreboardCard core", () => {
       expect(card.shadowRoot?.innerHTML).toContain("gold");
     });
 
-    it("leaves team names uncolored and normal-weight when highlight_winner is unset", () => {
+    it("colors and bolds the leading team's name by default when highlight_winner is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection] };
       card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
       card._render();
       const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
-      expect(name?.style.color).toContain("--ttsc-opponent-color");
-      expect(name?.style.fontWeight).toBe("normal");
+      expect(name?.style.color).toContain("--ttsc-live-color");
+      expect(name?.style.fontWeight).toBe("bold");
     });
 
-    it("colors and bolds the leading team's name when highlight_winner is true", () => {
+    it("leaves team names uncolored and normal-weight when highlight_winner is false", () => {
       const card = makeCard();
-      card._config = { sections: [nbaSection], highlight_winner: true };
+      card._config = { sections: [nbaSection], highlight_winner: false };
       card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
       card._render();
       const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
-      expect(name?.style.color).toContain("--ttsc-live-color");
-      expect(name?.style.fontWeight).toBe("bold");
+      expect(name?.style.color).toContain("--ttsc-opponent-color");
+      expect(name?.style.fontWeight).toBe("normal");
     });
 
     it("applies header color as inline style on section header element", () => {

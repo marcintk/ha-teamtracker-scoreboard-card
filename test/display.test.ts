@@ -92,6 +92,12 @@ describe("teamColor", () => {
     expect(teamColor("away", "IN", tied)).toBe("var(--ttsc-live-color, indianred)");
   });
 
+  it("leaves both names in the opponent color on a POST draw (neither side wins)", () => {
+    const draw: GameAttr = { ...homeAttr, team_winner: false, opponent_winner: false };
+    expect(teamColor("home", "POST", draw)).toBe("var(--ttsc-opponent-color, #777)");
+    expect(teamColor("away", "POST", draw)).toBe("var(--ttsc-opponent-color, #777)");
+  });
+
   it("uses config colors when provided", () => {
     const colors = { live: "gold", winner: "lime", opponent: "gray" };
     expect(teamColor("home", "PRE", homeAttr, colors)).toBe("gray");

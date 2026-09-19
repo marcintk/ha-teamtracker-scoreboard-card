@@ -83,18 +83,9 @@ describe("rowHtml", () => {
     expect(home?.style.fontWeight).toBe("normal");
   });
 
-  it("does not color or bold the leading name when highlightWinner is off (default)", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false));
-    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.color).toContain("--ttsc-opponent-color");
-    expect(home?.style.fontWeight).toBe("normal");
-    expect(away?.style.color).toContain("--ttsc-opponent-color");
-    expect(away?.style.fontWeight).toBe("normal");
-  });
-
-  it("colors and bolds the leading name when highlightWinner is on", () => {
+  it("colors and bolds the leading name by default (highlightWinner defaults to true)", () => {
     // home leads 95 vs 90
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, true));
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-live-color");
     expect(home?.style.fontWeight).toBe("bold");
@@ -102,8 +93,17 @@ describe("rowHtml", () => {
     expect(away?.style.fontWeight).toBe("normal");
   });
 
-  it("colors and bolds the winning name during POST when highlightWinner is on", () => {
-    const el = doc(rowHtml(makeState("POST", baseAttrs), false, {}, false, false, true));
+  it("does not color or bold the leading name when highlightWinner is explicitly off", () => {
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
+
+  it("colors and bolds the winning name during POST by default", () => {
+    const el = doc(rowHtml(makeState("POST", baseAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-winner-color");
     expect(home?.style.fontWeight).toBe("bold");
@@ -111,9 +111,9 @@ describe("rowHtml", () => {
     expect(away?.style.fontWeight).toBe("normal");
   });
 
-  it("colors and bolds the away name when the away side leads/wins and highlightWinner is on", () => {
+  it("colors and bolds the away name when the away side leads/wins", () => {
     const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" as const };
-    const el = doc(rowHtml(makeState("IN", awayAttrs), false, {}, false, false, true));
+    const el = doc(rowHtml(makeState("IN", awayAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(away?.style.color).toContain("--ttsc-live-color");
     expect(away?.style.fontWeight).toBe("bold");
@@ -122,10 +122,20 @@ describe("rowHtml", () => {
   });
 
   it("never bolds or colors the record, even when highlightWinner is on", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, true));
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false));
     const [homeRank, awayRank] = el.querySelectorAll<HTMLElement>(".team-rank");
     expect(homeRank?.style.color).toContain("--ttsc-opponent-color");
     expect(awayRank?.style.color).toContain("--ttsc-opponent-color");
+  });
+
+  it("does not highlight either name on a POST draw", () => {
+    const draw: GameAttr = { ...baseAttrs, team_winner: false, opponent_winner: false };
+    const el = doc(rowHtml(makeState("POST", draw), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
   });
 });
 

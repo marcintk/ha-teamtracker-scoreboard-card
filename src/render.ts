@@ -27,7 +27,7 @@ export function rowHtml(
   colors: ColorsConfig = {},
   opponentSpecial = false,
   isFresh = false,
-  highlightWinner = false
+  highlightWinner = true
 ): TemplateResult {
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
@@ -74,7 +74,7 @@ export function sectionHtml(
   scoreChangedAt: Map<string, number> = new Map(),
   carousel = false,
   controls: TemplateResult | typeof nothing = nothing,
-  highlightWinner = false
+  highlightWinner = true
 ): TemplateResult | typeof nothing {
   const {
     name,
