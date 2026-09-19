@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import {
   colonColor,
+  isTeamSide,
   nameText,
   rankText,
   scoreBg,
@@ -30,13 +31,15 @@ export function rowHtml(
   const bg = scoreBg(gs);
   const freshClass = isFresh ? " score-fresh" : "";
 
-  const homeColor = teamColor("home", attr, special, colors, opponentSpecial);
-  const awayColor = teamColor("away", attr, special, colors, opponentSpecial);
+  const homeColor = teamColor("home", gs, attr, colors);
+  const awayColor = teamColor("away", gs, attr, colors);
+  const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? " ★" : "";
+  const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? " ★" : "";
 
   return html`
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:${homeColor};font-weight:normal">${nameText("home", attr)}</div>
+    <div class="team-name" style="color:${homeColor};font-weight:normal">${nameText("home", attr)}${homeStar}</div>
     <div class="team-rank" style="color:${homeColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
@@ -45,7 +48,7 @@ export function rowHtml(
   <div class="score score-b${freshClass}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}">${scoreText("away", gs, attr)}</div>
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:${awayColor};font-weight:normal">${nameText("away", attr)}</div>
+    <div class="team-name" style="color:${awayColor};font-weight:normal">${nameText("away", attr)}${awayStar}</div>
     <div class="team-rank" style="color:${awayColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>

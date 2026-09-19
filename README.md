@@ -103,13 +103,13 @@ sections:
   - ...
 ```
 
-| Field                   | Type   | Default  | Description                                                                             |
-| ----------------------- | ------ | -------- | --------------------------------------------------------------------------------------- |
-| `section.name`          | string | required | Header label shown above the section                                                    |
-| `section.prefix`        | string | required | Entity ID prefix, e.g. `sensor.nba_`                                                    |
-| `section.limit`         | number | `10`     | Max rows to show                                                                        |
-| `section.score_blink`   | number | `5`      | Seconds to blink the score after a goal/basket; `0` disables                            |
-| `section.special_teams` | list   | `[]`     | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos` |
+| Field                   | Type   | Default  | Description                                                                                                                                  |
+| ----------------------- | ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `section.name`          | string | required | Header label shown above the section                                                                                                         |
+| `section.prefix`        | string | required | Entity ID prefix, e.g. `sensor.nba_`                                                                                                         |
+| `section.limit`         | number | `10`     | Max rows to show                                                                                                                             |
+| `section.score_blink`   | number | `5`      | Seconds to blink the score after a goal/basket; `0` disables                                                                                 |
+| `section.special_teams` | list   | `[]`     | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos`; matched teams get a ★ marker appended to their name |
 
 ### Layout
 
@@ -144,7 +144,6 @@ sections:
 type: custom:ha-teamtracker-scoreboard-card
 colors:
   opponent: gray
-  special: "#2196F3" # Material Blue
   header: "#2196F3" # Material Blue
   winner: orange
   loser: darkgray
@@ -157,7 +156,6 @@ sections:
 | Key               | Default                   | CSS property            | Applies to                                 |
 | ----------------- | ------------------------- | ----------------------- | ------------------------------------------ |
 | `colors.opponent` | `#‌777` (grey)            | `--ttsc-opponent-color` | Both team names                            |
-| `colors.special`  | `#2196F3` (Material Blue) | `--ttsc-special-color`  | `special_teams` highlight                  |
 | `colors.header`   | `#2196F3` (Material Blue) | `--ttsc-header-color`   | Section header label                       |
 | `colors.winner`   | `orange`                  | `--ttsc-winner-color`   | POST winner score and final clock          |
 | `colors.loser`    | `darkgray`                | `--ttsc-loser-color`    | POST loser score                           |

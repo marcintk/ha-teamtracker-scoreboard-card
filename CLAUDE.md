@@ -27,8 +27,10 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 - The schedule shows one entry per game (home sensor wins over away when both exist). `IN` (live)
   games sort first; every other state (`PRE`/`BYE`/`POST`) shares one band ordered by
   `|date − now|`, so the next kick-off and the just-finished game sit near the top
-- Team-name rendering: both names always render normal-weight in the `opponent` colour (`teamColor`
-  has no tracked-team highlight mode). A `special_teams` entry still overrides to `special` (blue).
+- Team-name rendering: both names render normal-weight in the `opponent` colour by default; the
+  leading side during `IN` takes the `leading` colour and the winning side during `POST` takes the
+  `winner` colour (the losing/trailing side stays `opponent`). A `special_teams` entry appends a ★
+  marker after the name, independent of colour.
 - Team logos render only for HTTPS URLs; non-HTTPS is silently dropped
 - With `mode: slide` and **≥ 2 sections**, the card shows one section at a time and auto-advances
   every `slide_sec` seconds (default 45; `≤ 0` ⇒ 45; hard swap, wraps, empty sections take their

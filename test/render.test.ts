@@ -75,10 +75,11 @@ describe("rowHtml", () => {
     expect(away?.style.color).toContain("--ttsc-opponent-color");
   });
 
-  it("keeps the special-team blue", () => {
+  it("appends a star marker for a special team, without changing its color", () => {
     const el = doc(rowHtml(makeState("PRE", baseAttrs), true));
     const [home] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.color).toContain("--ttsc-special-color");
+    expect(home?.textContent).toContain("★");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
     expect(home?.style.fontWeight).toBe("normal");
   });
 });
@@ -142,20 +143,10 @@ describe("sectionHtml", () => {
     expect(el.querySelector(".section-title")?.textContent).toBe("<b>NBA</b>");
   });
 
-  it("marks special teams correctly using default CSS var color", () => {
+  it("marks special teams with a star marker, not a color change", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
-    expect(el.innerHTML).toContain("ttsc-special-color");
-  });
-
-  it("applies config colors to special teams", () => {
-    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(
-      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states), {
-        special: "gold",
-      })
-    );
-    expect(el.innerHTML).toContain("gold");
+    expect(el.innerHTML).toContain("★");
     expect(el.innerHTML).not.toContain("ttsc-special-color");
   });
 
@@ -165,15 +156,12 @@ describe("sectionHtml", () => {
     expect(el.querySelector(".game-row")).not.toBeNull();
   });
 
-  it("accepts pre-filtered entity IDs and still applies colors", () => {
+  it("accepts pre-filtered entity IDs and still marks special teams", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states), {
-        special: "gold",
-      })
+      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states))
     );
-    expect(el.innerHTML).toContain("gold");
-    expect(el.innerHTML).not.toContain("ttsc-special-color");
+    expect(el.innerHTML).toContain("★");
   });
 
   it("applies config opponent color to both team names (no highlight)", () => {
@@ -378,8 +366,8 @@ describe("sectionHtml", () => {
       }),
     };
     const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
-    expect(el.innerHTML).toContain("ttsc-special-color");
-    // the tracked-team bold/colour is never applied, but the special team stays blue
+    expect(el.innerHTML).toContain("★");
+    // the tracked-team bold/colour is never applied, but the special team keeps its marker
     expect(el.innerHTML).not.toContain("font-weight:bold");
   });
 

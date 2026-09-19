@@ -337,8 +337,8 @@ describe("SportScoreboardCard core", () => {
     it("passes colors config through to row rendering", () => {
       const card = makeCard();
       card._config = {
-        sections: [{ ...nbaSection, special_teams: ["lal"] }],
-        colors: { special: "gold" },
+        sections: [nbaSection],
+        colors: { opponent: "gold" },
       };
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();

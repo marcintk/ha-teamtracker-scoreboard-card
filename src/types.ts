@@ -55,7 +55,6 @@ export interface SectionConfig {
 export interface ColorsConfig {
   header?: string;
   opponent?: string;
-  special?: string;
   winner?: string;
   loser?: string;
   leading?: string;
