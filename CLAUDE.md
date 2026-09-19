@@ -30,8 +30,10 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 - Team-name rendering: both names render normal-weight in the `opponent` colour by default; the side
   that is `>=` on score during `IN` takes the `leading` colour (an exact tie colours both names
   `leading`, mirroring `scoreColor()`'s score-cell comparison) and the winning side during `POST`
-  takes the `winner` colour (the losing/trailing side stays `opponent`). A `special_teams` entry
-  appends a ★ marker after the name, independent of colour.
+  takes the `winner` colour (the losing/trailing side stays `opponent`). This highlight applies only
+  to the `.team-name` text — the `.team-rank` (record) stays in the plain `opponent` colour
+  regardless of leading/winner state. A `special_teams` entry appends a ★ marker after the name,
+  independent of colour.
 - Team logos render only for HTTPS URLs; non-HTTPS is silently dropped
 - With `mode: slide` and **≥ 2 sections**, the card shows one section at a time and auto-advances
   every `slide_sec` seconds (default 45; `≤ 0` ⇒ 45; hard swap, wraps, empty sections take their

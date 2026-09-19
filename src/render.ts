@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import {
   colonColor,
+  colorVar,
   isTeamSide,
   nameText,
   rankText,
@@ -33,6 +34,7 @@ export function rowHtml(
 
   const homeColor = teamColor("home", gs, attr, colors);
   const awayColor = teamColor("away", gs, attr, colors);
+  const rankColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
   const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? "★" : "";
   const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? "★" : "";
 
@@ -40,7 +42,7 @@ export function rowHtml(
 <div class="game-row">
   <div class="team-col team-col-a">
     <div class="team-name" style="color:${homeColor};font-weight:normal">${nameText("home", attr)}${homeStar}</div>
-    <div class="team-rank" style="color:${homeColor}">${rankText("home", attr)}</div>
+    <div class="team-rank" style="color:${rankColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
   <div class="score score-a${freshClass}" style="background:${bg};color:${scoreColor("home", gs, attr, colors)}">${scoreText("home", gs, attr)}</div>
@@ -49,7 +51,7 @@ export function rowHtml(
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
     <div class="team-name" style="color:${awayColor};font-weight:normal">${nameText("away", attr)}${awayStar}</div>
-    <div class="team-rank" style="color:${awayColor}">${rankText("away", attr)}</div>
+    <div class="team-rank" style="color:${rankColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>
   <div class="tv">${tvHtml(gs, attr, colors)}</div>
