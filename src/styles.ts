@@ -122,21 +122,6 @@ export const CARD_STYLES = `
     position: relative;
   }
 
-  .team-pos {
-    box-sizing: border-box;
-    display: block;
-    width: var(--ttsc-position-width, 24px);
-    min-width: var(--ttsc-position-width, 24px);
-    /* balance the card's 6px left padding so the number sits an equal gap from
-       the card edge and from the next cell */
-    padding-right: 6px;
-    font-size: calc(14px * var(--ttsc-font-scale, 1));
-    font-variant-numeric: tabular-nums;
-    text-align: center;
-    color: var(--ttsc-opponent-color, #777);
-    overflow: hidden;
-  }
-
   .team-col {
     display: flex;
     flex-direction: column;

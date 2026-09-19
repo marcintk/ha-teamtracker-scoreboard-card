@@ -33,8 +33,6 @@ export const nbaSection = {
   prefix: "sensor.nba_",
   limit: 10,
   special_teams: [] as string[],
-  rank_type: "win-loss" as const,
-  view: "standings" as const,
 };
 
 export function makeCard(): SportScoreboardCard {
