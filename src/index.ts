@@ -319,23 +319,8 @@ export class SportScoreboardCard extends HTMLElement {
     return false;
   }
 
-  /**
-   * Resolve the layout knobs: values under `layout:` win, falling back to the
-   * deprecated flat card-level keys (`team_col_width` still feeds `team_width`).
-   */
   _layout(): LayoutConfig {
-    const c = this._config;
-    const l = c?.layout ?? {};
-    return {
-      height: l.height ?? c?.height,
-      team_width: l.team_width ?? c?.team_width ?? c?.team_col_width,
-      logo_width: l.logo_width ?? c?.logo_width,
-      score_width: l.score_width ?? c?.score_width,
-      colon_width: l.colon_width ?? c?.colon_width,
-      row_height: l.row_height ?? c?.row_height,
-      row_padding: l.row_padding,
-      font_scale: l.font_scale ?? c?.font_scale,
-    };
+    return this._config?.layout ?? {};
   }
 
   _render(): void {

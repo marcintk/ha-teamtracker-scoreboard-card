@@ -197,7 +197,7 @@ describe("SportScoreboardCard slide mode", () => {
         sections: [nbaSection, nhlSection],
         mode: "slide",
         slide_sec: 30,
-        height: "400px",
+        layout: { height: "400px" },
       } as SlideConfig;
       card._hass = twoSectionHass();
       card._render();
@@ -582,7 +582,7 @@ describe("SportScoreboardCard slide mode", () => {
         sections: two,
         mode: "slide",
         slide_sec: 30,
-        row_height: "40px",
+        layout: { row_height: "40px" },
       } as SlideCfg;
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
