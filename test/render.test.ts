@@ -66,16 +66,8 @@ describe("rowHtml", () => {
     expect(el.querySelector("img")).toBeNull();
   });
 
-  it("bolds the tracked team by default (standings)", () => {
+  it("drops the tracked-team highlight — both names normal + opponent color", () => {
     const el = doc(rowHtml(makeState("PRE", baseAttrs), false));
-    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.fontWeight).toBe("bold");
-    expect(away?.style.fontWeight).toBe("normal");
-    expect(home?.style.color).toContain("--ttsc-team-color");
-  });
-
-  it("schedule flag drops the tracked-team highlight — both names normal + opponent color", () => {
-    const el = doc(rowHtml(makeState("PRE", baseAttrs), false, {}, false, false, undefined, true));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.fontWeight).toBe("normal");
     expect(away?.style.fontWeight).toBe("normal");
@@ -83,8 +75,8 @@ describe("rowHtml", () => {
     expect(away?.style.color).toContain("--ttsc-opponent-color");
   });
 
-  it("schedule flag keeps the special-team blue", () => {
-    const el = doc(rowHtml(makeState("PRE", baseAttrs), true, {}, false, false, undefined, true));
+  it("keeps the special-team blue", () => {
+    const el = doc(rowHtml(makeState("PRE", baseAttrs), true));
     const [home] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-special-color");
     expect(home?.style.fontWeight).toBe("normal");
@@ -97,8 +89,6 @@ describe("sectionHtml", () => {
     prefix: "sensor.nba_",
     limit: 10,
     special_teams: [],
-    rank_type: "win-loss",
-    view: "standings",
   };
 
   it("returns empty when no matching entities", () => {
@@ -186,19 +176,19 @@ describe("sectionHtml", () => {
     expect(el.innerHTML).not.toContain("ttsc-special-color");
   });
 
-  it("applies config colors to team and opponent", () => {
+  it("applies config opponent color to both team names (no highlight)", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
       sectionHtml(section, states, Object.keys(states), { team: "cyan", opponent: "dimgray" })
     );
-    expect(el.innerHTML).toContain("cyan");
     expect(el.innerHTML).toContain("dimgray");
+    expect(el.innerHTML).not.toContain("cyan");
   });
 
-  it("schedule view renders both team names normal-weight in the opponent color", () => {
+  it("renders both team names normal-weight in the opponent color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml({ ...section, view: "schedule" }, states, Object.keys(states), {
+      sectionHtml(section, states, Object.keys(states), {
         team: "cyan",
         opponent: "dimgray",
       })
@@ -224,20 +214,9 @@ describe("sectionHtml", () => {
       prefix: "sensor.wc_",
       limit: 10,
       special_teams: [],
-      rank_type: "by-date",
     };
     const text = doc(sectionHtml(wcSection, states)).textContent ?? "";
     expect(text.indexOf("France")).toBeLessThan(text.indexOf("Brazil"));
-  });
-
-  it("defaults a section with no `view` to the schedule (no position numbers)", () => {
-    // baseAttrs carries a record, so the old `auto` default would have ranked it
-    const states = {
-      "sensor.nba_lal": makeState("PRE", { ...baseAttrs, date: "2024-04-20T00:00:00Z" }),
-    };
-    const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
-    const el = doc(sectionHtml(s, states));
-    expect(el.querySelector(".team-pos")).toBeNull();
   });
 
   const H = 3600_000;
@@ -269,6 +248,47 @@ describe("sectionHtml", () => {
     expect(text.indexOf("Recent")).toBeLessThan(text.indexOf("Soon"));
     expect(text.indexOf("Soon")).toBeLessThan(text.indexOf("Far"));
     expect(text.indexOf("Far")).toBeLessThan(text.indexOf("Old"));
+  });
+
+  it("renders by-date order with no bold highlight and blank position cells even when every tracked team has a numeric win-loss record", () => {
+    // Alphas has the best record but the latest kick-off; Gammas has the worst record but
+    // plays soonest. If ranking still existed (old `auto`/`standings` behavior), Alphas would
+    // sort first; by-date order instead puts Gammas first.
+    const states = {
+      "sensor.nba_aaa": makeState("PRE", {
+        ...baseAttrs,
+        team_name: "Alphas",
+        team_record: "30-5",
+        date: iso(20 * H),
+      }),
+      "sensor.nba_bbb": makeState("PRE", {
+        ...baseAttrs,
+        team_name: "Betas",
+        team_record: "20-15",
+        date: iso(10 * H),
+      }),
+      "sensor.nba_ccc": makeState("PRE", {
+        ...baseAttrs,
+        team_name: "Gammas",
+        team_record: "10-25",
+        date: iso(1 * H),
+      }),
+    };
+    const s: SectionConfig = {
+      name: "NBA",
+      prefix: "sensor.nba_",
+      limit: 10,
+      special_teams: [],
+    };
+    const el = doc(sectionHtml(s, states));
+    const text = el.textContent ?? "";
+    expect(text.indexOf("Gammas")).toBeLessThan(text.indexOf("Betas"));
+    expect(text.indexOf("Betas")).toBeLessThan(text.indexOf("Alphas"));
+
+    const names = [...el.querySelectorAll<HTMLElement>(".team-name")];
+    for (const n of names) {
+      expect(n.style.fontWeight).toBe("normal");
+    }
   });
 
   it("produces stable order when two teams have the same win ratio", () => {
@@ -308,27 +328,12 @@ describe("sectionHtml", () => {
       prefix: "sensor.wc_",
       limit: 10,
       special_teams: [],
-      rank_type: "by-date",
     };
     const el1 = doc(sectionHtml(wcSection, states));
     const el2 = doc(sectionHtml(wcSection, states));
     expect(el1.innerHTML).toBe(el2.innerHTML);
     const text = el1.textContent ?? "";
     expect(text.indexOf("AAA")).toBeLessThan(text.indexOf("ZZZ"));
-  });
-
-  it("keeps configured rank_type when first entity has no season attribute yet", () => {
-    const states = {
-      "sensor.nba_aaa": makeState("PRE", { team_name: "Team A", team_record: "5-25" }),
-      "sensor.nba_zzz": makeState("PRE", {
-        ...baseAttrs,
-        team_name: "Team Z",
-        team_record: "25-5",
-      }),
-    };
-    const text =
-      doc(sectionHtml({ ...section, rank_type: "win-loss" as const }, states)).textContent ?? "";
-    expect(text.indexOf("Team Z")).toBeLessThan(text.indexOf("Team A"));
   });
 
   it("falls back to entityId as teamName when team_name attribute is absent", () => {
@@ -377,121 +382,16 @@ describe("sectionHtml", () => {
         date,
       }),
     };
-    const el = doc(sectionHtml({ ...section, special_teams: ["lal"], view: "schedule" }, states));
-    expect(el.innerHTML).toContain("ttsc-special-color");
-    // schedule view drops the tracked-team bold/colour, but the special team stays blue
-    expect(el.innerHTML).not.toContain("font-weight:bold");
-  });
-
-  it("preserves the special-team highlight in standings view (bold tracked team)", () => {
-    const states = {
-      "sensor.nba_lal": makeState("PRE", { ...baseAttrs, team_abbr: "LAL" }),
-    };
     const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
     expect(el.innerHTML).toContain("ttsc-special-color");
-    expect(el.innerHTML).toContain("font-weight:bold");
-  });
-
-  it("auto-switches to the date-sorted list when a tracked team has no record", () => {
-    const states = {
-      "sensor.nba_lal": makeState("PRE", {
-        ...baseAttrs,
-        team_record: undefined,
-        date: "2024-04-20T00:00:00Z",
-      }),
-    };
-    expect(() => doc(sectionHtml(section, states))).not.toThrow();
+    // the tracked-team bold/colour is never applied, but the special team stays blue
+    expect(el.innerHTML).not.toContain("font-weight:bold");
   });
 
   it("skips entity IDs that are no longer present in states", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml(section, states, ["sensor.stale_id", "sensor.nba_lal"]));
     expect(el.querySelector(".game-row")).not.toBeNull();
-  });
-});
-
-describe("standings position column", () => {
-  const section: SectionConfig = {
-    name: "NBA",
-    prefix: "sensor.nba_",
-    limit: 10,
-    special_teams: [],
-    rank_type: "win-loss",
-    view: "standings",
-    show_position: true,
-  };
-
-  const threeTeams = () => ({
-    "sensor.nba_aaa": makeState("PRE", {
-      ...baseAttrs,
-      team_name: "Alphas",
-      team_record: "30-5",
-    }),
-    "sensor.nba_bbb": makeState("PRE", {
-      ...baseAttrs,
-      team_name: "Betas",
-      team_record: "20-15",
-    }),
-    "sensor.nba_ccc": makeState("PRE", {
-      ...baseAttrs,
-      team_name: "Gammas",
-      team_record: "10-25",
-    }),
-  });
-
-  it("numbers rows in standings order", () => {
-    const el = doc(sectionHtml(section, threeTeams()));
-    const positions = [...el.querySelectorAll(".game-row .team-pos")].map((n) =>
-      (n.textContent ?? "").trim()
-    );
-    expect(positions).toEqual(["1", "2", "3"]);
-    const firstRow = el.querySelectorAll(".game-row")[0];
-    expect(firstRow?.textContent).toContain("Alphas");
-  });
-
-  it("renders .team-pos as the first child of .game-row", () => {
-    const el = doc(sectionHtml(section, threeTeams()));
-    const firstRow = el.querySelector(".game-row");
-    expect(firstRow?.firstElementChild?.classList.contains("team-pos")).toBe(true);
-  });
-
-  it("omits .team-pos cells entirely when show_position is false", () => {
-    const el = doc(sectionHtml({ ...section, show_position: false }, threeTeams()));
-    expect(el.querySelectorAll(".game-row .team-pos").length).toBe(0);
-  });
-
-  it("renders empty .team-pos cells in schedule (by-date) view", () => {
-    const el = doc(sectionHtml({ ...section, view: "schedule" }, threeTeams()));
-    const cells = [...el.querySelectorAll(".game-row .team-pos")];
-    expect(cells.length).toBe(3);
-    for (const cell of cells) {
-      expect((cell.textContent ?? "").trim()).toBe("");
-    }
-  });
-
-  it("colours the position number like a special team", () => {
-    const el = doc(sectionHtml({ ...section, special_teams: ["aaa"] }, threeTeams()));
-    const firstRow = el.querySelector(".game-row");
-    const posCell = firstRow?.querySelector(".team-pos");
-    expect(posCell?.getAttribute("style") ?? "").toContain("ttsc-special-color");
-  });
-
-  it("rowHtml omits .team-pos when position is undefined", () => {
-    const el = doc(rowHtml(makeState("PRE", baseAttrs), false));
-    expect(el.querySelector(".team-pos")).toBeNull();
-  });
-
-  it("rowHtml renders an empty .team-pos cell when position is null", () => {
-    const el = doc(rowHtml(makeState("PRE", baseAttrs), false, {}, false, false, null));
-    const cell = el.querySelector(".team-pos");
-    expect(cell).not.toBeNull();
-    expect((cell?.textContent ?? "").trim()).toBe("");
-  });
-
-  it("rowHtml renders the position number when given", () => {
-    const el = doc(rowHtml(makeState("PRE", baseAttrs), false, {}, false, false, 4));
-    const cell = el.querySelector(".team-pos");
-    expect((cell?.textContent ?? "").trim()).toBe("4");
   });
 });
 
@@ -513,8 +413,6 @@ describe("sectionHtml scoreChangedAt", () => {
     prefix: "sensor.nba_",
     limit: 10,
     special_teams: [] as string[],
-    rank_type: "win-loss" as const,
-    view: "standings" as const,
   };
 
   it("marks entity as fresh when scoreChangedAt is recent", () => {
