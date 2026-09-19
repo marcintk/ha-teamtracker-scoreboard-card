@@ -1,9 +1,5 @@
 export type GameState = "PRE" | "IN" | "POST" | "BYE";
 
-export type SortMode = "win-loss" | "win-draw-loss" | "win-loss-otl" | "by-date";
-
-export type ViewMode = "auto" | "standings" | "schedule";
-
 export interface GameAttr {
   state?: string;
   season?: string;
@@ -53,12 +49,7 @@ export interface SectionConfig {
   prefix?: string;
   limit?: number;
   special_teams?: string[];
-  rank_type?: SortMode;
-  /** default `schedule`; `standings` for the standings table, `auto` for the record heuristic */
-  view?: ViewMode;
   score_blink?: number;
-  /** default `false`; `true` draws the position gutter (the rank in a standings view) */
-  show_position?: boolean;
 }
 
 export interface ColorsConfig {
@@ -82,8 +73,6 @@ export interface LayoutConfig {
   score_width?: string;
   colon_width?: string;
   row_height?: string;
-  /** width of the `show_position` rank gutter (CSS length; default 24px) */
-  position_width?: string;
   /** padding above AND below every game row (CSS length; default 5px) */
   row_padding?: string;
   /** uniform multiplier over every font-size; 1 = baseline */
