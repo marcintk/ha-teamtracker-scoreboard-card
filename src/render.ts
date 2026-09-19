@@ -2,7 +2,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import {
   colonColor,
   colorVar,
-  isSideAheadOrWinning,
+  isSideOutrightWinning,
   isTeamSide,
   nameText,
   rankText,
@@ -36,9 +36,9 @@ export function rowHtml(
 
   const opponentColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
   const homeAhead =
-    highlightWinner && (gs === "IN" || gs === "POST") && isSideAheadOrWinning("home", gs, attr);
+    highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("home", gs, attr);
   const awayAhead =
-    highlightWinner && (gs === "IN" || gs === "POST") && isSideAheadOrWinning("away", gs, attr);
+    highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("away", gs, attr);
   const homeColor = homeAhead ? teamColor("home", gs, attr, colors) : opponentColor;
   const awayColor = awayAhead ? teamColor("away", gs, attr, colors) : opponentColor;
   const homeWeight = homeAhead ? "bold" : "normal";

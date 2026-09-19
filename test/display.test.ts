@@ -86,16 +86,22 @@ describe("teamColor", () => {
     expect(teamColor("away", "POST", awayAttr)).toBe("var(--ttsc-winner-color, orange)");
   });
 
-  it("colors both names leading on an exact tie during IN (mirrors scoreColor)", () => {
+  it("leaves both names in the opponent color on an exact tie during IN (neither side leads)", () => {
     const tied: GameAttr = { ...homeAttr, team_score: "90", opponent_score: "90" };
-    expect(teamColor("home", "IN", tied)).toBe("var(--ttsc-live-color, indianred)");
-    expect(teamColor("away", "IN", tied)).toBe("var(--ttsc-live-color, indianred)");
+    expect(teamColor("home", "IN", tied)).toBe("var(--ttsc-opponent-color, #777)");
+    expect(teamColor("away", "IN", tied)).toBe("var(--ttsc-opponent-color, #777)");
   });
 
   it("leaves both names in the opponent color on a POST draw (neither side wins)", () => {
     const draw: GameAttr = { ...homeAttr, team_winner: false, opponent_winner: false };
     expect(teamColor("home", "POST", draw)).toBe("var(--ttsc-opponent-color, #777)");
     expect(teamColor("away", "POST", draw)).toBe("var(--ttsc-opponent-color, #777)");
+  });
+
+  it("treats undefined scores as 0-0 (tied) during IN", () => {
+    const noScores = { ...homeAttr, team_score: undefined, opponent_score: undefined };
+    expect(teamColor("home", "IN", noScores)).toBe("var(--ttsc-opponent-color, #777)");
+    expect(teamColor("away", "IN", noScores)).toBe("var(--ttsc-opponent-color, #777)");
   });
 
   it("uses config colors when provided", () => {

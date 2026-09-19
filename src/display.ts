@@ -26,20 +26,38 @@ export function isSideAheadOrWinning(
   return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
 }
 
-// Both names fall back to the opponent gray by default; the leading (IN) or
-// winning (POST) side takes the live/winner colour — the same colour already
-// used for the score cell and, during IN, the live clock/TV badge. A
-// special_teams entry no longer affects colour — it drives the ★ marker in
-// render.ts instead.
+/** Like `isSideAheadOrWinning()`, but a tied score during IN counts as neither
+ *  side leading — matching how a POST draw (no `team_winner`/`opponent_winner`)
+ *  already highlights neither side. Used for the `.team-name` highlight, which
+ *  should only call out a side with a clear edge, not the score cell. */
+export function isSideOutrightWinning(
+  side: "home" | "away",
+  gs: GameState,
+  attr: GameAttr
+): boolean {
+  const isSide = isTeamSide(side, attr);
+  if (gs === "IN") {
+    const ts = parseFloat(String(attr.team_score ?? 0));
+    const os = parseFloat(String(attr.opponent_score ?? 0));
+    return isSide ? ts > os : os > ts;
+  }
+  return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
+}
+
+// Both names fall back to the opponent gray by default; the outright leading
+// (IN) or winning (POST) side takes the live/winner colour — the same colour
+// already used for the score cell and, during IN, the live clock/TV badge. A
+// tie/draw highlights neither side. A special_teams entry no longer affects
+// colour — it drives the ★ marker in render.ts instead.
 export function teamColor(
   side: "home" | "away",
   gs: GameState,
   attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  if (gs === "IN" && isSideAheadOrWinning(side, gs, attr))
+  if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
     return colorVar(colors.live, "--ttsc-live-color", "indianred");
-  if (gs === "POST" && isSideAheadOrWinning(side, gs, attr))
+  if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
     return colorVar(colors.winner, "--ttsc-winner-color", "orange");
   return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
 }

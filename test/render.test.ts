@@ -137,6 +137,16 @@ describe("rowHtml", () => {
     expect(away?.style.color).toContain("--ttsc-opponent-color");
     expect(away?.style.fontWeight).toBe("normal");
   });
+
+  it("does not highlight either name on an exact tie during IN", () => {
+    const tied: GameAttr = { ...baseAttrs, team_score: "90", opponent_score: "90" };
+    const el = doc(rowHtml(makeState("IN", tied), false));
+    const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
+    expect(home?.style.color).toContain("--ttsc-opponent-color");
+    expect(home?.style.fontWeight).toBe("normal");
+    expect(away?.style.color).toContain("--ttsc-opponent-color");
+    expect(away?.style.fontWeight).toBe("normal");
+  });
 });
 
 describe("sectionHtml", () => {
