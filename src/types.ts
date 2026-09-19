@@ -86,24 +86,8 @@ export interface SortItem {
 
 export interface CardConfig {
   sections?: SectionConfig[];
-  /** size / spacing / text-scale knobs; the flat keys below are deprecated aliases */
+  /** size / spacing / text-scale knobs */
   layout?: LayoutConfig;
-  /** @deprecated use `layout.height` */
-  height?: string;
-  /** @deprecated use `layout.team_width` */
-  team_width?: string;
-  /** @deprecated use `layout.team_width` */
-  team_col_width?: string;
-  /** @deprecated use `layout.logo_width` */
-  logo_width?: string;
-  /** @deprecated use `layout.score_width` */
-  score_width?: string;
-  /** @deprecated use `layout.colon_width` */
-  colon_width?: string;
-  /** @deprecated use `layout.row_height` */
-  row_height?: string;
-  /** @deprecated use `layout.font_scale` */
-  font_scale?: number;
   colors?: ColorsConfig;
   /** color + bold the leading (IN) / winning (POST) team's name; on by default, `false` leaves both names plain */
   highlight_winner?: boolean;

@@ -39,13 +39,13 @@ describe("SportScoreboardCard core", () => {
   describe("getCardSize", () => {
     it("calculates rows from height string", () => {
       const card = makeCard();
-      card._config = { height: "475px" };
+      card._config = { layout: { height: "475px" } };
       expect(card.getCardSize()).toBe(10);
     });
 
     it("rounds up fractional rows", () => {
       const card = makeCard();
-      card._config = { height: "51px" };
+      card._config = { layout: { height: "51px" } };
       expect(card.getCardSize()).toBe(2);
     });
 
@@ -76,14 +76,14 @@ describe("SportScoreboardCard core", () => {
 
     it("uses row_height px value for section-based size estimate", () => {
       const card = makeCard();
-      card._config = { sections: [{ limit: 10 }], row_height: "40px" };
+      card._config = { sections: [{ limit: 10 }], layout: { row_height: "40px" } };
       // 11 rows * (40 + 2*5 gap) = 550px / 50 = 11
       expect(card.getCardSize()).toBe(11);
     });
 
     it("falls back to 28px row height when row_height is non-numeric", () => {
       const card = makeCard();
-      card._config = { sections: [{ limit: 10 }], row_height: "auto" };
+      card._config = { sections: [{ limit: 10 }], layout: { row_height: "auto" } };
       // 11 rows * (28 + 2*5 gap) = 418px / 50 = ceil(8.36) = 9
       expect(card.getCardSize()).toBe(9);
     });
@@ -107,13 +107,13 @@ describe("SportScoreboardCard core", () => {
 
     it("ignores a percentage height (falls back to the section estimate)", () => {
       const card = makeCard();
-      card._config = { height: "50%", sections: [{ limit: 10 }] };
+      card._config = { layout: { height: "50%" }, sections: [{ limit: 10 }] };
       expect(card.getCardSize()).toBe(9);
     });
 
     it("falls back to section-based size when height is non-numeric", () => {
       const card = makeCard();
-      card._config = { height: "auto", sections: [{ limit: 10 }] };
+      card._config = { layout: { height: "auto" }, sections: [{ limit: 10 }] };
       const size = card.getCardSize();
       expect(Number.isFinite(size)).toBe(true);
       expect(size).toBeGreaterThanOrEqual(1);
@@ -314,7 +314,7 @@ describe("SportScoreboardCard core", () => {
 
     it("applies custom height to ha-card style", () => {
       const card = makeCard();
-      card._config = { sections: [nbaSection], height: "300px" };
+      card._config = { sections: [nbaSection], layout: { height: "300px" } };
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(card.shadowRoot?.innerHTML).toContain("300px");
@@ -322,7 +322,7 @@ describe("SportScoreboardCard core", () => {
 
     it("handles non-numeric height gracefully without setting row budget", () => {
       const card = makeCard();
-      card._config = { sections: [{ ...nbaSection, limit: 5 }], height: "auto" };
+      card._config = { sections: [{ ...nbaSection, limit: 5 }], layout: { height: "auto" } };
       const states = Object.fromEntries(
         Array.from({ length: 10 }, (_, i) => [
           `sensor.nba_team${i}`,
