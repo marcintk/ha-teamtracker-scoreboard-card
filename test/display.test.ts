@@ -58,10 +58,8 @@ describe("isTeamSide", () => {
 });
 
 describe("teamColor", () => {
-  it("returns team color when side matches", () => {
-    expect(teamColor("home", homeAttr, false)).toBe(
-      "var(--ttsc-team-color, var(--primary-text-color, white))"
-    );
+  it("tracked team falls back to opponent color (no highlight)", () => {
+    expect(teamColor("home", homeAttr, false)).toBe("var(--ttsc-opponent-color, #777)");
   });
 
   it("returns special color (blue) when side matches and special is true", () => {
@@ -84,28 +82,10 @@ describe("teamColor", () => {
   });
 
   it("uses config colors when provided", () => {
-    const colors = { team: "cyan", special: "gold", opponent: "gray" };
-    expect(teamColor("home", homeAttr, false, colors)).toBe("cyan");
+    const colors = { special: "gold", opponent: "gray" };
+    expect(teamColor("home", homeAttr, false, colors)).toBe("gray");
     expect(teamColor("home", homeAttr, true, colors)).toBe("gold");
     expect(teamColor("away", homeAttr, false, colors)).toBe("gray");
-  });
-
-  it("flat: tracked team falls back to opponent color (no highlight)", () => {
-    expect(teamColor("home", homeAttr, false, {}, false, true)).toBe(
-      "var(--ttsc-opponent-color, #777)"
-    );
-    expect(
-      teamColor("home", homeAttr, false, { team: "cyan", opponent: "gray" }, false, true)
-    ).toBe("gray");
-  });
-
-  it("flat: special team keeps blue", () => {
-    expect(teamColor("home", homeAttr, true, {}, false, true)).toBe(
-      "var(--ttsc-special-color, #2196F3)"
-    );
-    expect(teamColor("away", homeAttr, false, {}, true, true)).toBe(
-      "var(--ttsc-special-color, #2196F3)"
-    );
   });
 });
 

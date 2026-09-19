@@ -48,7 +48,6 @@ const nbaSection = {
   prefix: "sensor.nba_",
   limit: 10,
   special_teams: [] as string[],
-  rank_type: "win-loss" as const,
 };
 
 function makeCard(): SportScoreboardCard {
@@ -96,13 +95,6 @@ describe("CARD_STYLES", () => {
     // leaves the image narrower than its cell when no layout.logo_width is set
     expect(CARD_STYLES).toMatch(/\.logo\s*\{[^}]*[^-]width:\s*var\(--ttsc-logo-width, 30px\)/);
     expect(CARD_STYLES).toMatch(/\.logo img\s*\{[^}]*[^-]width:\s*var\(--ttsc-logo-width, 30px\)/);
-  });
-
-  it("wires the position gutter width to the --ttsc-position-width custom property", () => {
-    expect(CARD_STYLES).toMatch(/\.team-pos\s*\{[^}]*width:\s*var\(--ttsc-position-width, 24px\)/);
-    expect(CARD_STYLES).toMatch(
-      /\.team-pos\s*\{[^}]*min-width:\s*var\(--ttsc-position-width, 24px\)/
-    );
   });
 
   it("disables the score-fresh blink animation under prefers-reduced-motion", () => {
