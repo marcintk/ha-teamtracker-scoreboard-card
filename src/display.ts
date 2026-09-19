@@ -10,15 +10,14 @@ export function colorVar(override: string | undefined, cssVar: string, fallback:
   return override ?? `var(${cssVar}, ${fallback})`;
 }
 
+// No tracked-team highlight — both names fall back to the opponent gray, and only
+// an explicit special_teams entry still stands out.
 export function teamColor(
   side: "home" | "away",
   attr: GameAttr,
   special: boolean,
   colors: ColorsConfig = {},
-  opponentSpecial = false,
-  // schedule view: no tracked-team highlight — both names fall back to the
-  // opponent gray, and only an explicit special_teams entry still stands out.
-  flat = false
+  opponentSpecial = false
 ): string {
   if (!isTeamSide(side, attr)) {
     if (opponentSpecial) return colorVar(colors.special, "--ttsc-special-color", "#2196F3");
@@ -26,8 +25,7 @@ export function teamColor(
   }
   if (special)
     return colorVar(colors.special, "--ttsc-special-color", "#2196F3"); /* Material Blue */
-  if (flat) return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
-  return colorVar(colors.team, "--ttsc-team-color", "var(--primary-text-color, white)");
+  return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
 }
 
 export function scoreBg(gs: GameState): string {

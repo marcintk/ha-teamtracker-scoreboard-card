@@ -12,6 +12,10 @@ the card's `prefix` field groups every sensor sharing a common prefix (`sensor.n
 All rosters were verified against ESPN in **September 2026** and reflect the **2026/27 season**
 (2026 season for NFL).
 
+Each file loads a full league roster (20–32 sensors). Treat these as a **source to copy teams
+from**, not a config to enable wholesale — most setups only need a handful of entities across one or
+two leagues.
+
 | League                             | `league_id` | File                   | Sensors                              |
 | ---------------------------------- | ----------- | ---------------------- | ------------------------------------ |
 | NBA                                | `NBA`       | [nba.yaml](nba.yaml)   | All 30 teams, grouped by division    |
@@ -36,7 +40,8 @@ homeassistant:
   packages: !include_dir_named packages/
 ```
 
-Copy the league files into `<config>/packages/`, deleting any teams you don't need:
+Start with one league and trim it down: copy just that file into `<config>/packages/` and delete
+every team you don't follow before restarting — don't drop the whole file in as-is:
 
 ```
 config/
@@ -54,9 +59,9 @@ under `sensor:` in `configuration.yaml`.
 
 ## Card config notes
 
-- A section defaults to the **schedule** (date-sorted, live games first). Add `view: standings` for
-  the standings table. See "Schedule vs standings" in the main README.
-- Use `rank_type: win-loss` for NBA/NFL, `win-loss-otl` for NHL, and `win-draw-loss` for the soccer
-  leagues (only matters in a `standings` view).
+- Loading every team from every league at once means many `sensor.teamtracker` entities each polling
+  ESPN on its own schedule — real startup/update load for teams you'll never track. Only add the
+  leagues you follow, and trim each file to the teams you actually want.
+- A section renders the schedule (date-sorted, live games first). See "Schedule" in the main README.
 - `special_teams` takes the suffix **after** the prefix — e.g. `juv` for `sensor.sera_juv`, not the
   ESPN id.
