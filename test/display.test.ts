@@ -10,7 +10,7 @@ import {
   scoreText,
   teamColor,
 } from "../src/display.js";
-import type { GameAttr } from "../src/types.js";
+import type { GameAttr, GameState } from "../src/types.js";
 
 const homeAttr: GameAttr = {
   team_homeaway: "home",
@@ -86,6 +86,12 @@ describe("teamColor", () => {
     expect(teamColor("home", homeAttr, false, colors)).toBe("gray");
     expect(teamColor("home", homeAttr, true, colors)).toBe("gold");
     expect(teamColor("away", homeAttr, false, colors)).toBe("gray");
+  });
+
+  it("returns the leading colour when the home side is leading during IN (new 4-arg signature)", () => {
+    // home team scores 95 vs 90 — home is leading
+    const gs: GameState = "IN";
+    expect(teamColor("home", gs, homeAttr)).toBe("var(--ttsc-leading-color, brown)");
   });
 });
 
