@@ -23,8 +23,8 @@ REPO: {{REPO}} PR NUMBER: {{PR_NUMBER}}
 Always end the run with exactly one `gh pr review {{PR_NUMBER}}` call — never exit without
 submitting one. This includes when the skill's own eligibility gate (closed/draft/"no review
 needed"/"already reviewed") would otherwise skip you: that gate doesn't apply here, since this
-workflow is already the trigger, and every run — including re-runs on a PR you've seen before —
-must produce a fresh decision on the current diff.
+workflow is already the trigger, and every run — including re-runs on a PR you've seen before — must
+produce a fresh decision on the current diff.
 
 - No correctness bugs and no CLAUDE.md/coverage violations → `--approve` with a short summary of
   what you checked.
