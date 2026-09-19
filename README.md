@@ -75,7 +75,7 @@ into one row.
 | `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                             |
 | `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                  |
 | `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                              |
-| `highlight_winner` | boolean | `false`  | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.leading` / `colors.winner`); off leaves both names plain          |
+| `highlight_winner` | boolean | `false`  | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.live` / `colors.winner`); off leaves both names plain             |
 | `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls |
 | `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                    |
 | `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                |
@@ -149,19 +149,17 @@ colors:
   winner: orange
   loser: darkgray
   live: indianred
-  leading: brown
 sections:
   - ...
 ```
 
-| Key               | Default                   | CSS property            | Applies to                                 |
-| ----------------- | ------------------------- | ----------------------- | ------------------------------------------ |
-| `colors.opponent` | `#‌777` (grey)            | `--ttsc-opponent-color` | Both team names                            |
-| `colors.header`   | `#2196F3` (Material Blue) | `--ttsc-header-color`   | Section header label                       |
-| `colors.winner`   | `orange`                  | `--ttsc-winner-color`   | POST winner score and final clock          |
-| `colors.loser`    | `darkgray`                | `--ttsc-loser-color`    | POST loser score                           |
-| `colors.live`     | `indianred`               | `--ttsc-live-color`     | IN game clock text and TV badge background |
-| `colors.leading`  | `brown`                   | `--ttsc-leading-color`  | IN score for the currently leading team    |
+| Key               | Default                   | CSS property            | Applies to                                                                                           |
+| ----------------- | ------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `colors.opponent` | `#‌777` (grey)            | `--ttsc-opponent-color` | Both team names                                                                                      |
+| `colors.header`   | `#2196F3` (Material Blue) | `--ttsc-header-color`   | Section header label                                                                                 |
+| `colors.winner`   | `orange`                  | `--ttsc-winner-color`   | POST winner score, name (with `highlight_winner`), and final clock                                   |
+| `colors.loser`    | `darkgray`                | `--ttsc-loser-color`    | POST loser score                                                                                     |
+| `colors.live`     | `indianred`               | `--ttsc-live-color`     | IN game clock text, TV badge background, and the leading team's score/name (with `highlight_winner`) |
 
 <!-- Reference links -->
 

@@ -57,7 +57,6 @@ export interface ColorsConfig {
   opponent?: string;
   winner?: string;
   loser?: string;
-  leading?: string;
   live?: string;
 }
 

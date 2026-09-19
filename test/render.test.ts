@@ -96,7 +96,7 @@ describe("rowHtml", () => {
     // home leads 95 vs 90
     const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, true));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.color).toContain("--ttsc-leading-color");
+    expect(home?.style.color).toContain("--ttsc-live-color");
     expect(home?.style.fontWeight).toBe("bold");
     expect(away?.style.color).toContain("--ttsc-opponent-color");
     expect(away?.style.fontWeight).toBe("normal");
@@ -115,7 +115,7 @@ describe("rowHtml", () => {
     const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" as const };
     const el = doc(rowHtml(makeState("IN", awayAttrs), false, {}, false, false, true));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(away?.style.color).toContain("--ttsc-leading-color");
+    expect(away?.style.color).toContain("--ttsc-live-color");
     expect(away?.style.fontWeight).toBe("bold");
     expect(home?.style.color).toContain("--ttsc-opponent-color");
     expect(home?.style.fontWeight).toBe("normal");

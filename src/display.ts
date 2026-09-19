@@ -27,8 +27,10 @@ export function isSideAheadOrWinning(
 }
 
 // Both names fall back to the opponent gray by default; the leading (IN) or
-// winning (POST) side takes the leading/winner colour. A special_teams entry
-// no longer affects colour — it drives the ★ marker in render.ts instead.
+// winning (POST) side takes the live/winner colour — the same colour already
+// used for the score cell and, during IN, the live clock/TV badge. A
+// special_teams entry no longer affects colour — it drives the ★ marker in
+// render.ts instead.
 export function teamColor(
   side: "home" | "away",
   gs: GameState,
@@ -36,7 +38,7 @@ export function teamColor(
   colors: ColorsConfig = {}
 ): string {
   if (gs === "IN" && isSideAheadOrWinning(side, gs, attr))
-    return colorVar(colors.leading, "--ttsc-leading-color", "brown");
+    return colorVar(colors.live, "--ttsc-live-color", "indianred");
   if (gs === "POST" && isSideAheadOrWinning(side, gs, attr))
     return colorVar(colors.winner, "--ttsc-winner-color", "orange");
   return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
@@ -57,7 +59,7 @@ export function scoreColor(
   if (gs === "PRE") return "black";
   if (gs === "IN") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.leading, "--ttsc-leading-color", "brown")
+      ? colorVar(colors.live, "--ttsc-live-color", "indianred")
       : "black";
   }
   if (gs === "POST") {

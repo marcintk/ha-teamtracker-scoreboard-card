@@ -314,7 +314,7 @@ exports[`rowHtml structural snapshots > renders IN markup 1`] = `
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:lightgray;color:var(--ttsc-leading-color, brown)"><!--?-->95</div>
+  <div class="score score-a" style="background:lightgray;color:var(--ttsc-live-color, indianred)"><!--?-->95</div>
   <div class="colon" style="background:lightgray;color:black"><!--?-->:</div>
   <div class="score score-b" style="background:lightgray;color:black"><!--?-->90</div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
@@ -335,7 +335,7 @@ exports[`rowHtml structural snapshots > renders IN with fresh score 1`] = `
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a score-fresh" style="background:lightgray;color:var(--ttsc-leading-color, brown)"><!--?-->95</div>
+  <div class="score score-a score-fresh" style="background:lightgray;color:var(--ttsc-live-color, indianred)"><!--?-->95</div>
   <div class="colon score-fresh" style="background:lightgray;color:black"><!--?-->:</div>
   <div class="score score-b score-fresh" style="background:lightgray;color:black"><!--?-->90</div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
@@ -398,7 +398,7 @@ exports[`rowHtml structural snapshots > renders with showLogos enabled 1`] = `
     <div class="team-rank" style="color:var(--ttsc-opponent-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:lightgray;color:var(--ttsc-leading-color, brown)"><!--?-->95</div>
+  <div class="score score-a" style="background:lightgray;color:var(--ttsc-live-color, indianred)"><!--?-->95</div>
   <div class="colon" style="background:lightgray;color:black"><!--?-->:</div>
   <div class="score score-b" style="background:lightgray;color:black"><!--?-->90</div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>

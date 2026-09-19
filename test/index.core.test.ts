@@ -361,7 +361,7 @@ describe("SportScoreboardCard core", () => {
       card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
       card._render();
       const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
-      expect(name?.style.color).toContain("--ttsc-leading-color");
+      expect(name?.style.color).toContain("--ttsc-live-color");
       expect(name?.style.fontWeight).toBe("bold");
     });
 
