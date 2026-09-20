@@ -82,6 +82,7 @@ jobs:
       - name: Sign release artifact (keyless)
         run: |
           cosign sign-blob --yes \
+            --new-bundle-format=false \
             --output-signature dist/card.js.sig \
             --output-certificate dist/card.js.pem \
             dist/card.js
