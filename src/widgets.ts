@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { colorVar, isTeamSide } from "./display.js";
 import type { ColorsConfig, GameAttr, GameState } from "./types.js";
-import { firstSegment, safeLogoUrl } from "./utils.js";
+import { DEFAULT_TV_BADGE_CHARS, firstSegment, safeLogoUrl } from "./utils.js";
 
 export function logoHtml(side: "home" | "away", attr: GameAttr): TemplateResult | typeof nothing {
   const url = safeLogoUrl(isTeamSide(side, attr) ? attr.team_logo : attr.opponent_logo);
@@ -11,16 +11,18 @@ export function logoHtml(side: "home" | "away", attr: GameAttr): TemplateResult 
 export function tvHtml(
   gs: GameState,
   attr: GameAttr,
-  colors: ColorsConfig = {}
+  colors: ColorsConfig = {},
+  chars: number = DEFAULT_TV_BADGE_CHARS
 ): TemplateResult | typeof nothing {
+  if (chars === 0) return nothing;
   if (gs !== "PRE" && gs !== "IN") return nothing;
   const tv = String(attr.tv_network ?? "").trim();
   if (!tv) return nothing;
   const networks = tv.split("/").map((n) => n.trim());
   const hasMultiple = networks.length > 1;
   const first = firstSegment(tv, "/").trim();
-  const truncated = first.substring(0, 3);
-  const label = first.length > 3 || hasMultiple ? `${truncated}>` : truncated;
+  const truncated = first.substring(0, chars);
+  const label = first.length > chars || hasMultiple ? `${truncated}>` : truncated;
   const bg = gs === "IN" ? colorVar(colors.live, "--ttsc-live-color", "indianred") : "#666";
   const badge = html`<span class="tv-badge" style="background:${bg}">${label}</span>`;
   if (hasMultiple) {

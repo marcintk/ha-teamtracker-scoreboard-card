@@ -13,6 +13,7 @@ import {
   DEFAULT_ROW_PADDING,
   DEFAULT_SCORE_BLINK,
   DEFAULT_SLIDE_SEC,
+  DEFAULT_TV_BADGE_CHARS,
 } from "./utils.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
@@ -165,6 +166,11 @@ export class SportScoreboardCard extends HTMLElement {
   _slideSec(): number {
     const s = this._config?.slide_sec;
     return typeof s === "number" && s > 0 ? s : DEFAULT_SLIDE_SEC;
+  }
+
+  /** characters shown in the TV-network badge; unset falls back to 3, `0` hides the badge. */
+  _tvBadge(): number {
+    return this._config?.tv_badge === undefined ? DEFAULT_TV_BADGE_CHARS : this._config.tv_badge;
   }
 
   _syncSlideTimer(): void {
@@ -403,6 +409,7 @@ export class SportScoreboardCard extends HTMLElement {
         ? html`<span id="sc-version" class="sc-version">v${__CARD_VERSION__}</span>`
         : nothing;
 
+      const tvBadge = this._tvBadge();
       const sectionTemplates = visibleSections.map((s) =>
         sectionHtml(
           s,
@@ -412,7 +419,8 @@ export class SportScoreboardCard extends HTMLElement {
           this._scoreChangedAt,
           carousel,
           slideControls,
-          highlight_winner
+          highlight_winner,
+          tvBadge
         )
       );
       const hasContent = sectionTemplates.some((t) => t !== nothing);

@@ -78,6 +78,7 @@ into one row.
 | `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.primary`); `false` leaves both names plain                        |
 | `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls |
 | `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                    |
+| `tv_badge`         | number  | `3`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                               |
 | `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                |
 | `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                            |
 
