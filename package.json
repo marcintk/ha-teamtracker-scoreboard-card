@@ -6,6 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "build": "rollup -c",
     "build:prod": "NODE_ENV=production rollup -c",
     "dev": "rollup -c --watch",

@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "main" ]; then
+  echo "Direct commits to main are not allowed. Please use a feature branch." >&2
+  exit 1
+fi
+
+staged=$(git diff --cached --name-only)
+
+npm run check
+npm run --if-present format:md
+
+if [ -n "$staged" ]; then
+  echo "$staged" | while IFS= read -r f; do
+    [ -e "$f" ] && printf '%s\n' "$f"
+  done | git add --pathspec-from-file=-
+fi
+
+npm run typecheck
