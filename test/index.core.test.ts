@@ -120,6 +120,26 @@ describe("SportScoreboardCard core", () => {
     });
   });
 
+  describe("_tvBadge", () => {
+    it("defaults to 3 characters when tv_badge is unset", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection] };
+      expect(card._tvBadge()).toBe(3);
+    });
+
+    it("passes through 0 to hide the badge instead of falling back to the default", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], tv_badge: 0 };
+      expect(card._tvBadge()).toBe(0);
+    });
+
+    it("passes through a custom character count", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], tv_badge: 6 };
+      expect(card._tvBadge()).toBe(6);
+    });
+  });
+
   describe("_hasRelevantChange", () => {
     it("returns true when prevHass is null (no prior state to compare)", () => {
       const card = makeCard();

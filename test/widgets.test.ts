@@ -73,6 +73,21 @@ describe("tvHtml", () => {
     expect(el.querySelector(".tv-badge")?.textContent).toBe("TNT");
   });
 
+  it("truncates long network names to a configurable char count with > suffix", () => {
+    const el = doc(tvHtml("PRE", { tv_network: "VERY_LONG_CHANNEL_NAME" }, {}, 4));
+    expect(el.querySelector(".tv-badge")?.textContent).toBe("VERY>");
+  });
+
+  it("shows no suffix for a network name exactly matching the configured char count", () => {
+    const el = doc(tvHtml("PRE", { tv_network: "ESPN" }, {}, 4));
+    expect(el.querySelector(".tv-badge")?.textContent).toBe("ESPN");
+  });
+
+  it("hides the badge entirely when chars is 0, even with a valid network and live state", () => {
+    const el = doc(tvHtml("IN", { tv_network: "ESPN" }, {}, 0));
+    expect(el.querySelector(".tv-badge")).toBeNull();
+  });
+
   it("handles multi-network with slash", () => {
     const el = doc(tvHtml("PRE", { tv_network: "ESPN/ESPN2" }));
     expect(el.querySelector(".tv-badge")?.textContent).toContain(">");

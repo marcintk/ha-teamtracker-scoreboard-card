@@ -13,7 +13,12 @@ import {
 } from "./display.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
 import type { ColorsConfig, GameState, HassEntity, HassStates, SectionConfig } from "./types.js";
-import { DEFAULT_LIMIT, DEFAULT_SCORE_BLINK, VALID_STATES } from "./utils.js";
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_SCORE_BLINK,
+  DEFAULT_TV_BADGE_CHARS,
+  VALID_STATES,
+} from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
 // live (IN) games always sit above everything else. Every other state — PRE /
@@ -27,7 +32,8 @@ export function rowHtml(
   colors: ColorsConfig = {},
   opponentSpecial = false,
   isFresh = false,
-  highlightWinner = true
+  highlightWinner = true,
+  tvBadge: number = DEFAULT_TV_BADGE_CHARS
 ): TemplateResult {
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
@@ -75,7 +81,7 @@ export function rowHtml(
     <div class="team-rank" style="color:${opponentColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>
-  <div class="tv">${tvHtml(gs, attr, colors)}</div>
+  <div class="tv">${tvHtml(gs, attr, colors, tvBadge)}</div>
 </div>`;
 }
 
@@ -87,7 +93,8 @@ export function sectionHtml(
   scoreChangedAt: Map<string, number> = new Map(),
   carousel = false,
   controls: TemplateResult | typeof nothing = nothing,
-  highlightWinner = true
+  highlightWinner = true,
+  tvBadge: number = DEFAULT_TV_BADGE_CHARS
 ): TemplateResult | typeof nothing {
   const {
     name,
@@ -147,7 +154,8 @@ export function sectionHtml(
         colors,
         opponentSpecial,
         isFresh,
-        highlightWinner
+        highlightWinner,
+        tvBadge
       );
     });
 
