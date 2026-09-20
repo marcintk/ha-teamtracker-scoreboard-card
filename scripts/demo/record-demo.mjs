@@ -92,7 +92,12 @@ async function runScenario(page, d) {
   await sleep(200);
   await d.hold(16);
 
-  // a live score updates on the visible (NBA) section → the score cell blinks
+  // a live score updates on the visible (NBA) section → the score cell blinks.
+  // the context runs with prefers-reduced-motion: reduce (for deterministic paused
+  // rotation, read once at setConfig), but that also disables the .score-fresh
+  // CSS animation outright — flip to no-preference just for this window so the
+  // blink actually animates on camera; it doesn't retroactively affect rotation.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.evaluate(() => window.__bumpScore());
   await d.hold(28);
 

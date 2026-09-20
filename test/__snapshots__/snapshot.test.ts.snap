@@ -45,8 +45,12 @@ exports[`CARD_STYLES > matches snapshot 1`] = `
   }
   .slide-ctrls { display: inline-flex; align-items: center; gap: 0; flex: none; }
   /* grouped-pill treatment mirroring ha-planetary-solar-system-card's .nav
-     buttons: translucent fill, 1px divider border, shared edges collapsed, only
-     the outer corners rounded. */
+     buttons: translucent fill, 1px divider border, shared edges collapsed via
+     a -1px margin (not flex gap, which forces every button's fractional
+     font-scaled width to round to a whole device pixel — on a low-DPI
+     display that rounding can land unevenly gap-to-gap, e.g. a visibly wider
+     gap on one side; the collapsed shared border has no such leftover space
+     to divide, so it can't drift), only the outer corners rounded. */
   .slide-btn {
     position: relative;
     box-sizing: border-box;
@@ -80,12 +84,14 @@ exports[`CARD_STYLES > matches snapshot 1`] = `
   .slide-btn.toggle::before {
     content: "";
     background: currentColor;
-    width: calc(11px * var(--ttsc-font-scale, 1));
-    height: calc(11px * var(--ttsc-font-scale, 1));
+    /* even box so it splits the (even) content box's leftover space equally on
+       both axes — an odd size forces the browser to round one side further
+       than the other, biasing the icon toward the bottom-right */
+    width: calc(12px * var(--ttsc-font-scale, 1));
+    height: calc(12px * var(--ttsc-font-scale, 1));
     border-radius: 1px;
   }
   .slide-btn.toggle.paused::before {
-    height: calc(12px * var(--ttsc-font-scale, 1));
     border-radius: 0;
     clip-path: polygon(0 0, 100% 50%, 0 100%);
   }
