@@ -108,7 +108,8 @@ export function sectionHtml(
     score_blink = DEFAULT_SCORE_BLINK,
   } = section;
   const blinkMs = score_blink * 1000;
-  const resolvedIds = entityIds ?? Object.keys(states).filter((id) => id.startsWith(prefix));
+  const resolvedIds =
+    entityIds ?? section.entities ?? Object.keys(states).filter((id) => id.startsWith(prefix));
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
   );
