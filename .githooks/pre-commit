@@ -7,15 +7,25 @@ if [ "$branch" = "main" ]; then
   exit 1
 fi
 
+# Remember what was actually staged before the auto-fixers run, so a path-scoped or
+# staged-hunks commit doesn't silently swallow unrelated working-tree changes — `git add -u`
+# would re-stage every tracked modification in the repo, not just what's being committed.
 staged=$(git diff --cached --name-only)
 
-npm run check
-npm run --if-present format:md
+npm run check                    # biome: lint + auto-fix formatting in src/, test/
+npm run --if-present format:md   # prettier: auto-fix markdown (skipped if script absent)
 
+# Re-stage exactly what was staged before the fixers ran, but only paths that still exist: a
+# staged deletion is already correct in the index, and handing its now-absent path to `git add`
+# aborts the hook under `set -e` ("pathspec did not match any files"). The fixers never recreate
+# a deleted file, so skipping those loses nothing.
 if [ -n "$staged" ]; then
   echo "$staged" | while IFS= read -r f; do
     [ -e "$f" ] && printf '%s\n' "$f"
   done | git add --pathspec-from-file=-
 fi
-
-npm run typecheck
+# check/typecheck run against the working tree, not the index — a partially-staged commit can
+# still pass while the committed tree itself doesn't compile. Accepted: fixing that needs
+# something like lint-staged, a real dependency, for a narrow edge case (committing hunks of an
+# already-broken file) this repo hasn't hit yet.
+npm run typecheck                # tsc --noEmit: fail if types don't compile
