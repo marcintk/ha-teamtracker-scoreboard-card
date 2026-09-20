@@ -82,9 +82,7 @@ jobs:
       - name: Sign release artifact (keyless)
         run: |
           cosign sign-blob --yes \
-            --new-bundle-format=false \
-            --output-signature dist/card.js.sig \
-            --output-certificate dist/card.js.pem \
+            --bundle dist/card.js.bundle \
             dist/card.js
 
       - name: Create GitHub Release
@@ -93,8 +91,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             dist/card.js
-            dist/card.js.sig
-            dist/card.js.pem
+            dist/card.js.bundle
           generate_release_notes: true
           draft: true # always a draft — a human publishes from the Releases UI after review
           prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
