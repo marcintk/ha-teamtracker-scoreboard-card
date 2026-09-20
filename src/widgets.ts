@@ -64,7 +64,7 @@ export function messageHtml(
     default: {
       const clock = attr.clock ?? "";
       const sub = attr.series_summary ?? "";
-      return html`<span style="color:${colorVar(colors.winner, "--ttsc-winner-color", "orange")}">${clock}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
+      return html`<span style="color:${colorVar(colors.score_winner, "--ttsc-score-winner-color", "orange")}">${clock}</span>${sub ? html`<span class="msg-sub">${sub}</span>` : nothing}`;
     }
   }
 }

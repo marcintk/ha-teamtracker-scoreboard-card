@@ -70,17 +70,17 @@ into one row.
 
 ### Card
 
-| Option             | Type    | Default  | Description                                                                                                                                |
-| ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                             |
-| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                  |
-| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                              |
-| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.primary`); `false` leaves both names plain                        |
-| `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls |
-| `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                    |
-| `tv_badge`         | number  | `3`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                               |
-| `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                |
-| `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                            |
+| Option             | Type    | Default  | Description                                                                                                                                     |
+| ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                                  |
+| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                       |
+| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                   |
+| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain |
+| `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls      |
+| `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                         |
+| `tv_badge`         | number  | `3`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                                    |
+| `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                     |
+| `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                                 |
 
 ### Refresh
 
@@ -105,13 +105,13 @@ sections:
   - ...
 ```
 
-| Field                   | Type   | Default  | Description                                                                                                                                    |
-| ----------------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `section.name`          | string | required | Header label shown above the section                                                                                                           |
-| `section.prefix`        | string | required | Entity ID prefix, e.g. `sensor.nba_`                                                                                                           |
-| `section.limit`         | number | `10`     | Max rows to show                                                                                                                               |
-| `section.score_blink`   | number | `5`      | Seconds to blink the score after a goal/basket; `0` disables                                                                                   |
-| `section.special_teams` | list   | `[]`     | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos`; matched teams get their name colored `colors.special` |
+| Field                   | Type   | Default  | Description                                                                                                                                         |
+| ----------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `section.name`          | string | required | Header label shown above the section                                                                                                                |
+| `section.prefix`        | string | required | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                |
+| `section.limit`         | number | `10`     | Max rows to show                                                                                                                                    |
+| `section.score_blink`   | number | `5`      | Seconds to blink the score after a goal/basket; `0` disables                                                                                        |
+| `section.special_teams` | list   | `[]`     | Team suffixes to highlight — the part after the prefix, e.g. `bos` for `sensor.nba_bos`; matched teams get their name colored `colors.name_special` |
 
 ### Layout
 
@@ -145,28 +145,30 @@ sections:
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:
-  opponent: gray
+  name_default: gray
   header: "#2196F3" # Material Blue
-  winner: orange
-  loser: darkgray
+  score_winner: orange
+  score_loser: darkgray
   live: indianred
-  leading: brown
-  primary: var(--primary-text-color)
-  special: "#2196F3" # Material Blue
+  score_leading: brown
+  name_leading: var(--primary-text-color)
+  name_winner: var(--primary-text-color)
+  name_special: "#2196F3" # Material Blue
 sections:
   - ...
 ```
 
-| Key               | Default                        | CSS property            | Applies to                                                                  |
-| ----------------- | ------------------------------ | ----------------------- | --------------------------------------------------------------------------- |
-| `colors.opponent` | `#‌777` (grey)                 | `--ttsc-opponent-color` | Both team names, and the record under each name                             |
-| `colors.header`   | `#2196F3` (Material Blue)      | `--ttsc-header-color`   | Section header label                                                        |
-| `colors.winner`   | `orange`                       | `--ttsc-winner-color`   | POST winner score and final clock                                           |
-| `colors.loser`    | `darkgray`                     | `--ttsc-loser-color`    | POST loser score                                                            |
-| `colors.live`     | `indianred`                    | `--ttsc-live-color`     | IN game clock text and TV badge background                                  |
-| `colors.leading`  | `brown`                        | `--ttsc-leading-color`  | IN leading team's score                                                     |
-| `colors.primary`  | theme's `--primary-text-color` | `--ttsc-primary-color`  | Leading (IN) / winning (POST) team's name (with `highlight_winner`)         |
-| `colors.special`  | `#2196F3` (Material Blue)      | `--ttsc-special-color`  | A `section.special_teams` entry's name, whether it's leading/winning or not |
+| Key                    | Default                        | CSS property                 | Applies to                                                                  |
+| ---------------------- | ------------------------------ | ---------------------------- | --------------------------------------------------------------------------- |
+| `colors.name_default`  | `#777` (grey)                  | `--ttsc-name-default-color`  | Both team names, and the record under each name, when not leading/winning   |
+| `colors.header`        | `#2196F3` (Material Blue)      | `--ttsc-header-color`        | Section header label                                                        |
+| `colors.score_winner`  | `orange`                       | `--ttsc-score-winner-color`  | POST winner score and final clock                                           |
+| `colors.score_loser`   | `darkgray`                     | `--ttsc-score-loser-color`   | POST loser score                                                            |
+| `colors.live`          | `indianred`                    | `--ttsc-live-color`          | IN game clock text and TV badge background                                  |
+| `colors.score_leading` | `brown`                        | `--ttsc-score-leading-color` | IN leading team's score                                                     |
+| `colors.name_leading`  | theme's `--primary-text-color` | `--ttsc-name-leading-color`  | IN leading team's name (with `highlight_winner`)                            |
+| `colors.name_winner`   | theme's `--primary-text-color` | `--ttsc-name-winner-color`   | POST winning team's name (with `highlight_winner`)                          |
+| `colors.name_special`  | `#2196F3` (Material Blue)      | `--ttsc-name-special-color`  | A `section.special_teams` entry's name, whether it's leading/winning or not |
 
 <!-- Reference links -->
 

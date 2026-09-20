@@ -40,10 +40,14 @@ export function rowHtml(
   const bg = scoreBg(gs);
   const freshClass = isFresh ? " score-fresh" : "";
 
-  const opponentColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  const opponentColor = colorVar(
+    colors.name_default,
+    "--ttsc-name-default-color",
+    "#777"
+  ); /* gray */
   const specialColor = colorVar(
-    colors.special,
-    "--ttsc-special-color",
+    colors.name_special,
+    "--ttsc-name-special-color",
     "#2196F3"
   ); /* Material Blue */
   const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;

@@ -44,20 +44,23 @@ export function isSideOutrightWinning(
   return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
 }
 
-// Both names fall back to the opponent gray by default; the outright leading
-// (IN) or winning (POST) side takes the primary colour. A tie/draw highlights
-// neither side. A section.special_teams entry overrides this with the
-// special colour instead — see render.ts's rowHtml, which applies it
-// regardless of leading/winning state.
+// Both names fall back to the default gray by default; the outright leading
+// (IN) side takes the leading colour and the outright winning (POST) side
+// takes the winner colour — both theme-primary by default, independently
+// overridable. A tie/draw highlights neither side. A section.special_teams
+// entry overrides this with the special colour instead — see render.ts's
+// rowHtml, which applies it regardless of leading/winning state.
 export function teamColor(
   side: "home" | "away",
   gs: GameState,
   attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  if ((gs === "IN" || gs === "POST") && isSideOutrightWinning(side, gs, attr))
-    return colorVar(colors.primary, "--ttsc-primary-color", "var(--primary-text-color)");
-  return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
+    return colorVar(colors.name_leading, "--ttsc-name-leading-color", "var(--primary-text-color)");
+  if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
+    return colorVar(colors.name_winner, "--ttsc-name-winner-color", "var(--primary-text-color)");
+  return colorVar(colors.name_default, "--ttsc-name-default-color", "#777"); /* gray */
 }
 
 export function scoreBg(gs: GameState): string {
@@ -75,13 +78,13 @@ export function scoreColor(
   if (gs === "PRE") return "black";
   if (gs === "IN") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.leading, "--ttsc-leading-color", "brown")
+      ? colorVar(colors.score_leading, "--ttsc-score-leading-color", "brown")
       : "black";
   }
   if (gs === "POST") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.winner, "--ttsc-winner-color", "orange")
-      : colorVar(colors.loser, "--ttsc-loser-color", "darkgray");
+      ? colorVar(colors.score_winner, "--ttsc-score-winner-color", "orange")
+      : colorVar(colors.score_loser, "--ttsc-score-loser-color", "darkgray");
   }
   return "black";
 }

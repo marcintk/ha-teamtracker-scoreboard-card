@@ -54,13 +54,14 @@ export interface SectionConfig {
 
 export interface ColorsConfig {
   header?: string;
-  opponent?: string;
-  winner?: string;
-  loser?: string;
+  name_default?: string;
+  score_winner?: string;
+  score_loser?: string;
   live?: string;
-  leading?: string;
-  primary?: string;
-  special?: string;
+  score_leading?: string;
+  name_leading?: string;
+  name_winner?: string;
+  name_special?: string;
 }
 
 /** Card-level size / spacing / text-scale knobs, grouped like `colors`. */
