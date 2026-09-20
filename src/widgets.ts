@@ -24,7 +24,7 @@ export function tvHtml(
   const truncated = first.substring(0, chars);
   const label = first.length > chars || hasMultiple ? `${truncated}>` : truncated;
   const bg = gs === "IN" ? colorVar(colors.live, "--ttsc-live-color", "indianred") : "#666";
-  const badge = html`<span class="tv-badge" style="background:${bg}">${label}</span>`;
+  const badge = html`<span class="tv-badge" style="background:color-mix(in srgb, ${bg} 85%, transparent)">${label}</span>`;
   if (hasMultiple) {
     const tooltip = networks.join(" · ");
     return html`<span class="tv-tooltip" data-tooltip="${tooltip}">${badge}</span>`;
