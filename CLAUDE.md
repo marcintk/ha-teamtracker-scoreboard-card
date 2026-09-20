@@ -35,17 +35,19 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
   games sort first; every other state (`PRE`/`BYE`/`POST`) shares one band ordered by
   `|date − now|`, so the next kick-off and the just-finished game sit near the top
 - Team-name rendering: `highlight_winner` defaults to `true` — the side strictly ahead on score
-  during `IN` takes the `live` colour and bold, the same `live` colour already used for the IN clock
-  text and TV badge, so name/score/message stay in sync during a live game. The winning side during
-  `POST` takes the `winner` colour and bold, matching the score cell and final-clock message text.
-  Neither side highlights on a tie (`IN`) or a draw (`POST`, neither `team_winner`/
-  `opponent_winner` set) — this is `isSideOutrightWinning()`, deliberately stricter than
-  `scoreColor()`'s own `isSideAheadOrWinning()`, which still colours the score cell `>=`
-  (tie-inclusive) and is unchanged. The losing/trailing side always stays plain
-  `opponent`/normal-weight; setting `highlight_winner: false` drops the whole feature and leaves
-  both names plain, always. This highlight applies only to the `.team-name` text — the `.team-rank`
-  (record) always stays in the plain `opponent` colour, never bold. A `special_teams` entry appends
-  a ★ marker after the name, independent of colour/`highlight_winner`.
+  during `IN` or winning during `POST` takes the `primary` colour (theme `--primary-text-color` by
+  default) and bold. This is intentionally a separate colour from the `IN` score cell (`leading`,
+  brown) and the live clock/TV badge (`live`, indianred) — the three no longer stay in visual sync;
+  see `colors.leading` / `colors.primary` / `colors.live` in the Colors table. Neither side
+  highlights on a tie (`IN`) or a draw (`POST`, neither `team_winner`/`opponent_winner` set) — this
+  is `isSideOutrightWinning()`, deliberately stricter than `scoreColor()`'s own
+  `isSideAheadOrWinning()`, which still colours the score cell `>=` (tie-inclusive) and is
+  unchanged. The losing/trailing side always stays plain `opponent`/normal-weight; setting
+  `highlight_winner: false` drops the whole feature and leaves both names plain, always. This
+  highlight applies only to the `.team-name` text — the `.team-rank` (record) always stays in the
+  plain `opponent` colour, never bold. A `special_teams` entry colours the name `special` (Material
+  Blue by default) instead — independent of `highlight_winner` and taking priority over the
+  leading/winning colour, though it still bolds when that side is actually ahead/winning.
 - Team logos render only for HTTPS URLs; non-HTTPS is silently dropped
 - With `mode: slide` and **≥ 2 sections**, the card shows one section at a time and auto-advances
   every `slide_sec` seconds (default 45; `≤ 0` ⇒ 45; hard swap, wraps, empty sections take their
