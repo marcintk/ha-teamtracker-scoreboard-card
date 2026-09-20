@@ -218,7 +218,11 @@ describe("nameText", () => {
   });
 
   it("falls back to an empty string when the name is undefined", () => {
-    const attr: GameAttr = { team_homeaway: "home", team_name: undefined, opponent_name: undefined };
+    const attr: GameAttr = {
+      team_homeaway: "home",
+      team_name: undefined,
+      opponent_name: undefined,
+    };
     expect(nameText("home", attr)).toBe("");
     expect(nameText("away", attr)).toBe("");
   });
