@@ -221,6 +221,17 @@ describe("sectionHtml", () => {
     expect(el.innerHTML).toContain("ttsc-name-special-color");
   });
 
+  it("matches special_teams by full entity ID when the section also has entities", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      sectionHtml(
+        { ...section, entities: ["sensor.nba_lal"], special_teams: ["sensor.nba_lal"] },
+        states
+      )
+    );
+    expect(el.innerHTML).toContain("ttsc-name-special-color");
+  });
+
   it("accepts pre-filtered entity IDs without colors", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml(section, states, Object.keys(states)));

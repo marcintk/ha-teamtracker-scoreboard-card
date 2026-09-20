@@ -131,7 +131,9 @@ export function sectionHtml(
     return {
       entityId,
       teamName: String(attr?.team_name ?? entityId),
-      special: special_teams.includes(entityId.replace(prefix, "")),
+      special: section.entities
+        ? special_teams.includes(entityId)
+        : special_teams.includes(entityId.replace(prefix, "")),
       key: sortKeyFor(attr, now),
     };
   });
