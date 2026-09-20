@@ -13,6 +13,7 @@ docs/design-notes/.work/
 .gitconfig
 .gitmodules
 .idea
+.mcp.json
 .profile
 .ripgreprc
 .vscode
