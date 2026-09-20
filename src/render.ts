@@ -35,21 +35,34 @@ export function rowHtml(
   const freshClass = isFresh ? " score-fresh" : "";
 
   const opponentColor = colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
+  const specialColor = colorVar(
+    colors.special,
+    "--ttsc-special-color",
+    "#2196F3"
+  ); /* Material Blue */
+  const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;
+  const awaySpecial = isTeamSide("away", attr) ? special : opponentSpecial;
   const homeAhead =
     highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("home", gs, attr);
   const awayAhead =
     highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("away", gs, attr);
-  const homeColor = homeAhead ? teamColor("home", gs, attr, colors) : opponentColor;
-  const awayColor = awayAhead ? teamColor("away", gs, attr, colors) : opponentColor;
+  const homeColor = homeSpecial
+    ? specialColor
+    : homeAhead
+      ? teamColor("home", gs, attr, colors)
+      : opponentColor;
+  const awayColor = awaySpecial
+    ? specialColor
+    : awayAhead
+      ? teamColor("away", gs, attr, colors)
+      : opponentColor;
   const homeWeight = homeAhead ? "bold" : "normal";
   const awayWeight = awayAhead ? "bold" : "normal";
-  const homeStar = (isTeamSide("home", attr) ? special : opponentSpecial) ? "★" : "";
-  const awayStar = (isTeamSide("away", attr) ? special : opponentSpecial) ? "★" : "";
 
   return html`
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr)}${homeStar}</div>
+    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr)}</div>
     <div class="team-rank" style="color:${opponentColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
@@ -58,7 +71,7 @@ export function rowHtml(
   <div class="score score-b${freshClass}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}">${scoreText("away", gs, attr)}</div>
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr)}${awayStar}</div>
+    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr)}</div>
     <div class="team-rank" style="color:${opponentColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>

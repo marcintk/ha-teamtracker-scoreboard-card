@@ -46,7 +46,7 @@ describe("rowHtml inline styles — score text color", () => {
   });
   it("highlights the leading team in IN state", () => {
     const html = doc(rowHtml(makeState("IN", baseAttrs), false)).innerHTML;
-    expect(html).toContain("color:var(--ttsc-live-color, indianred)");
+    expect(html).toContain("color:var(--ttsc-leading-color, brown)");
     expect(html).toContain("color:black");
   });
   it("marks winner and loser colours in POST state", () => {

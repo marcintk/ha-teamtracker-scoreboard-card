@@ -63,9 +63,11 @@ describe("teamColor", () => {
     expect(teamColor("away", "PRE", homeAttr)).toBe("var(--ttsc-opponent-color, #777)");
   });
 
-  it("returns the live colour when the home side is leading during IN", () => {
+  it("returns the accent colour when the home side is leading during IN", () => {
     // home team scores 95 vs 90 — home is leading
-    expect(teamColor("home", "IN", homeAttr)).toBe("var(--ttsc-live-color, indianred)");
+    expect(teamColor("home", "IN", homeAttr)).toBe(
+      "var(--ttsc-primary-color, var(--primary-text-color))"
+    );
   });
 
   it("returns the opponent color for the trailing side during IN", () => {
@@ -73,8 +75,10 @@ describe("teamColor", () => {
     expect(teamColor("away", "IN", homeAttr)).toBe("var(--ttsc-opponent-color, #777)");
   });
 
-  it("returns the winner colour for the winning side during POST", () => {
-    expect(teamColor("home", "POST", homeAttr)).toBe("var(--ttsc-winner-color, orange)");
+  it("returns the accent colour for the winning side during POST", () => {
+    expect(teamColor("home", "POST", homeAttr)).toBe(
+      "var(--ttsc-primary-color, var(--primary-text-color))"
+    );
   });
 
   it("returns the opponent color (not a loser color) for the losing side during POST", () => {
@@ -82,8 +86,12 @@ describe("teamColor", () => {
   });
 
   it("supports the away side leading/winning too", () => {
-    expect(teamColor("away", "IN", awayAttr)).toBe("var(--ttsc-live-color, indianred)");
-    expect(teamColor("away", "POST", awayAttr)).toBe("var(--ttsc-winner-color, orange)");
+    expect(teamColor("away", "IN", awayAttr)).toBe(
+      "var(--ttsc-primary-color, var(--primary-text-color))"
+    );
+    expect(teamColor("away", "POST", awayAttr)).toBe(
+      "var(--ttsc-primary-color, var(--primary-text-color))"
+    );
   });
 
   it("leaves both names in the opponent color on an exact tie during IN (neither side leads)", () => {
@@ -105,10 +113,10 @@ describe("teamColor", () => {
   });
 
   it("uses config colors when provided", () => {
-    const colors = { live: "gold", winner: "lime", opponent: "gray" };
+    const colors = { primary: "gold", opponent: "gray" };
     expect(teamColor("home", "PRE", homeAttr, colors)).toBe("gray");
     expect(teamColor("home", "IN", homeAttr, colors)).toBe("gold");
-    expect(teamColor("home", "POST", homeAttr, colors)).toBe("lime");
+    expect(teamColor("home", "POST", homeAttr, colors)).toBe("gold");
     expect(teamColor("away", "POST", homeAttr, colors)).toBe("gray");
   });
 });
@@ -134,16 +142,16 @@ describe("scoreColor", () => {
     expect(scoreColor("away", "PRE", homeAttr)).toBe("black");
   });
 
-  it("returns the live colour for the leading team during IN", () => {
+  it("returns the leading colour for the leading team during IN", () => {
     // home team scores 95 vs 90 — home is leading
-    expect(scoreColor("home", "IN", homeAttr)).toBe("var(--ttsc-live-color, indianred)");
+    expect(scoreColor("home", "IN", homeAttr)).toBe("var(--ttsc-leading-color, brown)");
     expect(scoreColor("away", "IN", homeAttr)).toBe("black");
   });
 
   it("treats undefined scores as 0 during IN", () => {
     const attr = { ...homeAttr, team_score: undefined, opponent_score: undefined };
     // tied at 0-0: home side ts>=os
-    expect(scoreColor("home", "IN", attr)).toBe("var(--ttsc-live-color, indianred)");
+    expect(scoreColor("home", "IN", attr)).toBe("var(--ttsc-leading-color, brown)");
   });
 
   it("returns the winner / loser colours in POST", () => {
@@ -151,8 +159,8 @@ describe("scoreColor", () => {
     expect(scoreColor("away", "POST", homeAttr)).toBe("var(--ttsc-loser-color, darkgray)");
   });
 
-  it("uses config colors for winner, loser, and live", () => {
-    const colors = { winner: "gold", loser: "silver", live: "teal" };
+  it("uses config colors for winner, loser, and leading", () => {
+    const colors = { winner: "gold", loser: "silver", leading: "teal" };
     expect(scoreColor("home", "POST", homeAttr, colors)).toBe("gold");
     expect(scoreColor("away", "POST", homeAttr, colors)).toBe("silver");
     expect(scoreColor("home", "IN", homeAttr, colors)).toBe("teal");
