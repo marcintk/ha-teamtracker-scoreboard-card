@@ -28,11 +28,20 @@ describe("logoHtml", () => {
     const attr = { ...homeAttr, team_logo: "http://insecure.example.com/logo.png" };
     expect(doc(logoHtml("home", attr)).querySelector("img")).toBeNull();
   });
+
+  it("returns opponent logo for the away side", () => {
+    const el = doc(logoHtml("away", homeAttr));
+    expect(el.querySelector("img")?.getAttribute("src")).toBe("https://cdn.example.com/bos.png");
+  });
 });
 
 describe("tvHtml", () => {
   it("returns empty for POST state", () => {
     expect(doc(tvHtml("POST", { tv_network: "ESPN" })).querySelector(".tv-badge")).toBeNull();
+  });
+
+  it("returns empty when tv_network is absent", () => {
+    expect(doc(tvHtml("IN", {})).querySelector(".tv-badge")).toBeNull();
   });
 
   it("returns empty when tv_network is blank", () => {
@@ -167,6 +176,11 @@ describe("messageHtml", () => {
     expect(el.textContent).toContain("Q3 5:00");
     expect(el.textContent).toContain("Touchdown - LAL");
     expect(el.querySelector(".tv-tooltip")).toBeNull();
+  });
+
+  it("handles missing clock for IN state", () => {
+    const el = doc(messageHtml("IN", { last_play: "Touchdown" }));
+    expect(el.textContent).toContain("Touchdown");
   });
 
   it("omits last_play span when last_play is absent", () => {
