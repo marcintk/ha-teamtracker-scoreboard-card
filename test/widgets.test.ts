@@ -233,7 +233,7 @@ describe("messageHtml", () => {
   });
 
   it("uses config winner color for POST clock", () => {
-    const el = doc(messageHtml("POST", { clock: "Final" }, { winner: "gold" }));
+    const el = doc(messageHtml("POST", { clock: "Final" }, { score_winner: "gold" }));
     expect(el.querySelector("span")?.getAttribute("style")).toContain("gold");
   });
 

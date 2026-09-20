@@ -358,7 +358,7 @@ describe("SportScoreboardCard core", () => {
       const card = makeCard();
       card._config = {
         sections: [nbaSection],
-        colors: { opponent: "gold" },
+        colors: { name_default: "gold" },
       };
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
@@ -371,7 +371,7 @@ describe("SportScoreboardCard core", () => {
       card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
       card._render();
       const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
-      expect(name?.style.color).toContain("--ttsc-primary-color");
+      expect(name?.style.color).toContain("--ttsc-name-leading-color");
       expect(name?.style.fontWeight).toBe("bold");
     });
 
@@ -381,7 +381,7 @@ describe("SportScoreboardCard core", () => {
       card._hass = makeHass({ "sensor.nba_lal": makeState("IN", baseAttrs) });
       card._render();
       const name = card.shadowRoot?.querySelector<HTMLElement>(".team-name");
-      expect(name?.style.color).toContain("--ttsc-opponent-color");
+      expect(name?.style.color).toContain("--ttsc-name-default-color");
       expect(name?.style.fontWeight).toBe("normal");
     });
 
