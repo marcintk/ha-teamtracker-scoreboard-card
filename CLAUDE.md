@@ -68,11 +68,14 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 
 - **WebSocket subscription**: subscribed to `state_changed` on first `set hass`; callback arms
   `_renderTimer` debounce. Rendering always reads `_hass.states` — never the event payload.
-- **Entity filter**: `_trackedIds` (Set) built via `sectionMatches()` — each section matches by its
-  explicit `entities` list if set, else by `prefix` — once per config; reset on `setConfig`, rebuilt
-  lazily on next `set hass`. `_trackedBySection` (keyed by section **index**, not prefix string)
-  hands each section its resolved entity list; keying by prefix would collide once more than one
-  section can have an empty/absent prefix (any `entities`-only section).
+- **Entity filter**: `_trackedIds` (Set) built via `sectionMatches()` — a section matches an id via
+  `prefix` **or** its explicit `entities` list (union, not either/or, so a section can mix a pattern
+  with cherry-picked extras) — once per config; reset on `setConfig`, rebuilt lazily on next
+  `set hass`. A bare section (neither set) still matches everything, since `prefix` defaults to
+  `""`; once `entities` is set without a `prefix`, that "match everything" default no longer
+  applies. `_trackedBySection` (keyed by section **index**, not prefix string) hands each section
+  its resolved entity list; keying by prefix would collide once more than one section can have an
+  empty/absent prefix (any `entities`-only section).
 - **Deduplication**: two-pass — pass 1 builds home/special key sets, pass 2 keeps home sensor over
   away sensor per game key.
 - **View state** (`mode: slide` only): `_slideIndex` / `_slidePaused` are instance fields, not

@@ -232,6 +232,39 @@ describe("sectionHtml", () => {
     expect(el.innerHTML).toContain("ttsc-name-special-color");
   });
 
+  it("resolves only the listed entities when prefix is absent", () => {
+    const states = {
+      "sensor.nba_lal": makeState("PRE", baseAttrs),
+      "sensor.custom_renamed_bos": makeState("PRE", { ...baseAttrs, team_name: "Celtics" }),
+    };
+    const el = doc(
+      sectionHtml(
+        { name: "Custom", special_teams: [], entities: ["sensor.custom_renamed_bos"] },
+        states
+      )
+    );
+    expect(el.textContent).not.toContain("Lakers");
+    expect(el.textContent).toContain("Celtics");
+  });
+
+  it("unions prefix matches with explicit entities when both are set", () => {
+    const states = {
+      "sensor.nba_lal": makeState("PRE", baseAttrs),
+      "sensor.nba_gsw": makeState("PRE", { ...baseAttrs, team_name: "Warriors" }),
+      "sensor.custom_renamed_bos": makeState("PRE", { ...baseAttrs, team_name: "Celtics" }),
+    };
+    const el = doc(sectionHtml({ ...section, entities: ["sensor.custom_renamed_bos"] }, states));
+    expect(el.textContent).toContain("Lakers");
+    expect(el.textContent).toContain("Warriors");
+    expect(el.textContent).toContain("Celtics");
+  });
+
+  it("matches all entities when the section has neither prefix nor entities", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(sectionHtml({ name: "All", special_teams: [] }, states));
+    expect(el.textContent).toContain("Lakers");
+  });
+
   it("accepts pre-filtered entity IDs without colors", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml(section, states, Object.keys(states)));

@@ -103,22 +103,23 @@ sections:
     special_teams:
       - liv
   - name: My Teams
+    prefix: sensor.nba_
     entities:
-      - sensor.nba_lal
       - sensor.custom_renamed_bos
   - ...
 ```
 
-| Field                   | Type   | Default    | Description                                                                                                                                                                                    |
-| ----------------------- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `section.name`          | string | required   | Header label shown above the section                                                                                                                                                           |
-| `section.prefix`        | string | either/or* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                                           |
-| `section.entities`      | list   | either/or* | Explicit list of entity IDs, for setups without a stable shared prefix; takes precedence over `prefix` if both are set                                                                         |
-| `section.limit`         | number | `10`       | Max rows to show                                                                                                                                                                               |
-| `section.score_blink`   | number | `5`        | Seconds to blink the score after a goal/basket; `0` disables                                                                                                                                   |
-| `section.special_teams` | list   | `[]`       | Teams to highlight. With `prefix`: the part after the prefix, e.g. `bos` for `sensor.nba_bos`. With `entities`: the full entity ID. Matched teams get their name colored `colors.name_special` |
+| Field                   | Type   | Default   | Description                                                                                                                                                            |
+| ----------------------- | ------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |
+| `section.prefix`        | string | optional* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                   |
+| `section.entities`      | list   | optional* | Explicit list of entity IDs, included in addition to any `prefix` match — for entities renamed away from a shared prefix, or cherry-picked from elsewhere              |
+| `section.limit`         | number | `10`      | Max rows to show                                                                                                                                                       |
+| `section.score_blink`   | number | `5`       | Seconds to blink the score after a goal/basket; `0` disables                                                                                                           |
+| `section.special_teams` | list   | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |
 
-\* One of `section.prefix` or `section.entities` is required.
+\* `prefix` and `entities` combine (a section's entities are the union of both); a section with
+neither set matches every tracked entity.
 
 ### Layout
 
