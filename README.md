@@ -142,6 +142,11 @@ sections:
 
 ### Colors
 
+> **Breaking change:** the `colors` keys below replace the older `opponent` / `winner` / `loser` /
+> `leading` / `primary` / `special` names (and split `primary` into `name_leading` and
+> `name_winner`, since the IN-leading and POST-winning name colours are no longer tied together).
+> Update any existing `colors:` block in your dashboard config to the new key names.
+
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:

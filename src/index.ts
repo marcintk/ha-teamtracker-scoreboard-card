@@ -168,9 +168,10 @@ export class SportScoreboardCard extends HTMLElement {
     return typeof s === "number" && s > 0 ? s : DEFAULT_SLIDE_SEC;
   }
 
-  /** characters shown in the TV-network badge; unset falls back to 3, `0` hides the badge. */
+  /** characters shown in the TV-network badge; a missing / negative value falls back to 3, `0` hides the badge. */
   _tvBadge(): number {
-    return this._config?.tv_badge === undefined ? DEFAULT_TV_BADGE_CHARS : this._config.tv_badge;
+    const n = this._config?.tv_badge;
+    return typeof n === "number" && n >= 0 ? n : DEFAULT_TV_BADGE_CHARS;
   }
 
   _syncSlideTimer(): void {

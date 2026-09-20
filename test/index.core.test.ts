@@ -138,6 +138,12 @@ describe("SportScoreboardCard core", () => {
       card._config = { sections: [nbaSection], tv_badge: 6 };
       expect(card._tvBadge()).toBe(6);
     });
+
+    it("falls back to the default when tv_badge is negative", () => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], tv_badge: -1 };
+      expect(card._tvBadge()).toBe(3);
+    });
   });
 
   describe("_hasRelevantChange", () => {
