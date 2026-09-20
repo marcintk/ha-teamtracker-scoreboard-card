@@ -157,14 +157,14 @@ sections:
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:
-  name_default: gray
   header: "#2196F3" # Material Blue
-  score_winner: orange
-  score_loser: darkgray
   live: indianred
   score_leading: brown
   name_leading: var(--primary-text-color)
+  score_winner: orange
   name_winner: var(--primary-text-color)
+  score_loser: darkgray
+  name_default: gray
   name_special: "#2196F3" # Material Blue
 sections:
   - ...
@@ -172,14 +172,14 @@ sections:
 
 | Key                    | Default                        | CSS property                 | Applies to                                                                  |
 | ---------------------- | ------------------------------ | ---------------------------- | --------------------------------------------------------------------------- |
-| `colors.name_default`  | `#777` (grey)                  | `--ttsc-name-default-color`  | Both team names, and the record under each name, when not leading/winning   |
 | `colors.header`        | `#2196F3` (Material Blue)      | `--ttsc-header-color`        | Section header label                                                        |
-| `colors.score_winner`  | `orange`                       | `--ttsc-score-winner-color`  | POST winner score and final clock                                           |
-| `colors.score_loser`   | `darkgray`                     | `--ttsc-score-loser-color`   | POST loser score                                                            |
 | `colors.live`          | `indianred`                    | `--ttsc-live-color`          | IN game clock text and TV badge background                                  |
 | `colors.score_leading` | `brown`                        | `--ttsc-score-leading-color` | IN leading team's score                                                     |
 | `colors.name_leading`  | theme's `--primary-text-color` | `--ttsc-name-leading-color`  | IN leading team's name (with `highlight_winner`)                            |
+| `colors.score_winner`  | `orange`                       | `--ttsc-score-winner-color`  | POST winner score and final clock                                           |
 | `colors.name_winner`   | theme's `--primary-text-color` | `--ttsc-name-winner-color`   | POST winning team's name (with `highlight_winner`)                          |
+| `colors.score_loser`   | `darkgray`                     | `--ttsc-score-loser-color`   | POST loser score                                                            |
+| `colors.name_default`  | `#777` (grey)                  | `--ttsc-name-default-color`  | Both team names, and the record under each name, when not leading/winning   |
 | `colors.name_special`  | `#2196F3` (Material Blue)      | `--ttsc-name-special-color`  | A `section.special_teams` entry's name, whether it's leading/winning or not |
 
 <!-- Reference links -->
