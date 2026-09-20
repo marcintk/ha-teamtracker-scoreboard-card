@@ -7,7 +7,8 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022", "DOM"],
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "types": ["node"]
   },
   "include": ["src/**/*", "test/**/*", "globals.d.ts"]
 }

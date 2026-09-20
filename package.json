@@ -6,6 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "build": "rollup -c",
     "build:prod": "NODE_ENV=production rollup -c",
     "dev": "rollup -c --watch",
@@ -23,6 +24,7 @@
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^26.6.2",
     "@vitest/coverage-v8": "^5.0.1",
     "jsdom": "^30.0.1",
     "playwright": "^1.62.1",
