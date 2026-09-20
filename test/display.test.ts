@@ -165,6 +165,11 @@ describe("scoreColor", () => {
     expect(scoreColor("away", "POST", homeAttr, colors)).toBe("silver");
     expect(scoreColor("home", "IN", homeAttr, colors)).toBe("teal");
   });
+
+  it("returns black for BYE regardless of side", () => {
+    expect(scoreColor("home", "BYE", homeAttr)).toBe("black");
+    expect(scoreColor("away", "BYE", homeAttr)).toBe("black");
+  });
 });
 
 describe("colonColor", () => {
@@ -211,11 +216,27 @@ describe("nameText", () => {
     const attr: GameAttr = { team_homeaway: "home", team_name: "<script>", opponent_name: "Safe" };
     expect(nameText("home", attr)).toBe("<script>");
   });
+
+  it("falls back to an empty string when the name is undefined", () => {
+    const attr: GameAttr = { team_homeaway: "home", team_name: undefined, opponent_name: undefined };
+    expect(nameText("home", attr)).toBe("");
+    expect(nameText("away", attr)).toBe("");
+  });
 });
 
 describe("rankText", () => {
   it("returns correct record for each side", () => {
     expect(rankText("home", homeAttr)).toBe("20-10");
     expect(rankText("away", homeAttr)).toBe("18-12");
+  });
+
+  it("falls back to an empty string when the record is undefined", () => {
+    const attr: GameAttr = {
+      team_homeaway: "home",
+      team_record: undefined,
+      opponent_record: undefined,
+    };
+    expect(rankText("home", attr)).toBe("");
+    expect(rankText("away", attr)).toBe("");
   });
 });
