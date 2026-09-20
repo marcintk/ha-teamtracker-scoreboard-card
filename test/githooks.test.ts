@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { describe, expect, it } from "vitest";
 
-const root = path.resolve(__dirname, "..");
+const root = path.resolve(import.meta.dirname, "..");
 
 describe("git hooks wiring (issue #176)", () => {
   it("has an executable .githooks/pre-push that runs the coverage gate", () => {

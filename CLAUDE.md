@@ -20,10 +20,10 @@ npm run check:ci       # CI gate: typecheck + biome check + prettier check
 
 <important if="you are writing or modifying tests, or about to report a task/slice complete">
 
-Run `npm run test:coverage` (not bare `npm test`) before considering work or a slice done — only
-the `--coverage` flag enforces the 100% thresholds configured in `vitest.config.mjs`. `npm test`
-runs the same suite without checking those thresholds, so a slice can look green under `npm test`
-while still failing CI's `test:coverage` gate. </important>
+Run `npm run test:coverage` (not bare `npm test`) before considering work or a slice done — only the
+`--coverage` flag enforces the 100% thresholds configured in `vitest.config.mjs`. `npm test` runs
+the same suite without checking those thresholds, so a slice can look green under `npm test` while
+still failing CI's `test:coverage` gate. </important>
 
 ## Design Invariants
 
