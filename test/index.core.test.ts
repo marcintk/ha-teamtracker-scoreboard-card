@@ -194,6 +194,24 @@ describe("SportScoreboardCard core", () => {
       expect(card._trackedIds?.size).toBe(2);
     });
 
+    it("populates _trackedIds from an explicit entities list regardless of prefix", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [{ name: "Custom", entities: ["sensor.nba_lal", "sensor.foo_custom_bos"] }],
+      };
+      card._buildTrackedIds([
+        "sensor.nba_lal",
+        "sensor.foo_custom_bos",
+        "sensor.nba_bos",
+        "sensor.weather_london",
+      ]);
+      expect(card._trackedIds?.has("sensor.nba_lal")).toBe(true);
+      expect(card._trackedIds?.has("sensor.foo_custom_bos")).toBe(true);
+      expect(card._trackedIds?.has("sensor.nba_bos")).toBe(false);
+      expect(card._trackedIds?.has("sensor.weather_london")).toBe(false);
+      expect(card._trackedIds?.size).toBe(2);
+    });
+
     it("rebuilds _trackedIds when an entity swaps in at the same total count", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection] };

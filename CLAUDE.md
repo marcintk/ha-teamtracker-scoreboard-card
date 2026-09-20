@@ -25,6 +25,13 @@ Run `npm run test:coverage` (not bare `npm test`) before considering work or a s
 the same suite without checking those thresholds, so a slice can look green under `npm test` while
 still failing CI's `test:coverage` gate. </important>
 
+<important if="you are adding, renaming, or changing a section/card config option, or about to report a task/slice complete">
+
+Update the config tables in `README.md` (Section/Layout/Colors, whichever the option belongs to) in
+the same slice — they're the only place config options are documented, and they drift silently
+otherwise. This was missed once already (the `section.entities` option landed without a README
+update until asked for separately). </important>
+
 ## Design Invariants
 
 Durable behavioral/UX constraints. Preserve unless the user explicitly changes them.
@@ -61,8 +68,11 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
 
 - **WebSocket subscription**: subscribed to `state_changed` on first `set hass`; callback arms
   `_renderTimer` debounce. Rendering always reads `_hass.states` — never the event payload.
-- **Entity filter**: `_trackedIds` (Set) built from section prefixes once per config; reset on
-  `setConfig`, rebuilt lazily on next `set hass`.
+- **Entity filter**: `_trackedIds` (Set) built via `sectionMatches()` — each section matches by its
+  explicit `entities` list if set, else by `prefix` — once per config; reset on `setConfig`, rebuilt
+  lazily on next `set hass`. `_trackedBySection` (keyed by section **index**, not prefix string)
+  hands each section its resolved entity list; keying by prefix would collide once more than one
+  section can have an empty/absent prefix (any `entities`-only section).
 - **Deduplication**: two-pass — pass 1 builds home/special key sets, pass 2 keeps home sensor over
   away sensor per game key.
 - **View state** (`mode: slide` only): `_slideIndex` / `_slidePaused` are instance fields, not

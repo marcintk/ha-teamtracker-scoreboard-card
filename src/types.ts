@@ -47,6 +47,8 @@ export interface HomeAssistant {
 export interface SectionConfig {
   name?: string;
   prefix?: string;
+  /** explicit entity id list; when set, takes precedence over `prefix` */
+  entities?: string[];
   limit?: number;
   special_teams?: string[];
   score_blink?: number;

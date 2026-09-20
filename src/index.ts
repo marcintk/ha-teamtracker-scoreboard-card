@@ -6,7 +6,13 @@ import { sectionHtml } from "./render.js";
 import { DebugMetrics } from "./runtime/debug.js";
 import { SubscriptionManager } from "./runtime/subscription.js";
 import { CARD_STYLES } from "./styles.js";
-import type { CardConfig, HassStates, HomeAssistant, LayoutConfig } from "./types.js";
+import type {
+  CardConfig,
+  HassStates,
+  HomeAssistant,
+  LayoutConfig,
+  SectionConfig,
+} from "./types.js";
 import {
   DEFAULT_LIMIT,
   DEFAULT_ROW_HEIGHT,
@@ -30,6 +36,11 @@ const asPx = (v: string | undefined): number | null => {
 const rowGeometryPx = (row_height: string | undefined, row_padding: string | undefined): number =>
   (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 
+// a section's explicit `entities` list wins over `prefix` matching, so two
+// entities-only sections (both defaulting prefix to "") don't collide
+const sectionMatches = (section: SectionConfig, id: string): boolean =>
+  section.entities ? section.entities.includes(id) : id.startsWith(section.prefix ?? "");
+
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
   _config: CardConfig | null;
@@ -42,7 +53,7 @@ export class SportScoreboardCard extends HTMLElement {
   _slideIndex: number;
   _slidePaused: boolean;
   _trackedIds: Set<string> | null;
-  _trackedByPrefix: Map<string, string[]> | null;
+  _trackedBySection: Map<number, string[]> | null;
   _subscription: SubscriptionManager;
   _debug: DebugMetrics;
   _scoreChangedAt: Map<string, number>;
@@ -61,7 +72,7 @@ export class SportScoreboardCard extends HTMLElement {
     this._slideIndex = 0;
     this._slidePaused = false;
     this._trackedIds = null;
-    this._trackedByPrefix = null;
+    this._trackedBySection = null;
     this._subscription = new SubscriptionManager();
     this._debug = new DebugMetrics();
     this._scoreChangedAt = new Map();
@@ -72,7 +83,7 @@ export class SportScoreboardCard extends HTMLElement {
     this._config = config;
     this._clearSubscription();
     this._trackedIds = null;
-    this._trackedByPrefix = null;
+    this._trackedBySection = null;
     this._scoreChangedAt.clear();
     this._prevScores.clear();
     this._slideIndex = 0;
@@ -275,7 +286,7 @@ export class SportScoreboardCard extends HTMLElement {
     const now = Date.now();
     const sections = this._config?.sections ?? [];
     for (const [id, changedAt] of this._scoreChangedAt) {
-      const section = sections.find((s) => id.startsWith(s.prefix ?? ""));
+      const section = sections.find((s) => sectionMatches(s, id));
       const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
       if (blinkMs <= 0 || now - changedAt >= blinkMs) {
         this._scoreChangedAt.delete(id);
@@ -289,7 +300,7 @@ export class SportScoreboardCard extends HTMLElement {
     const now = Date.now();
     let minExpiry = Infinity;
     for (const [id, changedAt] of this._scoreChangedAt) {
-      const section = sections.find((s) => id.startsWith(s.prefix ?? ""));
+      const section = sections.find((s) => sectionMatches(s, id));
       const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
       if (blinkMs > 0) minExpiry = Math.min(minExpiry, changedAt + blinkMs);
     }
@@ -304,14 +315,14 @@ export class SportScoreboardCard extends HTMLElement {
   }
 
   _buildTrackedIds(stateKeys: string[]): void {
-    const prefixes = (this._config?.sections ?? []).map((s) => s.prefix ?? "");
+    const sections = this._config?.sections ?? [];
     this._trackedIds = new Set();
-    this._trackedByPrefix = new Map(prefixes.map((p) => [p, []]));
+    this._trackedBySection = new Map(sections.map((_, i) => [i, []]));
     for (const id of stateKeys) {
-      for (const p of prefixes) {
-        if (id.startsWith(p)) {
+      for (const [i, section] of sections.entries()) {
+        if (sectionMatches(section, id)) {
           this._trackedIds.add(id);
-          this._trackedByPrefix.get(p)?.push(id);
+          this._trackedBySection.get(i)?.push(id);
           break;
         }
       }
@@ -402,7 +413,9 @@ export class SportScoreboardCard extends HTMLElement {
       const haCardStyle = `${slideMinH}${height ? `height:${String(height)};min-height:${String(height)};max-height:${String(height)};overflow:hidden;` : ""}${varStr}`;
 
       const idx = ((this._slideIndex % sections.length) + sections.length) % sections.length;
-      const visibleSections = carousel ? sections.slice(idx, idx + 1) : sections;
+      const visibleSections: Array<[number, SectionConfig]> = carousel
+        ? [[idx, sections[idx] as SectionConfig]]
+        : Array.from(sections.entries());
 
       // card-level badge — sits over the top-centre of the card, shown whenever
       // show_version is set regardless of whether any section renders
@@ -411,11 +424,11 @@ export class SportScoreboardCard extends HTMLElement {
         : nothing;
 
       const tvBadge = this._tvBadge();
-      const sectionTemplates = visibleSections.map((s) =>
+      const sectionTemplates = visibleSections.map(([i, s]) =>
         sectionHtml(
           s,
           states,
-          this._trackedByPrefix?.get(s.prefix ?? ""),
+          this._trackedBySection?.get(i),
           colors,
           this._scoreChangedAt,
           carousel,
