@@ -36,10 +36,19 @@ const asPx = (v: string | undefined): number | null => {
 const rowGeometryPx = (row_height: string | undefined, row_padding: string | undefined): number =>
   (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 
-// a section's explicit `entities` list wins over `prefix` matching, so two
-// entities-only sections (both defaulting prefix to "") don't collide
-const sectionMatches = (section: SectionConfig, id: string): boolean =>
-  section.entities ? section.entities.includes(id) : id.startsWith(section.prefix ?? "");
+// a section matches an id via `prefix` OR its explicit `entities` list — union, not
+// either/or — so a section can mix a pattern with a few cherry-picked extras. A bare
+// section (neither set) still matches everything (prefix defaults to ""); once
+// `entities` is set without a `prefix`, the "match everything" default no longer
+// applies, so two entities-only sections (both otherwise defaulting prefix to "")
+// don't collide.
+const sectionMatches = (section: SectionConfig, id: string): boolean => {
+  const matchesPrefix =
+    section.prefix !== undefined || section.entities === undefined
+      ? id.startsWith(section.prefix ?? "")
+      : false;
+  return matchesPrefix || (section.entities?.includes(id) ?? false);
+};
 
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;

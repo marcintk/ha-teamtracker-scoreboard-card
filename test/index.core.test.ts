@@ -212,6 +212,18 @@ describe("SportScoreboardCard core", () => {
       expect(card._trackedIds?.size).toBe(2);
     });
 
+    it("unions prefix matches with explicit entities when a section sets both", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [{ name: "Mixed", prefix: "sensor.nba_", entities: ["sensor.foo_custom_bos"] }],
+      };
+      card._buildTrackedIds(["sensor.nba_lal", "sensor.foo_custom_bos", "sensor.weather_london"]);
+      expect(card._trackedIds?.has("sensor.nba_lal")).toBe(true);
+      expect(card._trackedIds?.has("sensor.foo_custom_bos")).toBe(true);
+      expect(card._trackedIds?.has("sensor.weather_london")).toBe(false);
+      expect(card._trackedIds?.size).toBe(2);
+    });
+
     it("rebuilds _trackedIds when an entity swaps in at the same total count", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection] };

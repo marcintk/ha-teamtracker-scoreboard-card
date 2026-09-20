@@ -108,8 +108,12 @@ export function sectionHtml(
     score_blink = DEFAULT_SCORE_BLINK,
   } = section;
   const blinkMs = score_blink * 1000;
+  const prefixMatches =
+    section.prefix !== undefined || section.entities === undefined
+      ? Object.keys(states).filter((id) => id.startsWith(prefix))
+      : [];
   const resolvedIds =
-    entityIds ?? section.entities ?? Object.keys(states).filter((id) => id.startsWith(prefix));
+    entityIds ?? Array.from(new Set([...prefixMatches, ...(section.entities ?? [])]));
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
   );
@@ -131,9 +135,8 @@ export function sectionHtml(
     return {
       entityId,
       teamName: String(attr?.team_name ?? entityId),
-      special: section.entities
-        ? special_teams.includes(entityId)
-        : special_teams.includes(entityId.replace(prefix, "")),
+      special:
+        special_teams.includes(entityId) || special_teams.includes(entityId.replace(prefix, "")),
       key: sortKeyFor(attr, now),
     };
   });
