@@ -45,20 +45,18 @@ export function isSideOutrightWinning(
 }
 
 // Both names fall back to the opponent gray by default; the outright leading
-// (IN) or winning (POST) side takes the live/winner colour — the same colour
-// already used for the score cell and, during IN, the live clock/TV badge. A
-// tie/draw highlights neither side. A special_teams entry no longer affects
-// colour — it drives the ★ marker in render.ts instead.
+// (IN) or winning (POST) side takes the primary colour. A tie/draw highlights
+// neither side. A section.special_teams entry overrides this with the
+// special colour instead — see render.ts's rowHtml, which applies it
+// regardless of leading/winning state.
 export function teamColor(
   side: "home" | "away",
   gs: GameState,
   attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
-    return colorVar(colors.live, "--ttsc-live-color", "indianred");
-  if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
-    return colorVar(colors.winner, "--ttsc-winner-color", "orange");
+  if ((gs === "IN" || gs === "POST") && isSideOutrightWinning(side, gs, attr))
+    return colorVar(colors.primary, "--ttsc-primary-color", "var(--primary-text-color)");
   return colorVar(colors.opponent, "--ttsc-opponent-color", "#777"); /* gray */
 }
 
@@ -77,7 +75,7 @@ export function scoreColor(
   if (gs === "PRE") return "black";
   if (gs === "IN") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.live, "--ttsc-live-color", "indianred")
+      ? colorVar(colors.leading, "--ttsc-leading-color", "brown")
       : "black";
   }
   if (gs === "POST") {

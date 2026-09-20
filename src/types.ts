@@ -58,6 +58,9 @@ export interface ColorsConfig {
   winner?: string;
   loser?: string;
   live?: string;
+  leading?: string;
+  primary?: string;
+  special?: string;
 }
 
 /** Card-level size / spacing / text-scale knobs, grouped like `colors`. */
