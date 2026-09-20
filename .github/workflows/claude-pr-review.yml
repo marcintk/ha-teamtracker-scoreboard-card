@@ -1,34 +1,95 @@
 name: Claude PR Review
 
-# Second-reviewer bot: only ever engages with PRs opened by the repo owner.
-# PRs from anyone else are left untouched — the owner remains the sole human
-# gate on external contributions.
+# Second-reviewer bot: only ever engages with PRs opened by the repo owner, and only after every
+# other PR workflow (build, CodeQL) has succeeded for that same commit. Triggered by workflow_run
+# instead of pull_request so it always runs last; the gate job re-checks both required workflows'
+# conclusions (not just the one that triggered this run) and skips if a review already landed for
+# this commit, since either upstream workflow finishing can fire this trigger.
 
 on:
-  pull_request:
-    branches: ["main"]
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["Card Build and Test", "CodeQL Analysis"]
+    types: [completed]
 
 permissions:
   contents: read
   pull-requests: write
   id-token: write
+  actions: read
 
 jobs:
+  gate:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      pr_number: ${{ steps.check.outputs.pr_number }}
+
+    steps:
+      - name: Check required workflows and PR author, guard against duplicate runs
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -e
+
+          pr_number=$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" --jq '.[0].number // empty')
+          if [ -z "$pr_number" ]; then
+            echo "No PR found for $HEAD_SHA; skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          author=$(gh pr view "$pr_number" --repo "$REPO" --json author --jq '.author.login')
+          if [ "$author" != "marcintk" ]; then
+            echo "PR #$pr_number not opened by marcintk; skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          declare -A required=(
+            ["Card Build and Test"]="card-build-and-test.yml"
+            ["CodeQL Analysis"]="codeql-analysis.yml"
+          )
+          for name in "${!required[@]}"; do
+            file="${required[$name]}"
+            conclusion=$(gh api "repos/$REPO/actions/workflows/$file/runs?head_sha=$HEAD_SHA&status=completed" --jq '.workflow_runs[0].conclusion // empty')
+            if [ "$conclusion" != "success" ]; then
+              echo "$name has not succeeded yet for $HEAD_SHA (conclusion: ${conclusion:-none}); skipping for now."
+              echo "proceed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+
+          already_ran=$(gh api "repos/$REPO/actions/workflows/claude-pr-review.yml/runs?head_sha=$HEAD_SHA&status=completed" --jq '[.workflow_runs[] | select(.conclusion=="success")] | length')
+          if [ "${already_ran:-0}" -gt 0 ]; then
+            echo "Review already completed for $HEAD_SHA; skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "All required workflows succeeded for $HEAD_SHA; proceeding."
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+
   review:
-    if: github.event.pull_request.user.login == 'marcintk'
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 1
 
       - name: Load review persona
         id: persona
         env:
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ needs.gate.outputs.pr_number }}
         run: |
           {
             echo 'text<<PERSONA_EOF'
