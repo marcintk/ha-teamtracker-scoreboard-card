@@ -4,6 +4,7 @@ export default defineConfig({
   define: { __CARD_VERSION__: '"test"' },
   test: {
     environment: "jsdom",
+    setupFiles: ["test/setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

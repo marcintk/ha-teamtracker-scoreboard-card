@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SportScoreboardCard } from "../src/index.js";
-import { useFakeTimers } from "./helpers.js";
+import { haCardStyle, useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
 describe("SportScoreboardCard slide mode", () => {
@@ -171,7 +171,7 @@ describe("SportScoreboardCard slide mode", () => {
       } as SlideConfig;
       card._hass = twoSectionHass();
       card._render();
-      const style = card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
+      const style = haCardStyle(card);
       // maxRows = 1 + 10 = 11; h = 28 + 2*5 padding => 11 * 38 = 418
       expect(style).toContain("min-height:418px");
     });
@@ -186,7 +186,7 @@ describe("SportScoreboardCard slide mode", () => {
       } as SlideConfig;
       card._hass = twoSectionHass();
       card._render();
-      const style = card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
+      const style = haCardStyle(card);
       // h = 28 + 2*10 = 48 => 11 * 48 = 528
       expect(style).toContain("min-height:528px");
     });
@@ -201,7 +201,7 @@ describe("SportScoreboardCard slide mode", () => {
       } as SlideConfig;
       card._hass = twoSectionHass();
       card._render();
-      const style = card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
+      const style = haCardStyle(card);
       expect(style).toContain("min-height:400px");
       expect(style).not.toContain("418px");
     });
@@ -211,7 +211,7 @@ describe("SportScoreboardCard slide mode", () => {
       card._config = { sections: [nbaSection, nhlSection] };
       card._hass = twoSectionHass();
       card._render();
-      const style = card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
+      const style = haCardStyle(card);
       expect(style).not.toContain("min-height");
     });
   });
@@ -371,11 +371,8 @@ describe("SportScoreboardCard slide mode", () => {
   });
 
   describe("slide_sec reduced motion", () => {
-    beforeEach(() => vi.useFakeTimers());
-    afterEach(() => {
-      vi.useRealTimers();
-      vi.unstubAllGlobals();
-    });
+    useFakeTimers();
+    afterEach(() => vi.unstubAllGlobals());
 
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
     type SlideCard = SportScoreboardCard & {
@@ -589,7 +586,7 @@ describe("SportScoreboardCard slide mode", () => {
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
       card._render();
-      const style = card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
+      const style = haCardStyle(card);
       expect(style).toContain("min-height:550px");
     });
 
