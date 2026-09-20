@@ -1,3 +1,4 @@
+import { html } from "lit";
 import { describe, expect, it } from "vitest";
 import { rowHtml, sectionHtml } from "../src/render.js";
 import type { GameAttr, SectionConfig } from "../src/types.js";
@@ -445,6 +446,77 @@ describe("sectionHtml", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(sectionHtml(section, states, ["sensor.stale_id", "sensor.nba_lal"]));
     expect(el.querySelector(".game-row")).not.toBeNull();
+  });
+
+  it("applies the configured header color when no carousel controls are present", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      sectionHtml(section, states, undefined, { header: "gold" }, new Map(), false)
+    );
+    const header = el.querySelector<HTMLElement>(".section-header");
+    expect(header?.classList.contains("has-controls")).toBe(false);
+    expect(header?.style.color).toBe("gold");
+  });
+
+  it("renders carousel controls in the header with the configured header color", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      sectionHtml(
+        section,
+        states,
+        undefined,
+        { header: "gold" },
+        new Map(),
+        false,
+        html`<button class="my-control">•</button>`
+      )
+    );
+    const header = el.querySelector<HTMLElement>(".section-header");
+    expect(header?.classList.contains("has-controls")).toBe(true);
+    expect(header?.style.color).toBe("gold");
+    expect(el.querySelector(".my-control")).not.toBeNull();
+  });
+
+  it("renders carousel controls in the header without a configured header color", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      sectionHtml(
+        section,
+        states,
+        undefined,
+        {},
+        new Map(),
+        false,
+        html`<button class="my-control">•</button>`
+      )
+    );
+    const header = el.querySelector<HTMLElement>(".section-header");
+    expect(header?.classList.contains("has-controls")).toBe(true);
+    expect(header?.style.color).toBe("");
+  });
+
+  it("renders an empty-state message with the header when carousel is true and no entities match", () => {
+    const el = doc(
+      sectionHtml(section, {}, undefined, {}, new Map(), true /* carousel */)
+    );
+    expect(el.querySelector(".section-header")).not.toBeNull();
+    expect(el.querySelector(".empty")?.textContent).toContain("No games found");
+  });
+
+  it("renders an empty-state message with the header when carousel is true and the limit yields no rows", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      sectionHtml(
+        { ...section, limit: 0 },
+        states,
+        undefined,
+        {},
+        new Map(),
+        true /* carousel */
+      )
+    );
+    expect(el.querySelector(".section-header")).not.toBeNull();
+    expect(el.querySelector(".empty")?.textContent).toContain("No games found");
   });
 });
 
