@@ -90,7 +90,7 @@ The card subscribes to Home Assistant state changes and re-renders when a tracke
 
 ### Section
 
-```yaml
+````yaml
 | Field                   | Type   | Default   | Description                                                                                                                                                            |
 | ----------------------- | ------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |
@@ -119,7 +119,7 @@ layout:
   font_scale: 1.15 # ~15% larger text throughout
 sections:
   - ...
-```
+````
 
 | Key                  | Type   | Default | CSS property                    | Controls                                                                       |
 | -------------------- | ------ | ------- | ------------------------------- | ------------------------------------------------------------------------------ |

@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   colonColor,
   colorVar,
+  isSideAheadOrWinning,
+  isSideOutrightWinning,
   isTeamSide,
   nameText,
   rankText,
   scoreBg,
   scoreColor,
   scoreText,
+  sideRelation,
   teamColor,
 } from "../src/display.js";
 import type { GameAttr } from "../src/types.js";
@@ -54,6 +57,38 @@ describe("isTeamSide", () => {
   it("handles missing attr gracefully", () => {
     expect(isTeamSide("home", {})).toBe(false);
     expect(isTeamSide("away", {})).toBe(true);
+  });
+});
+
+// single source of truth behind both isSideAheadOrWinning (tie counts as "ahead") and
+// isSideOutrightWinning (tie counts as "trailing") — see their own doc comments for why
+// the two need different tie handling.
+describe("sideRelation", () => {
+  it("is 'ahead' when the side leads during IN", () => {
+    expect(sideRelation("home", "IN", homeAttr)).toBe("ahead");
+  });
+
+  it("is 'trailing' when the side is behind during IN", () => {
+    expect(sideRelation("away", "IN", homeAttr)).toBe("trailing");
+  });
+
+  it("is 'tied' on an exact score tie during IN", () => {
+    const tied: GameAttr = { ...homeAttr, team_score: "90", opponent_score: "90" };
+    expect(sideRelation("home", "IN", tied)).toBe("tied");
+    expect(sideRelation("away", "IN", tied)).toBe("tied");
+  });
+
+  it("is 'ahead' or 'trailing' during POST based on the winner flag, never 'tied'", () => {
+    expect(sideRelation("home", "POST", homeAttr)).toBe("ahead");
+    expect(sideRelation("away", "POST", homeAttr)).toBe("trailing");
+    const draw: GameAttr = { ...homeAttr, team_winner: false, opponent_winner: false };
+    expect(sideRelation("home", "POST", draw)).toBe("trailing");
+  });
+
+  it("backs isSideAheadOrWinning (tie counts as ahead) and isSideOutrightWinning (tie doesn't)", () => {
+    const tied: GameAttr = { ...homeAttr, team_score: "90", opponent_score: "90" };
+    expect(isSideAheadOrWinning("home", "IN", tied)).toBe(true);
+    expect(isSideOutrightWinning("home", "IN", tied)).toBe(false);
   });
 });
 

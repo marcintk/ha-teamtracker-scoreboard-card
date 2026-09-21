@@ -494,7 +494,7 @@ describe("sectionHtml", () => {
 
   it("applies the configured header color when no carousel controls are present", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml(section, states, undefined, { header: "gold" }, new Map(), false));
+    const el = doc(sectionHtml(section, states, undefined, { header: "gold" }, new Map()));
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(false);
     expect(header?.style.color).toBe("gold");
@@ -503,15 +503,9 @@ describe("sectionHtml", () => {
   it("renders carousel controls in the header with the configured header color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml(
-        section,
-        states,
-        undefined,
-        { header: "gold" },
-        new Map(),
-        false,
-        html`<button class="my-control">•</button>`
-      )
+      sectionHtml(section, states, undefined, { header: "gold" }, new Map(), {
+        controls: html`<button class="my-control">•</button>`,
+      })
     );
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(true);
@@ -522,15 +516,9 @@ describe("sectionHtml", () => {
   it("renders carousel controls in the header without a configured header color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml(
-        section,
-        states,
-        undefined,
-        {},
-        new Map(),
-        false,
-        html`<button class="my-control">•</button>`
-      )
+      sectionHtml(section, states, undefined, {}, new Map(), {
+        controls: html`<button class="my-control">•</button>`,
+      })
     );
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(true);
@@ -538,7 +526,7 @@ describe("sectionHtml", () => {
   });
 
   it("renders an empty-state message with the header when carousel is true and no entities match", () => {
-    const el = doc(sectionHtml(section, {}, undefined, {}, new Map(), true /* carousel */));
+    const el = doc(sectionHtml(section, {}, undefined, {}, new Map(), { carousel: true }));
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");
   });
@@ -546,7 +534,7 @@ describe("sectionHtml", () => {
   it("renders an empty-state message with the header when carousel is true and the limit yields no rows", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml({ ...section, limit: 0 }, states, undefined, {}, new Map(), true /* carousel */)
+      sectionHtml({ ...section, limit: 0 }, states, undefined, {}, new Map(), { carousel: true })
     );
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");

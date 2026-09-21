@@ -110,25 +110,35 @@ export function rowHtml(
 </div>`;
 }
 
+/** Same-typed flags grouped behind one object, mirroring `RowFlags` — `sectionHtml` had
+ *  the same 9-positional-param shallowness `rowHtml` was already fixed for. `blinkMsFor`
+ *  defaults to this section's own `score_blink`, but a caller tracking blink windows
+ *  across every section an id matches (see `blinkMsForId` in utils.ts) should pass its
+ *  own resolver so the row-freshness check agrees with wherever else that window is used. */
+export interface SectionFlags {
+  carousel?: boolean;
+  controls?: TemplateResult | typeof nothing;
+  highlightWinner?: boolean;
+  tvBadge?: number;
+  blinkMsFor?: (entityId: string) => number;
+}
+
 export function sectionHtml(
   section: SectionConfig,
   states: HassStates,
   entityIds?: string[],
   colors: ColorsConfig = {},
   scoreChangedAt: ReadonlyMap<string, ScoreBlinkEntry> = new Map(),
-  carousel = false,
-  controls: TemplateResult | typeof nothing = nothing,
-  highlightWinner = true,
-  tvBadge: number = DEFAULT_TV_BADGE_CHARS
+  flags: SectionFlags = {}
 ): TemplateResult | typeof nothing {
   const {
-    name,
-    prefix = "",
-    limit = DEFAULT_LIMIT,
-    special_teams = [],
-    score_blink = DEFAULT_SCORE_BLINK,
-  } = section;
-  const blinkMs = score_blink * 1000;
+    carousel = false,
+    controls = nothing,
+    highlightWinner = true,
+    tvBadge = DEFAULT_TV_BADGE_CHARS,
+    blinkMsFor = () => (section.score_blink ?? DEFAULT_SCORE_BLINK) * 1000,
+  } = flags;
+  const { name, prefix = "", limit = DEFAULT_LIMIT, special_teams = [] } = section;
   const resolvedIds = entityIds ?? Object.keys(states).filter((id) => sectionMatches(section, id));
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
@@ -177,6 +187,7 @@ export function sectionHtml(
       // entities was filtered above to ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
       const attr = entity.attributes;
+      const blinkMs = blinkMsFor(entityId);
       // each side's own timestamp gates its own window independently — a change on one
       // side must not cut the other side's blink short
       const isFresh = (at: number | undefined): boolean =>

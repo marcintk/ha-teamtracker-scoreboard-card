@@ -10,13 +10,14 @@ import { SubscriptionManager } from "./runtime/subscription.js";
 import { CARD_STYLES } from "./styles.js";
 import type { CardConfig, HomeAssistant, LayoutConfig, SectionConfig } from "./types.js";
 import {
+  blinkMsForId,
+  buildTrackedIds,
   DEFAULT_LIMIT,
   DEFAULT_ROW_HEIGHT,
   DEFAULT_ROW_PADDING,
-  DEFAULT_SCORE_BLINK,
   DEFAULT_SLIDE_SEC,
   DEFAULT_TV_BADGE_CHARS,
-  sectionMatches,
+  hasRelevantChange,
 } from "./utils.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
@@ -245,41 +246,20 @@ export class SportScoreboardCard extends HTMLElement {
     this._blink.clear();
   }
 
-  // longest score_blink among every section this id currently matches — an id tracked
-  // by more than one section must stay blink-eligible until every matching section's own
-  // window has had its chance, not just whichever section happens to be first in config
-  _maxBlinkMsFor(id: string): number {
-    const sections = this._config?.sections ?? [];
-    const matching = sections.filter((s) => sectionMatches(s, id));
-    // an id untracked by any section (stray entry, or _config momentarily null) falls
-    // back to the default rather than going silently unblinkable
-    if (!matching.length) return DEFAULT_SCORE_BLINK * 1000;
-    return Math.max(...matching.map((s) => (s.score_blink ?? DEFAULT_SCORE_BLINK) * 1000));
-  }
-
-  // an id can match more than one section (e.g. a team's prefix-based league section
-  // and a hand-picked "My teams" section) — every match gets the id, not just the first,
-  // so the same game can legitimately appear in more than one section at once.
+  // assigns this._trackedIds / this._trackedBySection from the pure buildTrackedIds() in
+  // utils.ts — the matching rule itself lives there so it can be tested without
+  // instantiating this element, and can't drift from render.ts's own use of it.
   _buildTrackedIds(stateKeys: string[]): void {
-    const sections = this._config?.sections ?? [];
-    this._trackedIds = new Set();
-    this._trackedBySection = new Map(sections.map((_, i) => [i, []]));
-    for (const id of stateKeys) {
-      for (const [i, section] of sections.entries()) {
-        if (sectionMatches(section, id)) {
-          this._trackedIds.add(id);
-          this._trackedBySection.get(i)?.push(id);
-        }
-      }
-    }
+    const { trackedIds, trackedBySection } = buildTrackedIds(
+      this._config?.sections ?? [],
+      stateKeys
+    );
+    this._trackedIds = trackedIds;
+    this._trackedBySection = trackedBySection;
   }
 
   _hasRelevantChange(newHass: HomeAssistant, prevHass: HomeAssistant | null): boolean {
-    if (!prevHass || !this._config || !this._trackedIds) return true;
-    for (const id of this._trackedIds) {
-      if (newHass.states[id] !== prevHass.states[id]) return true;
-    }
-    return false;
+    return hasRelevantChange(this._trackedIds, this._config, newHass.states, prevHass?.states);
   }
 
   _layout(): LayoutConfig {
@@ -311,7 +291,8 @@ export class SportScoreboardCard extends HTMLElement {
       // _buildTrackedIds always assigns a Set just above; the field stays nullable only
       // because it's cleared elsewhere in the card's lifecycle (setConfig, disconnectedCallback)
       this._blink.record(this._trackedIds as Set<string>, states);
-      this._blink.prune((id) => this._maxBlinkMsFor(id));
+      const blinkMsFor = (id: string): number => blinkMsForId(sections ?? [], id);
+      this._blink.prune(blinkMsFor);
 
       if (!Array.isArray(sections) || !sections.length) {
         this._showError("Add at least one section to your card config.");
@@ -369,17 +350,13 @@ export class SportScoreboardCard extends HTMLElement {
 
       const tvBadge = this._tvBadge();
       const sectionTemplates = visibleSections.map(([i, s]) =>
-        sectionHtml(
-          s,
-          states,
-          this._trackedBySection?.get(i),
-          colors,
-          this._blink.entries,
+        sectionHtml(s, states, this._trackedBySection?.get(i), colors, this._blink.entries, {
           carousel,
-          slideControls,
-          highlight_winner,
-          tvBadge
-        )
+          controls: slideControls,
+          highlightWinner: highlight_winner,
+          tvBadge,
+          blinkMsFor,
+        })
       );
       const hasContent = sectionTemplates.some((t) => t !== nothing);
 
@@ -399,12 +376,9 @@ export class SportScoreboardCard extends HTMLElement {
         this._root
       );
 
-      this._blink.armTimer(
-        (id) => this._maxBlinkMsFor(id),
-        () => {
-          if (this._hass && this._config) this._render();
-        }
-      );
+      this._blink.armTimer(blinkMsFor, () => {
+        if (this._hass && this._config) this._render();
+      });
     } catch (e) {
       this._showError((e as Error).message);
       // biome-ignore lint/suspicious/noConsole: intentional render error logging

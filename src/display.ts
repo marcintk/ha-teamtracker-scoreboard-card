@@ -11,20 +11,33 @@ export function colorVar(override: string | undefined, cssVar: string, fallback:
   return override ?? `var(${cssVar}, ${fallback})`;
 }
 
-/** Shared leading/winner side-check used by both `scoreColor()` and `teamColor()` —
- *  callers only invoke this once they've already gated on `gs === "IN" | "POST"`. */
+/** A side's standing relative to its opponent: "ahead" (leading during IN, or the
+ *  winner in a settled state), "trailing" (behind, or the loser), or "tied" — only
+ *  reachable during IN, since a settled state's `team_winner`/`opponent_winner`
+ *  flags carry no draw information of their own. Single source of truth for the two
+ *  ahead/winning checks below, so they can't silently diverge on the tie case. */
+export type SideRelation = "ahead" | "trailing" | "tied";
+
+export function sideRelation(side: "home" | "away", gs: GameState, attr: GameAttr): SideRelation {
+  const isSide = isTeamSide(side, attr);
+  if (gs === "IN") {
+    const ts = parseFloat(String(attr.team_score ?? 0));
+    const os = parseFloat(String(attr.opponent_score ?? 0));
+    const mine = isSide ? ts : os;
+    const other = isSide ? os : ts;
+    return mine > other ? "ahead" : mine < other ? "trailing" : "tied";
+  }
+  return (isSide ? attr.team_winner : attr.opponent_winner) ? "ahead" : "trailing";
+}
+
+/** Shared leading/winner side-check used by `scoreColor()` — a tied score during IN
+ *  counts as "ahead" here, matching the score cell's own always-colored-somehow look. */
 export function isSideAheadOrWinning(
   side: "home" | "away",
   gs: GameState,
   attr: GameAttr
 ): boolean {
-  const isSide = isTeamSide(side, attr);
-  if (gs === "IN") {
-    const ts = parseFloat(String(attr.team_score ?? 0));
-    const os = parseFloat(String(attr.opponent_score ?? 0));
-    return isSide ? ts >= os : os >= ts;
-  }
-  return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
+  return sideRelation(side, gs, attr) !== "trailing";
 }
 
 /** Like `isSideAheadOrWinning()`, but a tied score during IN counts as neither
@@ -36,13 +49,7 @@ export function isSideOutrightWinning(
   gs: GameState,
   attr: GameAttr
 ): boolean {
-  const isSide = isTeamSide(side, attr);
-  if (gs === "IN") {
-    const ts = parseFloat(String(attr.team_score ?? 0));
-    const os = parseFloat(String(attr.opponent_score ?? 0));
-    return isSide ? ts > os : os > ts;
-  }
-  return Boolean(isSide ? attr.team_winner : attr.opponent_winner);
+  return sideRelation(side, gs, attr) === "ahead";
 }
 
 // Both names fall back to the default gray by default; the outright leading
