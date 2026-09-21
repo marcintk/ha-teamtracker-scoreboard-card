@@ -74,12 +74,9 @@ describe("CARD_STYLES", () => {
     expect(CARD_STYLES).toMatchSnapshot();
   });
 
-  it("wires .team-col-a width to the nested team-col-a custom property fallback chain", () => {
-    expect(CARD_STYLES).toContain("var(--ttsc-team-col-a-width, var(--ttsc-team-col-width, 99px))");
-  });
-
-  it("wires .team-col-b width to the nested team-col-b custom property fallback chain", () => {
-    expect(CARD_STYLES).toContain("var(--ttsc-team-col-b-width, var(--ttsc-team-col-width, 99px))");
+  it("wires both team columns to the same --ttsc-team-col-width custom property", () => {
+    const matches = CARD_STYLES.match(/var\(--ttsc-team-col-width, 99px\)/g);
+    expect(matches).toHaveLength(2);
   });
 
   it("keeps a 60px shrink floor on the team columns", () => {
@@ -147,7 +144,9 @@ describe("rowHtml structural snapshots", () => {
   });
 
   it("renders IN with fresh score", () => {
-    expect(snap(rowHtml(makeState("IN", baseAttrs), false, {}, false, true))).toMatchSnapshot();
+    expect(
+      snap(rowHtml(makeState("IN", baseAttrs), false, {}, { freshHome: true }))
+    ).toMatchSnapshot();
   });
 });
 

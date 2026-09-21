@@ -1,3 +1,4 @@
+import { CSS_VARS } from "./css-vars.js";
 import type { ColorsConfig, GameAttr, GameState } from "./types.js";
 
 export function isTeamSide(side: "home" | "away", attr: GameAttr): boolean {
@@ -57,10 +58,10 @@ export function teamColor(
   colors: ColorsConfig = {}
 ): string {
   if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
-    return colorVar(colors.name_leading, "--ttsc-name-leading-color", "var(--primary-text-color)");
+    return colorVar(colors.name_leading, CSS_VARS.nameLeadingColor, "var(--primary-text-color)");
   if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
-    return colorVar(colors.name_winner, "--ttsc-name-winner-color", "var(--primary-text-color)");
-  return colorVar(colors.name_default, "--ttsc-name-default-color", "#777"); /* gray */
+    return colorVar(colors.name_winner, CSS_VARS.nameWinnerColor, "var(--primary-text-color)");
+  return colorVar(colors.name_default, CSS_VARS.nameDefaultColor, "#777"); /* gray */
 }
 
 export function scoreBg(gs: GameState): string {
@@ -78,13 +79,13 @@ export function scoreColor(
   if (gs === "PRE") return "black";
   if (gs === "IN") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.score_leading, "--ttsc-score-leading-color", "brown")
+      ? colorVar(colors.score_leading, CSS_VARS.scoreLeadingColor, "brown")
       : "black";
   }
   if (gs === "POST") {
     return isSideAheadOrWinning(side, gs, attr)
-      ? colorVar(colors.score_winner, "--ttsc-score-winner-color", "orange")
-      : colorVar(colors.score_loser, "--ttsc-score-loser-color", "darkgray");
+      ? colorVar(colors.score_winner, CSS_VARS.scoreWinnerColor, "orange")
+      : colorVar(colors.score_loser, CSS_VARS.scoreLoserColor, "darkgray");
   }
   return "black";
 }

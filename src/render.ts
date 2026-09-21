@@ -1,4 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
+import { CSS_VARS } from "./css-vars.js";
 import {
   colonColor,
   colorVar,
@@ -24,6 +25,7 @@ import {
   DEFAULT_LIMIT,
   DEFAULT_SCORE_BLINK,
   DEFAULT_TV_BADGE_CHARS,
+  sectionMatches,
   VALID_STATES,
 } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
@@ -33,30 +35,40 @@ import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 // so an imminent fixture and a just-finished game interleave.
 const scheduleGroup = (state: string | undefined): number => (state === "IN" ? 0 : 1);
 
+/** Same-typed flags grouped behind one object so a call site reads as labeled fields —
+ *  `{ freshHome, freshAway }` can't be silently transposed the way two adjacent
+ *  positional booleans can. */
+export interface RowFlags {
+  opponentSpecial?: boolean;
+  freshHome?: boolean;
+  freshAway?: boolean;
+  highlightWinner?: boolean;
+  tvBadge?: number;
+}
+
 export function rowHtml(
   stateObj: HassEntity | null,
   special: boolean,
   colors: ColorsConfig = {},
-  opponentSpecial = false,
-  freshHome = false,
-  freshAway = false,
-  highlightWinner = true,
-  tvBadge: number = DEFAULT_TV_BADGE_CHARS
+  flags: RowFlags = {}
 ): TemplateResult {
+  const {
+    opponentSpecial = false,
+    freshHome = false,
+    freshAway = false,
+    highlightWinner = true,
+    tvBadge = DEFAULT_TV_BADGE_CHARS,
+  } = flags;
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
   const bg = scoreBg(gs);
   const freshClassHome = freshHome ? " score-fresh" : "";
   const freshClassAway = freshAway ? " score-fresh" : "";
 
-  const opponentColor = colorVar(
-    colors.name_default,
-    "--ttsc-name-default-color",
-    "#777"
-  ); /* gray */
+  const opponentColor = colorVar(colors.name_default, CSS_VARS.nameDefaultColor, "#777"); /* gray */
   const specialColor = colorVar(
     colors.name_special,
-    "--ttsc-name-special-color",
+    CSS_VARS.nameSpecialColor,
     "#2196F3"
   ); /* Material Blue */
   const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;
@@ -103,7 +115,7 @@ export function sectionHtml(
   states: HassStates,
   entityIds?: string[],
   colors: ColorsConfig = {},
-  scoreChangedAt: Map<string, ScoreBlinkEntry> = new Map(),
+  scoreChangedAt: ReadonlyMap<string, ScoreBlinkEntry> = new Map(),
   carousel = false,
   controls: TemplateResult | typeof nothing = nothing,
   highlightWinner = true,
@@ -117,12 +129,7 @@ export function sectionHtml(
     score_blink = DEFAULT_SCORE_BLINK,
   } = section;
   const blinkMs = score_blink * 1000;
-  const prefixMatches =
-    section.prefix !== undefined || section.entities === undefined
-      ? Object.keys(states).filter((id) => id.startsWith(prefix))
-      : [];
-  const resolvedIds =
-    entityIds ?? Array.from(new Set([...prefixMatches, ...(section.entities ?? [])]));
+  const resolvedIds = entityIds ?? Object.keys(states).filter((id) => sectionMatches(section, id));
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
   );
@@ -176,16 +183,13 @@ export function sectionHtml(
         blinkMs > 0 && at !== undefined && now - at < blinkMs;
       const freshHome = isFresh(isTeamSide("home", attr) ? entry?.team : entry?.opponent);
       const freshAway = isFresh(isTeamSide("away", attr) ? entry?.team : entry?.opponent);
-      return rowHtml(
-        entity,
-        special,
-        colors,
+      return rowHtml(entity, special, colors, {
         opponentSpecial,
         freshHome,
         freshAway,
         highlightWinner,
-        tvBadge
-      );
+        tvBadge,
+      });
     });
 
   if (!rows.length) return carousel ? emptyHtml() : nothing;

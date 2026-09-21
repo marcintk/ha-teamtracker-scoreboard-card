@@ -142,11 +142,11 @@ exports[`CARD_STYLES > matches snapshot 1`] = `
   }
   .team-col-a {
     text-align: right; padding-right: 3px;
-    width: var(--ttsc-team-col-a-width, var(--ttsc-team-col-width, 99px));
+    width: var(--ttsc-team-col-width, 99px);
   }
   .team-col-b {
     text-align: left; padding-left: 3px;
-    width: var(--ttsc-team-col-b-width, var(--ttsc-team-col-width, 99px));
+    width: var(--ttsc-team-col-width, 99px);
   }
 
   .team-name {
