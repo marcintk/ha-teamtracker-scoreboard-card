@@ -101,7 +101,7 @@ describe("rowHtml", () => {
   });
 
   it("does not color or bold the leading name when highlightWinner is explicitly off", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, false));
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, false, false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
     expect(home?.style.fontWeight).toBe("normal");
@@ -554,9 +554,22 @@ describe("sectionHtml", () => {
 });
 
 describe("rowHtml score-fresh class", () => {
-  it("adds score-fresh to score and colon elements when isFresh is true", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, true));
-    expect(el.querySelectorAll(".score-fresh").length).toBe(3);
+  const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" };
+
+  it("adds score-fresh to .score-a only when freshHome is true (home side)", () => {
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, true, false));
+    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
+    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
+    expect(el.querySelector(".colon")?.classList.contains("score-fresh")).toBe(false);
+    expect(el.querySelectorAll(".score-fresh").length).toBe(1);
+  });
+
+  it("adds score-fresh to .score-b only when freshAway is true (away side)", () => {
+    const el = doc(rowHtml(makeState("IN", awayAttrs), false, {}, false, false, true));
+    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
+    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(false);
+    expect(el.querySelector(".colon")?.classList.contains("score-fresh")).toBe(false);
+    expect(el.querySelectorAll(".score-fresh").length).toBe(1);
   });
 
   it("does not add score-fresh by default", () => {
@@ -573,16 +586,32 @@ describe("sectionHtml scoreChangedAt", () => {
     special_teams: [] as string[],
   };
 
-  it("marks entity as fresh when scoreChangedAt is recent", () => {
+  it("marks the home score cell as fresh when the team side changed", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", Date.now()]]);
+    const scoreChangedAt = new Map([
+      ["sensor.nba_lal", { at: Date.now(), team: true, opponent: false }],
+    ]);
     const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
-    expect(el.querySelector(".score-fresh")).not.toBeNull();
+    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
+    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
+  });
+
+  it("marks the away score cell as fresh when the tracked entity plays away and its side changed", () => {
+    const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" };
+    const states = { "sensor.nba_lal": makeState("IN", awayAttrs) };
+    const scoreChangedAt = new Map([
+      ["sensor.nba_lal", { at: Date.now(), team: true, opponent: false }],
+    ]);
+    const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
+    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
+    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(false);
   });
 
   it("does not mark as fresh when scoreChangedAt is past the blink window", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", Date.now() - 10_000]]);
+    const scoreChangedAt = new Map([
+      ["sensor.nba_lal", { at: Date.now() - 10_000, team: true, opponent: false }],
+    ]);
     const el = doc(
       sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
     );
@@ -591,7 +620,9 @@ describe("sectionHtml scoreChangedAt", () => {
 
   it("does not mark as fresh when score_blink is 0", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", Date.now()]]);
+    const scoreChangedAt = new Map([
+      ["sensor.nba_lal", { at: Date.now(), team: true, opponent: false }],
+    ]);
     const el = doc(
       sectionHtml({ ...section, score_blink: 0 }, states, Object.keys(states), {}, scoreChangedAt)
     );

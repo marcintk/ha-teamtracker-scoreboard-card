@@ -119,7 +119,9 @@ sections:
 | `section.special_teams` | list   | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |
 
 \* `prefix` and `entities` combine (a section's entities are the union of both); a section with
-neither set matches every tracked entity.
+neither set matches every tracked entity. An entity matching more than one section (e.g. a league
+prefix and a hand-picked "My teams" list) is shown in **every** matching section, not just the
+first.
 
 ### Layout
 
