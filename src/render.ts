@@ -12,7 +12,14 @@ import {
   teamColor,
 } from "./display.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
-import type { ColorsConfig, GameState, HassEntity, HassStates, SectionConfig } from "./types.js";
+import type {
+  ColorsConfig,
+  GameState,
+  HassEntity,
+  HassStates,
+  ScoreBlinkEntry,
+  SectionConfig,
+} from "./types.js";
 import {
   DEFAULT_LIMIT,
   DEFAULT_SCORE_BLINK,
@@ -96,7 +103,7 @@ export function sectionHtml(
   states: HassStates,
   entityIds?: string[],
   colors: ColorsConfig = {},
-  scoreChangedAt: Map<string, { at: number; team: boolean; opponent: boolean }> = new Map(),
+  scoreChangedAt: Map<string, ScoreBlinkEntry> = new Map(),
   carousel = false,
   controls: TemplateResult | typeof nothing = nothing,
   highlightWinner = true,
@@ -121,7 +128,7 @@ export function sectionHtml(
   );
   // the name always lives in .section-title, carousel controls or not — a stable
   // node for tests to read, so a future stack-mode control doesn't grow the
-  // section's own textContent out from under them (see LESSONS.md)
+  // section's own textContent out from under them
   const header =
     controls === nothing
       ? html`<div class="section-header" style=${colors.header ? `color:${colors.header}` : nothing}><span class="section-title">${name}</span></div>`
@@ -160,14 +167,15 @@ export function sectionHtml(
     .slice(0, limit)
     .map(({ entityId, special = false, opponentSpecial = false }) => {
       const entry = scoreChangedAt.get(entityId);
-      const withinWindow = blinkMs > 0 && now - (entry?.at ?? -Infinity) < blinkMs;
       // entities was filtered above to ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
       const attr = entity.attributes;
-      const freshHome =
-        withinWindow && Boolean(isTeamSide("home", attr) ? entry?.team : entry?.opponent);
-      const freshAway =
-        withinWindow && Boolean(isTeamSide("away", attr) ? entry?.team : entry?.opponent);
+      // each side's own timestamp gates its own window independently — a change on one
+      // side must not cut the other side's blink short
+      const isFresh = (at: number | undefined): boolean =>
+        blinkMs > 0 && at !== undefined && now - at < blinkMs;
+      const freshHome = isFresh(isTeamSide("home", attr) ? entry?.team : entry?.opponent);
+      const freshAway = isFresh(isTeamSide("away", attr) ? entry?.team : entry?.opponent);
       return rowHtml(
         entity,
         special,
