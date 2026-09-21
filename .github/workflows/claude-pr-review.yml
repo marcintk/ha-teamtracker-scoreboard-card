@@ -11,16 +11,15 @@ on:
     workflows: ["Card Build and Test", "CodeQL Analysis"]
     types: [completed]
 
-permissions:
-  contents: read
-  pull-requests: write
-  id-token: write
-  actions: read
+permissions: {}
 
 jobs:
   gate:
     if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      actions: read
     outputs:
       proceed: ${{ steps.check.outputs.proceed }}
       pr_number: ${{ steps.check.outputs.pr_number }}
@@ -78,8 +77,18 @@ jobs:
     needs: gate
     if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
+      # This checks out the PR's head SHA, which scanners flag as "untrusted code checkout" in a
+      # privileged workflow_run context. It's gated: the `gate` job above already verified the PR
+      # was opened by marcintk and that both required checks passed, so this ref is not attacker-
+      # controlled by the time we get here. Downstream, the checked-out code is never executed —
+      # Claude only Read/Grep/Glob's it and runs a fixed set of `gh pr *` subcommands
+      # (claude_args' --allowedTools), so there's no script-injection path from repo contents into
+      # a privileged shell. `contents: read` on this job also means nothing here can push back.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
