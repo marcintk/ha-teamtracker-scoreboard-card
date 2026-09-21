@@ -1,3 +1,5 @@
+import { CSS_VARS } from "./css-vars.js";
+
 export const CARD_STYLES = `
   :host { display: block; }
 
@@ -7,12 +9,12 @@ export const CARD_STYLES = `
     position: relative; /* anchor for .sc-version and #sc-debug */
     font-family: var(--paper-font-body1_-_font-family, sans-serif);
     color: #888; /* gray */
-    font-size: calc(14px * var(--ttsc-font-scale, 1));
+    font-size: calc(14px * var(${CSS_VARS.fontScale}, 1));
   }
 
   .section-header {
-    color: var(--ttsc-header-color, #2196F3); /* Material Blue */
-    font-size: calc(15px * var(--ttsc-font-scale, 1));
+    color: var(${CSS_VARS.headerColor}, #2196F3); /* Material Blue */
+    font-size: calc(15px * var(${CSS_VARS.fontScale}, 1));
     padding: 2px 0 2px 0;
     margin-top: 1px;
   }
@@ -34,7 +36,7 @@ export const CARD_STYLES = `
     transform: translateX(-50%);
     z-index: 1;
     font-family: monospace;
-    font-size: calc(9px * var(--ttsc-font-scale, 1));
+    font-size: calc(9px * var(${CSS_VARS.fontScale}, 1));
     font-weight: normal;
     color: #888;
     white-space: nowrap;
@@ -61,12 +63,12 @@ export const CARD_STYLES = `
        (grey while running, orange only when stopped) rather than falling
        back to a colour emoji */
     font-variant-emoji: text;
-    font-size: calc(13px * var(--ttsc-font-scale, 1));
+    font-size: calc(13px * var(${CSS_VARS.fontScale}, 1));
     line-height: 1;
     padding: 0;
     /* fixed box so the stop/resume shape swap never shifts the nav buttons */
-    min-width: calc(20px * var(--ttsc-font-scale, 1));
-    height: calc(18px * var(--ttsc-font-scale, 1));
+    min-width: calc(20px * var(${CSS_VARS.fontScale}, 1));
+    height: calc(18px * var(${CSS_VARS.fontScale}, 1));
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -84,8 +86,8 @@ export const CARD_STYLES = `
     /* even box so it splits the (even) content box's leftover space equally on
        both axes — an odd size forces the browser to round one side further
        than the other, biasing the icon toward the bottom-right */
-    width: calc(12px * var(--ttsc-font-scale, 1));
-    height: calc(12px * var(--ttsc-font-scale, 1));
+    width: calc(12px * var(${CSS_VARS.fontScale}, 1));
+    height: calc(12px * var(${CSS_VARS.fontScale}, 1));
     border-radius: 1px;
   }
   .slide-btn.toggle.paused::before {
@@ -98,8 +100,8 @@ export const CARD_STYLES = `
      the font metrics and differ from machine to machine. */
   .slide-btn.nav::before {
     content: "";
-    width: calc(5px * var(--ttsc-font-scale, 1));
-    height: calc(5px * var(--ttsc-font-scale, 1));
+    width: calc(5px * var(${CSS_VARS.fontScale}, 1));
+    height: calc(5px * var(${CSS_VARS.fontScale}, 1));
     border: 2px solid currentColor;
     border-left: 0;
     border-bottom: 0;
@@ -117,10 +119,10 @@ export const CARD_STYLES = `
   .game-row {
     display: flex;
     align-items: center;
-    height: var(--ttsc-row-height, 28px);
+    height: var(${CSS_VARS.rowHeight}, 28px);
     /* equal padding above and below every row, so the divider sits centred in
        the space: <pad> · row · <pad> · line · <pad> · row · <pad> · … */
-    padding: var(--ttsc-row-padding, 5px) 0;
+    padding: var(${CSS_VARS.rowPadding}, 5px) 0;
     /* follow the active HA theme's divider (visible in light and dark, matches
        other cards); the rgba fallback covers the standalone / no-theme case */
     border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.04));
@@ -139,51 +141,51 @@ export const CARD_STYLES = `
   }
   .team-col-a {
     text-align: right; padding-right: 3px;
-    width: var(--ttsc-team-col-a-width, var(--ttsc-team-col-width, 99px));
+    width: var(${CSS_VARS.teamColWidth}, 99px);
   }
   .team-col-b {
     text-align: left; padding-left: 3px;
-    width: var(--ttsc-team-col-b-width, var(--ttsc-team-col-width, 99px));
+    width: var(${CSS_VARS.teamColWidth}, 99px);
   }
 
   .team-name {
-    font-size: calc(13px * var(--ttsc-font-scale, 1));
+    font-size: calc(13px * var(${CSS_VARS.fontScale}, 1));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
   }
   .team-rank {
-    font-size: calc(9px * var(--ttsc-font-scale, 1));
+    font-size: calc(9px * var(${CSS_VARS.fontScale}, 1));
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
   }
 
   .logo {
-    width: var(--ttsc-logo-width, 30px);
-    min-width: var(--ttsc-logo-width, 30px);
+    width: var(${CSS_VARS.logoWidth}, 30px);
+    min-width: var(${CSS_VARS.logoWidth}, 30px);
     display: flex;
     align-items: center;
     justify-content: center;
-    height: var(--ttsc-row-height, 28px);
+    height: var(${CSS_VARS.rowHeight}, 28px);
     overflow: hidden;
   }
   .logo-a { padding-right: 3px; }
   .logo-b { padding-left:  3px; }
   .logo img {
-    width: var(--ttsc-logo-width, 30px);
-    height: var(--ttsc-row-height, 28px);
+    width: var(${CSS_VARS.logoWidth}, 30px);
+    height: var(${CSS_VARS.rowHeight}, 28px);
     object-fit: contain;
     display: block;
   }
 
   .score {
-    width: var(--ttsc-score-width, 34px);
-    min-width: var(--ttsc-score-width, 34px);
-    font-size: calc(20px * var(--ttsc-font-scale, 1));
+    width: var(${CSS_VARS.scoreWidth}, 34px);
+    min-width: var(${CSS_VARS.scoreWidth}, 34px);
+    font-size: calc(20px * var(${CSS_VARS.fontScale}, 1));
     font-weight: bold;
-    height: var(--ttsc-row-height, 28px);
+    height: var(${CSS_VARS.rowHeight}, 28px);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -193,12 +195,12 @@ export const CARD_STYLES = `
   .score-b { justify-content: flex-start; }
 
   .colon {
-    width: var(--ttsc-colon-width, 9px);
-    min-width: var(--ttsc-colon-width, 9px);
-    font-size: calc(17px * var(--ttsc-font-scale, 1));
+    width: var(${CSS_VARS.colonWidth}, 9px);
+    min-width: var(${CSS_VARS.colonWidth}, 9px);
+    font-size: calc(17px * var(${CSS_VARS.fontScale}, 1));
     font-weight: bold;
     text-align: center;
-    height: var(--ttsc-row-height, 28px);
+    height: var(${CSS_VARS.rowHeight}, 28px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -211,7 +213,7 @@ export const CARD_STYLES = `
     font-size: 0;
   }
   .tv-badge {
-    font-size: calc(8px * var(--ttsc-font-scale, 1));
+    font-size: calc(8px * var(${CSS_VARS.fontScale}, 1));
     font-weight: bold;
     color: white;
     border-radius: 3px;
@@ -230,7 +232,7 @@ export const CARD_STYLES = `
     transform: translateX(-50%);
     background: #222;
     color: #fff;
-    font-size: calc(10px * var(--ttsc-font-scale, 1));
+    font-size: calc(10px * var(${CSS_VARS.fontScale}, 1));
     font-weight: bold;
     padding: 3px 6px;
     border-radius: 4px;
@@ -253,13 +255,13 @@ export const CARD_STYLES = `
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-size: calc(13px * var(--ttsc-font-scale, 1));
+    font-size: calc(13px * var(${CSS_VARS.fontScale}, 1));
     font-weight: bold;
     line-height: 1.1;
     padding-left: 4px;
   }
   .msg-sub {
-    font-size: calc(10px * var(--ttsc-font-scale, 1));
+    font-size: calc(10px * var(${CSS_VARS.fontScale}, 1));
     font-weight: normal;
     color: #666; /* dimgray */
     line-height: 1.1;
@@ -267,7 +269,7 @@ export const CARD_STYLES = `
 
   .empty {
     padding: 8px 4px;
-    font-size: calc(13px * var(--ttsc-font-scale, 1));
+    font-size: calc(13px * var(${CSS_VARS.fontScale}, 1));
     color: #555; /* dark gray */
   }
 

@@ -2,18 +2,13 @@
 
 import { html, nothing, render, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { CSS_VARS } from "./css-vars.js";
 import { sectionHtml } from "./render.js";
+import { BlinkTracker } from "./runtime/blink.js";
 import { DebugMetrics } from "./runtime/debug.js";
 import { SubscriptionManager } from "./runtime/subscription.js";
 import { CARD_STYLES } from "./styles.js";
-import type {
-  CardConfig,
-  HassStates,
-  HomeAssistant,
-  LayoutConfig,
-  ScoreBlinkEntry,
-  SectionConfig,
-} from "./types.js";
+import type { CardConfig, HomeAssistant, LayoutConfig, SectionConfig } from "./types.js";
 import {
   DEFAULT_LIMIT,
   DEFAULT_ROW_HEIGHT,
@@ -21,6 +16,7 @@ import {
   DEFAULT_SCORE_BLINK,
   DEFAULT_SLIDE_SEC,
   DEFAULT_TV_BADGE_CHARS,
+  sectionMatches,
 } from "./utils.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
@@ -37,20 +33,6 @@ const asPx = (v: string | undefined): number | null => {
 const rowGeometryPx = (row_height: string | undefined, row_padding: string | undefined): number =>
   (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 
-// a section matches an id via `prefix` OR its explicit `entities` list — union, not
-// either/or — so a section can mix a pattern with a few cherry-picked extras. A bare
-// section (neither set) still matches everything (prefix defaults to ""); once
-// `entities` is set without a `prefix`, the "match everything" default no longer
-// applies, so two entities-only sections (both otherwise defaulting prefix to "")
-// don't collide.
-const sectionMatches = (section: SectionConfig, id: string): boolean => {
-  const matchesPrefix =
-    section.prefix !== undefined || section.entities === undefined
-      ? id.startsWith(section.prefix ?? "")
-      : false;
-  return matchesPrefix || (section.entities?.includes(id) ?? false);
-};
-
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
   _config: CardConfig | null;
@@ -58,7 +40,6 @@ export class SportScoreboardCard extends HTMLElement {
   _fixedTimer: ReturnType<typeof setInterval> | null;
   _debugTimer: ReturnType<typeof setInterval> | null;
   _renderTimer: ReturnType<typeof setTimeout> | null;
-  _blinkTimer: ReturnType<typeof setTimeout> | null;
   _slideTimer: ReturnType<typeof setInterval> | null;
   _slideIndex: number;
   _slidePaused: boolean;
@@ -66,8 +47,7 @@ export class SportScoreboardCard extends HTMLElement {
   _trackedBySection: Map<number, string[]> | null;
   _subscription: SubscriptionManager;
   _debug: DebugMetrics;
-  _scoreChangedAt: Map<string, ScoreBlinkEntry>;
-  _prevScores: Map<string, { t: number; o: number }>;
+  _blink: BlinkTracker;
 
   constructor() {
     super();
@@ -77,7 +57,6 @@ export class SportScoreboardCard extends HTMLElement {
     this._fixedTimer = null;
     this._debugTimer = null;
     this._renderTimer = null;
-    this._blinkTimer = null;
     this._slideTimer = null;
     this._slideIndex = 0;
     this._slidePaused = false;
@@ -85,8 +64,7 @@ export class SportScoreboardCard extends HTMLElement {
     this._trackedBySection = null;
     this._subscription = new SubscriptionManager();
     this._debug = new DebugMetrics();
-    this._scoreChangedAt = new Map();
-    this._prevScores = new Map();
+    this._blink = new BlinkTracker();
   }
 
   setConfig(config: CardConfig): void {
@@ -94,8 +72,7 @@ export class SportScoreboardCard extends HTMLElement {
     this._clearSubscription();
     this._trackedIds = null;
     this._trackedBySection = null;
-    this._scoreChangedAt.clear();
-    this._prevScores.clear();
+    this._blink.clear();
     this._slideIndex = 0;
     this._slidePaused = this._prefersReducedMotion();
     this._startFixedTimer();
@@ -157,10 +134,7 @@ export class SportScoreboardCard extends HTMLElement {
       clearTimeout(this._renderTimer);
       this._renderTimer = null;
     }
-    if (this._blinkTimer) {
-      clearTimeout(this._blinkTimer);
-      this._blinkTimer = null;
-    }
+    this._blink.clearTimer();
   }
 
   _startFixedTimer(): void {
@@ -268,33 +242,7 @@ export class SportScoreboardCard extends HTMLElement {
     this._stopSlideTimer();
     this._clearSubscription();
     this._trackedIds = null;
-    this._scoreChangedAt.clear();
-    this._prevScores.clear();
-  }
-
-  _detectScoreChanges(states: HassStates): void {
-    for (const id of this._trackedIds ?? []) {
-      const gs = states[id]?.state;
-      const attr = states[id]?.attributes;
-      if (gs === "IN") {
-        const t = Number(attr?.team_score ?? 0);
-        const o = Number(attr?.opponent_score ?? 0);
-        const prev = this._prevScores.get(id);
-        if (prev && (prev.t !== t || prev.o !== o)) {
-          const now = Date.now();
-          // merge, don't overwrite — a change on one side must not reset/cancel the
-          // other side's own still-running blink window (see _pruneExpiredBlinks)
-          const next: ScoreBlinkEntry = { ...this._scoreChangedAt.get(id) };
-          if (prev.t !== t) next.team = now;
-          if (prev.o !== o) next.opponent = now;
-          this._scoreChangedAt.set(id, next);
-        }
-        this._prevScores.set(id, { t, o });
-      } else {
-        this._prevScores.delete(id);
-        this._scoreChangedAt.delete(id);
-      }
-    }
+    this._blink.clear();
   }
 
   // longest score_blink among every section this id currently matches — an id tracked
@@ -307,46 +255,6 @@ export class SportScoreboardCard extends HTMLElement {
     // back to the default rather than going silently unblinkable
     if (!matching.length) return DEFAULT_SCORE_BLINK * 1000;
     return Math.max(...matching.map((s) => (s.score_blink ?? DEFAULT_SCORE_BLINK) * 1000));
-  }
-
-  _pruneExpiredBlinks(): void {
-    if (!this._scoreChangedAt.size) return;
-    const now = Date.now();
-    for (const [id, entry] of this._scoreChangedAt) {
-      const blinkMs = this._maxBlinkMsFor(id);
-      const next: ScoreBlinkEntry = {};
-      if (blinkMs > 0 && entry.team !== undefined && now - entry.team < blinkMs) {
-        next.team = entry.team;
-      }
-      if (blinkMs > 0 && entry.opponent !== undefined && now - entry.opponent < blinkMs) {
-        next.opponent = entry.opponent;
-      }
-      if (next.team === undefined && next.opponent === undefined) {
-        this._scoreChangedAt.delete(id);
-      } else {
-        this._scoreChangedAt.set(id, next);
-      }
-    }
-  }
-
-  _armBlinkTimer(): void {
-    if (this._blinkTimer || !this._scoreChangedAt.size) return;
-    const now = Date.now();
-    let minExpiry = Infinity;
-    for (const [id, entry] of this._scoreChangedAt) {
-      const blinkMs = this._maxBlinkMsFor(id);
-      if (blinkMs <= 0) continue;
-      if (entry.team !== undefined) minExpiry = Math.min(minExpiry, entry.team + blinkMs);
-      if (entry.opponent !== undefined) minExpiry = Math.min(minExpiry, entry.opponent + blinkMs);
-    }
-    if (minExpiry === Infinity) return;
-    this._blinkTimer = setTimeout(
-      () => {
-        this._blinkTimer = null;
-        if (this._hass && this._config) this._render();
-      },
-      Math.max(50, minExpiry - now)
-    );
   }
 
   // an id can match more than one section (e.g. a team's prefix-based league section
@@ -400,8 +308,10 @@ export class SportScoreboardCard extends HTMLElement {
       const states = (this._hass as HomeAssistant).states;
       const stateKeys = Object.keys(states);
       this._buildTrackedIds(stateKeys);
-      this._detectScoreChanges(states);
-      this._pruneExpiredBlinks();
+      // _buildTrackedIds always assigns a Set just above; the field stays nullable only
+      // because it's cleared elsewhere in the card's lifecycle (setConfig, disconnectedCallback)
+      this._blink.record(this._trackedIds as Set<string>, states);
+      this._blink.prune((id) => this._maxBlinkMsFor(id));
 
       if (!Array.isArray(sections) || !sections.length) {
         this._showError("Add at least one section to your card config.");
@@ -429,17 +339,14 @@ export class SportScoreboardCard extends HTMLElement {
         slideMinH = `min-height:${maxRows * slideH}px;`;
       }
 
-      const tw = team_width;
-
       const cssVars: Record<string, string | undefined> = {
-        "--ttsc-team-col-a-width": tw,
-        "--ttsc-team-col-b-width": tw,
-        "--ttsc-logo-width": logo_width,
-        "--ttsc-score-width": score_width,
-        "--ttsc-colon-width": colon_width,
-        "--ttsc-row-height": row_height,
-        "--ttsc-row-padding": row_padding,
-        "--ttsc-font-scale":
+        [CSS_VARS.teamColWidth]: team_width,
+        [CSS_VARS.logoWidth]: logo_width,
+        [CSS_VARS.scoreWidth]: score_width,
+        [CSS_VARS.colonWidth]: colon_width,
+        [CSS_VARS.rowHeight]: row_height,
+        [CSS_VARS.rowPadding]: row_padding,
+        [CSS_VARS.fontScale]:
           font_scale != null && font_scale !== 1 ? String(font_scale) : undefined,
       };
       const varStr = Object.entries(cssVars)
@@ -467,7 +374,7 @@ export class SportScoreboardCard extends HTMLElement {
           states,
           this._trackedBySection?.get(i),
           colors,
-          this._scoreChangedAt,
+          this._blink.entries,
           carousel,
           slideControls,
           highlight_winner,
@@ -492,7 +399,12 @@ export class SportScoreboardCard extends HTMLElement {
         this._root
       );
 
-      this._armBlinkTimer();
+      this._blink.armTimer(
+        (id) => this._maxBlinkMsFor(id),
+        () => {
+          if (this._hass && this._config) this._render();
+        }
+      );
     } catch (e) {
       this._showError((e as Error).message);
       // biome-ignore lint/suspicious/noConsole: intentional render error logging

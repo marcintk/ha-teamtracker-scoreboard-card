@@ -101,7 +101,7 @@ describe("rowHtml", () => {
   });
 
   it("does not color or bold the leading name when highlightWinner is explicitly off", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, false, false, false));
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, { highlightWinner: false }));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
     expect(home?.style.fontWeight).toBe("normal");
@@ -557,7 +557,7 @@ describe("rowHtml score-fresh class", () => {
   const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" };
 
   it("adds score-fresh to .score-a only when freshHome is true (home side)", () => {
-    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, false, true, false));
+    const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, { freshHome: true }));
     expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
     expect(el.querySelector(".colon")?.classList.contains("score-fresh")).toBe(false);
@@ -565,7 +565,7 @@ describe("rowHtml score-fresh class", () => {
   });
 
   it("adds score-fresh to .score-b only when freshAway is true (away side)", () => {
-    const el = doc(rowHtml(makeState("IN", awayAttrs), false, {}, false, false, true));
+    const el = doc(rowHtml(makeState("IN", awayAttrs), false, {}, { freshAway: true }));
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
     expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(false);
     expect(el.querySelector(".colon")?.classList.contains("score-fresh")).toBe(false);
