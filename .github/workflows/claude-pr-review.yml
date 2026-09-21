@@ -17,6 +17,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      # claude-code-action requests an OIDC token to exchange for its scoped GitHub App token; it
+      # fails without this (a previous change dropped it as "unused" without the job ever having
+      # actually run, since workflow_run reviews hadn't fired since).
+      id-token: write
 
     steps:
       # Deliberately does NOT check out the PR's head SHA: this job holds secrets

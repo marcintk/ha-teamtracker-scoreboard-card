@@ -28,5 +28,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      id-token: write
     secrets: inherit
     uses: ./.github/workflows/claude-pr-review.yml
