@@ -1,4 +1,4 @@
-import type { GameState, SectionConfig } from "./types.js";
+import type { GameState, HassStates, SectionConfig } from "./types.js";
 
 export const VALID_STATES: ReadonlySet<GameState> = new Set(["PRE", "IN", "POST", "BYE"]);
 
@@ -38,4 +38,55 @@ export function sectionMatches(section: SectionConfig, id: string): boolean {
       ? id.startsWith(section.prefix ?? "")
       : false;
   return matchesPrefix || (section.entities?.includes(id) ?? false);
+}
+
+// longest score_blink among every section a given id currently matches — an id tracked
+// by more than one section must stay blink-eligible until every matching section's own
+// window has had its chance, not just whichever section happens to be first in config.
+// Single source of truth for both the tracker's prune/timer window (index.ts) and the
+// row-freshness check (render.ts) — they must agree or a row's "is this blinking right
+// now" state can diverge from when the tracker considers its window closed.
+export function blinkMsForId(sections: SectionConfig[], id: string): number {
+  const matching = sections.filter((s) => sectionMatches(s, id));
+  // an id untracked by any section (stray entry, or a momentarily empty config) falls
+  // back to the default rather than going silently unblinkable
+  if (!matching.length) return DEFAULT_SCORE_BLINK * 1000;
+  return Math.max(...matching.map((s) => (s.score_blink ?? DEFAULT_SCORE_BLINK) * 1000));
+}
+
+/** Every currently-tracked id, plus which section index(es) it matches. An id can match
+ *  more than one section (e.g. a team's prefix-based league section and a hand-picked
+ *  "My teams" section) — every match gets the id, not just the first, so the same game
+ *  can legitimately appear in more than one section at once. */
+export function buildTrackedIds(
+  sections: SectionConfig[],
+  stateKeys: string[]
+): { trackedIds: Set<string>; trackedBySection: Map<number, string[]> } {
+  const trackedIds = new Set<string>();
+  const trackedBySection = new Map<number, string[]>(sections.map((_, i) => [i, []]));
+  for (const id of stateKeys) {
+    for (const [i, section] of sections.entries()) {
+      if (sectionMatches(section, id)) {
+        trackedIds.add(id);
+        trackedBySection.get(i)?.push(id);
+      }
+    }
+  }
+  return { trackedIds, trackedBySection };
+}
+
+/** Whether any tracked entity's state object actually changed between two hass snapshots —
+ *  a missing previous snapshot, a null config, or no tracked ids at all is treated as "yes,
+ *  something relevant changed" so the caller doesn't suppress a render it should perform. */
+export function hasRelevantChange(
+  trackedIds: ReadonlySet<string> | null,
+  config: unknown,
+  newStates: HassStates,
+  prevStates: HassStates | undefined
+): boolean {
+  if (!prevStates || !config || !trackedIds) return true;
+  for (const id of trackedIds) {
+    if (newStates[id] !== prevStates[id]) return true;
+  }
+  return false;
 }

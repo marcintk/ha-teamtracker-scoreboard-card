@@ -35,31 +35,27 @@ export function deduplicate(list: SortItem[], states: HassStates): SortItem[] {
   }
 
   // Second pass: filter the original (date-sorted) list in place, then annotate.
-  // When a special team plays away AND a home sensor also exists, prefer the home sensor
-  // but mark opponentSpecial so the away team still renders highlighted.
-  // Otherwise keep the special sensor (special-plays-away with no home counterpart).
+  // Precedence policy — prefer the home sensor, with two carve-outs for a special team:
+  //   1. special plays away AND a home sensor exists → keep home, defer to it
+  //   2. special plays away with NO home counterpart → keep the special (away) sensor
+  // Everything else falls through to "keep home over a non-special away duplicate".
   const seen = new Set<string | undefined>();
-  return list
-    .filter(({ entityId, special }) => {
-      const key = keyMap.get(entityId);
-      if (seen.has(key)) return false;
-      if (special && states[entityId]?.attributes?.team_homeaway !== "home" && homeKeys.has(key))
-        return false;
-      if (specialKeys.has(key) && !special && (!specialAwayKeys.has(key) || !homeKeys.has(key)))
-        return false;
-      if (
-        !specialKeys.has(key) &&
-        homeKeys.has(key) &&
-        states[entityId]?.attributes?.team_homeaway !== "home"
-      )
-        return false;
-      seen.add(key);
-      return true;
-    })
-    .map((item) => {
-      const key = keyMap.get(item.entityId);
-      if (states[item.entityId]?.attributes?.team_homeaway === "home" && specialAwayKeys.has(key))
-        return { ...item, opponentSpecial: true };
-      return item;
-    });
+  const preferHomeSensor = ({ entityId, special }: SortItem): boolean => {
+    const key = keyMap.get(entityId);
+    if (seen.has(key)) return false;
+    const isHome = states[entityId]?.attributes?.team_homeaway === "home";
+    if (special && !isHome && homeKeys.has(key)) return false; // carve-out 1: defer to home
+    if (specialKeys.has(key) && !special && (!specialAwayKeys.has(key) || !homeKeys.has(key)))
+      return false; // a special sensor exists for this game elsewhere in the list
+    if (!specialKeys.has(key) && homeKeys.has(key) && !isHome) return false; // plain home-over-away
+    seen.add(key);
+    return true;
+  };
+
+  return list.filter(preferHomeSensor).map((item) => {
+    const key = keyMap.get(item.entityId);
+    if (states[item.entityId]?.attributes?.team_homeaway === "home" && specialAwayKeys.has(key))
+      return { ...item, opponentSpecial: true };
+    return item;
+  });
 }

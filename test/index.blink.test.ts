@@ -1,49 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
+import { blinkMsForId } from "../src/utils.js";
 import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
 // Score-change detection, expiry and timer-arming themselves live in BlinkTracker
-// (test/runtime/blink.test.ts) — this file covers only what SportScoreboardCard adds on
-// top: resolving a section's blink duration from config, and wiring the tracker's
-// lifecycle into setConfig / disconnectedCallback / _render.
+// (test/runtime/blink.test.ts); the "longest score_blink across every matching section"
+// resolution rule itself lives in blinkMsForId (test/utils.test.ts) — this file covers
+// only what SportScoreboardCard adds on top: wiring the tracker's lifecycle into
+// setConfig / disconnectedCallback / _render.
 describe("SportScoreboardCard blink wiring", () => {
-  describe("_maxBlinkMsFor", () => {
-    it("uses the longer score_blink among every section the id matches", () => {
-      const card = makeCard();
-      card._config = {
-        sections: [
-          { name: "All", score_blink: 0 },
-          { ...nbaSection, score_blink: 5 },
-        ],
-      };
-      expect(card._maxBlinkMsFor("sensor.nba_lal")).toBe(5000);
-    });
-
-    it("returns 0 when every matching section has blink disabled", () => {
-      const card = makeCard();
-      card._config = { sections: [{ name: "All", score_blink: 0 }] };
-      expect(card._maxBlinkMsFor("sensor.nba_lal")).toBe(0);
-    });
-
-    it("uses default 5s window when entity does not match any section prefix", () => {
-      const card = makeCard();
-      card._config = { sections: [nbaSection] };
-      expect(card._maxBlinkMsFor("sensor.unknown_x")).toBe(5000);
-    });
-
-    it("uses default 5s when _config is null", () => {
-      const card = makeCard();
-      card._config = null;
-      expect(card._maxBlinkMsFor("sensor.nba_lal")).toBe(5000);
-    });
-
-    it("matches entity against a section with no prefix defined", () => {
-      const card = makeCard();
-      card._config = { sections: [{ name: "All" }] }; // no prefix → s.prefix ?? "" → ""
-      expect(card._maxBlinkMsFor("sensor.nba_lal")).toBe(5000);
-    });
-  });
-
   describe("lifecycle wiring", () => {
     useFakeTimers();
 
@@ -69,7 +34,7 @@ describe("SportScoreboardCard blink wiring", () => {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
       card._blink.armTimer(
-        (id) => card._maxBlinkMsFor(id),
+        (id) => blinkMsForId(card._config?.sections ?? [], id),
         () => {}
       );
       expect(card._blink.timerActive).toBe(true);
@@ -86,7 +51,7 @@ describe("SportScoreboardCard blink wiring", () => {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
       card._blink.armTimer(
-        (id) => card._maxBlinkMsFor(id),
+        (id) => blinkMsForId(card._config?.sections ?? [], id),
         () => {}
       );
       card._clearSubscription();
@@ -125,6 +90,23 @@ describe("SportScoreboardCard blink wiring", () => {
       card._hass = null;
       vi.runAllTimers();
       expect(renderSpy).not.toHaveBeenCalled();
+    });
+
+    it("prunes pre-existing blink entries with the default window when config has no sections", () => {
+      const card = makeCard();
+      card._blink.record(["sensor.nba_lal"], {
+        "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
+      });
+      card._blink.record(["sensor.nba_lal"], {
+        "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
+      });
+      expect(card._blink.entries.size).toBe(1);
+      card._config = {}; // no `sections` key at all
+      card._hass = makeHass({});
+      card._render();
+      // sections is undefined, not just empty, so blinkMsFor falls back to `[]` and the
+      // entry gets the 5s default window rather than being dropped outright
+      expect(card._blink.entries.has("sensor.nba_lal")).toBe(true);
     });
   });
 });
