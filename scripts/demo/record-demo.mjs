@@ -119,7 +119,23 @@ async function main() {
   const framesDir = mkdtempSync(join(tmpdir(), "ttsc-demo-frames-"));
   const server = await serveRoot();
   const port = server.address().port;
-  const browser = await chromium.launch();
+  // Chromium doesn't read HTTP_PROXY/HTTPS_PROXY itself (unlike curl/fetch) — forward it
+  // explicitly so the team-logo fetches to espncdn.com work in a proxied/sandboxed shell.
+  // No-op on a normal machine where these are unset. Bypass the proxy for the harness's
+  // own localhost server, which the proxy wouldn't know how to route. Playwright wants
+  // embedded basic-auth credentials split out into username/password, not left in the URL.
+  const proxyUrl = process.env.HTTPS_PROXY ?? process.env.https_proxy;
+  let proxy;
+  if (proxyUrl) {
+    const u = new URL(proxyUrl);
+    proxy = {
+      server: `${u.protocol}//${u.host}`,
+      username: decodeURIComponent(u.username) || undefined,
+      password: decodeURIComponent(u.password) || undefined,
+      bypass: "localhost,127.0.0.1",
+    };
+  }
+  const browser = await chromium.launch(proxy ? { proxy } : undefined);
   const context = await browser.newContext({
     viewport: { width: VIEW_WIDTH, height: 1000 },
     deviceScaleFactor: 2,
@@ -127,7 +143,21 @@ async function main() {
     // paused, so the shoot deterministically opens on the first section and the
     // demo shows the manual ‹/› controls before the final toggle resumes auto-advance
     reducedMotion: "reduce",
+    // the sandboxed proxy above MITMs TLS with its own CA, which Chromium (unlike
+    // curl/node) doesn't trust out of the box — only relevant when a proxy is in play
+    ignoreHTTPSErrors: Boolean(proxy),
   });
+  if (proxy) {
+    // the harness fires ~30 team-logo <img> requests to espncdn.com in parallel; if none
+    // of them has authenticated against the proxy yet, they can all get a 407 back at once
+    // (Chromium's proxy-auth cache isn't primed) and every logo fails to load. One sequential
+    // request to the same host first primes that cache so the parallel batch succeeds — it
+    // only needs to open an authenticated CONNECT tunnel, not fetch anything real, so the
+    // bare origin works and doesn't couple this to any one team's logo path.
+    const primer = await context.newPage();
+    await primer.goto("https://a.espncdn.com/").catch(() => {});
+    await primer.close();
+  }
   const page = await context.newPage();
 
   try {
