@@ -61,7 +61,12 @@ export function hasRelevantChange(
   newStates: HassStates,
   prevStates: HassStates | undefined
 ): boolean {
-  if (!prevStates || !config || !trackedIds) return true;
+  // fail open: no prior snapshot to diff against (first `hass` set), no config yet
+  // (nothing to filter by), or no tracked ids resolved yet — each means "we can't tell
+  // whether anything relevant changed," so render rather than silently suppress one.
+  if (!prevStates) return true;
+  if (!config) return true;
+  if (!trackedIds) return true;
   for (const id of trackedIds) {
     if (newStates[id] !== prevStates[id]) return true;
   }

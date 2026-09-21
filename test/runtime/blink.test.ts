@@ -177,6 +177,47 @@ describe("BlinkTracker", () => {
     });
   });
 
+  describe("sync", () => {
+    it("records then prunes in one call and returns the resulting entries", () => {
+      const tracker = new BlinkTracker();
+      tracker.record(["sensor.nba_lal"], {
+        "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
+      });
+      const entries = tracker.sync(
+        ["sensor.nba_lal"],
+        {
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "95",
+            opponent_score: "90",
+          }),
+        },
+        blinkMsFor(5000)
+      );
+      expect(entries).toBe(tracker.entries);
+      expect(typeof entries.get("sensor.nba_lal")?.team).toBe("number");
+    });
+
+    it("prunes what it just recorded when the window is already closed", () => {
+      const tracker = new BlinkTracker();
+      tracker.record(["sensor.nba_lal"], {
+        "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
+      });
+      const entries = tracker.sync(
+        ["sensor.nba_lal"],
+        {
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "95",
+            opponent_score: "90",
+          }),
+        },
+        blinkMsFor(0)
+      );
+      expect(entries.has("sensor.nba_lal")).toBe(false);
+    });
+  });
+
   describe("armTimer", () => {
     useFakeTimers();
 

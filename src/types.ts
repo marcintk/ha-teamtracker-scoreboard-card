@@ -94,7 +94,6 @@ export interface SortItem {
   teamName?: string;
   special?: boolean;
   key?: number;
-  opponentSpecial?: boolean;
 }
 
 export interface CardConfig {

@@ -55,6 +55,25 @@ export class BlinkTracker {
     }
   }
 
+  /** Records this pass's score changes, prunes expired windows, and returns the
+   *  now-current entries to render with — in that order, every time. Record must run
+   *  before prune (a timestamp has to reflect the latest score before its window is
+   *  judged) and prune before the entries are read for rendering (so a row's "is this
+   *  blinking" state can't disagree with the tracker's own window). Callers used to
+   *  reconstruct that order themselves by calling `record`/`prune`/`entries` in
+   *  sequence; `sync` makes the order part of the interface instead of the caller's
+   *  responsibility. `armTimer` is independent of this ordering (it only reads
+   *  whatever the map currently holds) and stays a separate call. */
+  sync(
+    trackedIds: Iterable<string>,
+    states: HassStates,
+    blinkMsFor: BlinkMsFor
+  ): ReadonlyMap<string, ScoreBlinkEntry> {
+    this.record(trackedIds, states);
+    this.prune(blinkMsFor);
+    return this.entries;
+  }
+
   /** Drops any per-side timestamp whose own blink window (from `blinkMsFor`) has closed. */
   prune(blinkMsFor: BlinkMsFor): void {
     if (!this._scoreChangedAt.size) return;
