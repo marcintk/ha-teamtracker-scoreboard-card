@@ -2,37 +2,17 @@
 
 import { html, nothing, render, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { CSS_VARS } from "./css-vars.js";
+import { blinkMsForId, buildTrackedIds, hasRelevantChange } from "./config-match.js";
 import { sectionHtml } from "./render.js";
 import { BlinkTracker } from "./runtime/blink.js";
 import { DebugMetrics } from "./runtime/debug.js";
+import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from "./runtime/layout.js";
 import { SubscriptionManager } from "./runtime/subscription.js";
 import { CARD_STYLES } from "./styles.js";
-import type { CardConfig, HomeAssistant, LayoutConfig, SectionConfig } from "./types.js";
-import {
-  blinkMsForId,
-  buildTrackedIds,
-  DEFAULT_LIMIT,
-  DEFAULT_ROW_HEIGHT,
-  DEFAULT_ROW_PADDING,
-  DEFAULT_SLIDE_SEC,
-  DEFAULT_TV_BADGE_CHARS,
-  hasRelevantChange,
-} from "./utils.js";
+import type { CardConfig, HomeAssistant, LayoutConfig } from "./types.js";
+import { DEFAULT_LIMIT, DEFAULT_SLIDE_SEC, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
-
-// a pixel length ("34px") → its number; anything else (a bare number, rem, %, auto,
-// undefined) → null, so callers fall back to their default instead of a wrong number
-const asPx = (v: string | undefined): number | null => {
-  const m = /^(\d+(?:\.\d+)?)px$/.exec((v ?? "").trim());
-  return m ? Number(m[1]) : null;
-};
-
-// each row is row_height + padding above and below it — shared by the slide-mode
-// min-height calc and getCardSize so the two can't drift out of sync
-const rowGeometryPx = (row_height: string | undefined, row_padding: string | undefined): number =>
-  (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
@@ -275,16 +255,7 @@ export class SportScoreboardCard extends HTMLElement {
         show_version,
         highlight_winner = true,
       } = this._config as CardConfig;
-      const {
-        height,
-        team_width,
-        logo_width,
-        score_width,
-        colon_width,
-        row_height,
-        row_padding,
-        font_scale,
-      } = this._layout();
+      const layout = this._layout();
       const states = (this._hass as HomeAssistant).states;
       const stateKeys = Object.keys(states);
       this._buildTrackedIds(stateKeys);
@@ -313,34 +284,8 @@ export class SportScoreboardCard extends HTMLElement {
             )}${this._slideBtn("Next section", () => this._slideStep(1), "nav next")}</span
           >`
         : nothing;
-      let slideMinH = "";
-      if (carousel && !height) {
-        const slideH = rowGeometryPx(row_height, row_padding);
-        const maxRows = Math.max(...sections.map((s) => 1 + (s.limit ?? DEFAULT_LIMIT)));
-        slideMinH = `min-height:${maxRows * slideH}px;`;
-      }
-
-      const cssVars: Record<string, string | undefined> = {
-        [CSS_VARS.teamColWidth]: team_width,
-        [CSS_VARS.logoWidth]: logo_width,
-        [CSS_VARS.scoreWidth]: score_width,
-        [CSS_VARS.colonWidth]: colon_width,
-        [CSS_VARS.rowHeight]: row_height,
-        [CSS_VARS.rowPadding]: row_padding,
-        [CSS_VARS.fontScale]:
-          font_scale != null && font_scale !== 1 ? String(font_scale) : undefined,
-      };
-      const varStr = Object.entries(cssVars)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `${k}:${String(v)};`)
-        .join("");
-
-      const haCardStyle = `${slideMinH}${height ? `height:${String(height)};min-height:${String(height)};max-height:${String(height)};overflow:hidden;` : ""}${varStr}`;
-
-      const idx = ((this._slideIndex % sections.length) + sections.length) % sections.length;
-      const visibleSections: Array<[number, SectionConfig]> = carousel
-        ? [[idx, sections[idx] as SectionConfig]]
-        : Array.from(sections.entries());
+      const haCardStyle = buildHaCardStyle(layout, sections, carousel);
+      const visibleSections = resolveVisibleSections(sections, carousel, this._slideIndex);
 
       // card-level badge — sits over the top-centre of the card, shown whenever
       // show_version is set regardless of whether any section renders
