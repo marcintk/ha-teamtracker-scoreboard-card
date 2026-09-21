@@ -32,10 +32,15 @@ export function deduplicate(list: SortItem[], states: HassStates): SortItem[] {
     else groups.set(key, [item]);
   }
 
-  const winners = new Set<SortItem>();
+  const resolved = new Map<SortItem, SortItem>();
   for (const group of groups.values()) {
-    winners.add(group.find((item) => item.special) ?? (group[0] as SortItem));
+    const winner = group.find((item) => item.special) ?? (group[0] as SortItem);
+    // both sides of a matchup can independently be in special_teams — only one row
+    // survives, so the discarded sensor's own specialness has to be carried over
+    // onto the winner or that team's highlight silently disappears with it
+    const opponentSpecial = group.some((item) => item !== winner && item.special);
+    resolved.set(winner, opponentSpecial ? { ...winner, opponentSpecial: true } : winner);
   }
 
-  return list.filter((item) => winners.has(item));
+  return list.filter((item) => resolved.has(item)).map((item) => resolved.get(item) as SortItem);
 }

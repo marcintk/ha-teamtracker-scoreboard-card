@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DebugMetrics } from "../../src/runtime/debug.js";
+import { DebugMetrics } from "../../src/lifecycle/debug.js";
 import { useFakeTimers } from "../helpers.js";
 
 describe("DebugMetrics", () => {

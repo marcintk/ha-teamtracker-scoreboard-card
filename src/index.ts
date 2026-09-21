@@ -2,11 +2,11 @@
 
 import { html, nothing, render, type TemplateResult } from "lit";
 import { blinkMsForId, buildTrackedIds, hasRelevantChange } from "./config-match.js";
+import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from "./layout.js";
+import { BlinkTracker } from "./lifecycle/blink.js";
+import { DebugMetrics } from "./lifecycle/debug.js";
+import { SubscriptionManager } from "./lifecycle/subscription.js";
 import { buildCardTemplate } from "./render.js";
-import { BlinkTracker } from "./runtime/blink.js";
-import { DebugMetrics } from "./runtime/debug.js";
-import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from "./runtime/layout.js";
-import { SubscriptionManager } from "./runtime/subscription.js";
 import type { CardConfig, HomeAssistant, LayoutConfig } from "./types.js";
 import { DEFAULT_LIMIT, DEFAULT_SLIDE_SEC, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 
@@ -140,7 +140,7 @@ export class SportScoreboardCard extends HTMLElement {
     return typeof s === "number" && s > 0 ? s : DEFAULT_SLIDE_SEC;
   }
 
-  /** characters shown in the TV-network badge; a missing / negative value falls back to 3, `0` hides the badge. */
+  /** characters shown in the TV-network badge; a missing / negative value falls back to 4, `0` hides the badge. */
   _tvBadge(): number {
     const n = this._config?.tv_badge;
     return typeof n === "number" && n >= 0 ? n : DEFAULT_TV_BADGE_CHARS;

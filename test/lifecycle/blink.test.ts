@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BlinkTracker } from "../../src/runtime/blink.js";
+import { BlinkTracker } from "../../src/lifecycle/blink.js";
 import { useFakeTimers } from "../helpers.js";
 import { baseAttrs, makeState } from "../index.fixtures.js";
 

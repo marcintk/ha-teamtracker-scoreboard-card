@@ -4,7 +4,7 @@ import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
 // Score-change detection, expiry and timer-arming themselves live in BlinkTracker
-// (test/runtime/blink.test.ts); the "longest score_blink across every matching section"
+// (test/lifecycle/blink.test.ts); the "longest score_blink across every matching section"
 // resolution rule itself lives in blinkMsForId (test/config-match.test.ts) — this file
 // covers only what SportScoreboardCard adds on top: wiring the tracker's lifecycle into
 // setConfig / disconnectedCallback / _render.
