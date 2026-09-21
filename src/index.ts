@@ -1,18 +1,14 @@
 /// <reference path="../globals.d.ts" />
 
 import { html, nothing, render, type TemplateResult } from "lit";
-import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { blinkMsForId, buildTrackedIds, hasRelevantChange } from "./config-match.js";
-import { sectionHtml } from "./render.js";
+import { buildCardTemplate } from "./render.js";
 import { BlinkTracker } from "./runtime/blink.js";
 import { DebugMetrics } from "./runtime/debug.js";
 import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from "./runtime/layout.js";
 import { SubscriptionManager } from "./runtime/subscription.js";
-import { CARD_STYLES } from "./styles.js";
 import type { CardConfig, HomeAssistant, LayoutConfig } from "./types.js";
 import { DEFAULT_LIMIT, DEFAULT_SLIDE_SEC, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
-
-const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
 
 export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
@@ -259,11 +255,10 @@ export class SportScoreboardCard extends HTMLElement {
       const states = (this._hass as HomeAssistant).states;
       const stateKeys = Object.keys(states);
       this._buildTrackedIds(stateKeys);
+      const blinkMsFor = (id: string): number => blinkMsForId(sections ?? [], id);
       // _buildTrackedIds always assigns a Set just above; the field stays nullable only
       // because it's cleared elsewhere in the card's lifecycle (setConfig, disconnectedCallback)
-      this._blink.record(this._trackedIds as Set<string>, states);
-      const blinkMsFor = (id: string): number => blinkMsForId(sections ?? [], id);
-      this._blink.prune(blinkMsFor);
+      const blinkEntries = this._blink.sync(this._trackedIds as Set<string>, states, blinkMsFor);
 
       if (!Array.isArray(sections) || !sections.length) {
         this._showError("Add at least one section to your card config.");
@@ -294,32 +289,23 @@ export class SportScoreboardCard extends HTMLElement {
         : nothing;
 
       const tvBadge = this._tvBadge();
-      const sectionTemplates = visibleSections.map(([i, s]) =>
-        sectionHtml(s, states, this._trackedBySection?.get(i), colors, this._blink.entries, {
-          carousel,
-          controls: slideControls,
-          highlightWinner: highlight_winner,
-          tvBadge,
-          blinkMsFor,
-        })
-      );
-      const hasContent = sectionTemplates.some((t) => t !== nothing);
+      const { template } = buildCardTemplate({
+        states,
+        trackedBySection: this._trackedBySection,
+        colors,
+        blinkEntries,
+        blinkMsFor,
+        carousel,
+        visibleSections,
+        slideControls,
+        highlightWinner: highlight_winner,
+        tvBadge,
+        haCardStyle,
+        versionBadge,
+        debugTableHtml: debug ? this._debug.tableHtml() : null,
+      });
 
-      render(
-        html`
-          ${STYLE_BLOCK}
-          <ha-card style=${haCardStyle || nothing}>
-            ${versionBadge}
-            ${debug ? unsafeHTML(`<div id="sc-debug" style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:rgba(0,0,0,0.5);color:#00e676;font-family:monospace;font-size:11px;line-height:1;padding:2px 6px;pointer-events:none;">${this._debug.tableHtml()}</div>`) : nothing}
-            ${
-              hasContent
-                ? sectionTemplates
-                : html`<div class="empty">No games found — check your section prefixes.</div>`
-            }
-          </ha-card>
-        `,
-        this._root
-      );
+      render(template, this._root);
 
       this._blink.armTimer(blinkMsFor, () => {
         if (this._hass && this._config) this._render();

@@ -117,7 +117,9 @@ describe("deduplicate", () => {
     expect(result[1]?.entityId).toBe("sensor.wc_later_home");
   });
 
-  it("prefers home sensor and marks opponentSpecial when away sensor is special", () => {
+  it("keeps the special sensor over the non-special one when the special team plays away", () => {
+    // regression: previously the home sensor always won and the away team's own
+    // highlight was silently lost — see fadbb0e
     const date = "2024-03-15";
     const states: HassStates = {
       "sensor.wc_fra": s({ team_homeaway: "home", date, team_abbr: "fra", opponent_abbr: "bra" }),
@@ -129,11 +131,11 @@ describe("deduplicate", () => {
     ];
     const result = deduplicate(list, states);
     expect(result).toHaveLength(1);
-    expect(result[0]?.entityId).toBe("sensor.wc_fra");
-    expect(result[0]?.opponentSpecial).toBe(true);
+    expect(result[0]?.entityId).toBe("sensor.wc_bra");
+    expect(result[0]?.special).toBe(true);
   });
 
-  it("prefers home sensor and marks opponentSpecial regardless of list order", () => {
+  it("keeps the special sensor regardless of list order", () => {
     const date = "2024-03-15";
     const states: HassStates = {
       "sensor.wc_fra": s({ team_homeaway: "home", date, team_abbr: "fra", opponent_abbr: "bra" }),
@@ -146,8 +148,7 @@ describe("deduplicate", () => {
     ];
     const result = deduplicate(list, states);
     expect(result).toHaveLength(1);
-    expect(result[0]?.entityId).toBe("sensor.wc_fra");
-    expect(result[0]?.opponentSpecial).toBe(true);
+    expect(result[0]?.entityId).toBe("sensor.wc_bra");
   });
 
   it("keeps special away sensor when no home sensor exists in the section", () => {
@@ -159,16 +160,14 @@ describe("deduplicate", () => {
     const result = deduplicate(list, states);
     expect(result).toHaveLength(1);
     expect(result[0]?.entityId).toBe("sensor.wc_bra");
-    expect(result[0]?.opponentSpecial).toBeUndefined();
   });
 
-  it("drops non-special away sensor when home sensor is the special one", () => {
+  it("keeps the special sensor when it's the home one", () => {
     const date = "2024-03-15";
     const states: HassStates = {
       "sensor.wc_fra": s({ team_homeaway: "home", date, team_abbr: "fra", opponent_abbr: "bra" }),
       "sensor.wc_bra": s({ team_homeaway: "away", date, team_abbr: "bra", opponent_abbr: "fra" }),
     };
-    // away-non-special sensor appears first to exercise the drop-non-special branch
     const list = [
       { entityId: "sensor.wc_bra", special: false },
       { entityId: "sensor.wc_fra", special: true },
@@ -176,10 +175,11 @@ describe("deduplicate", () => {
     const result = deduplicate(list, states);
     expect(result).toHaveLength(1);
     expect(result[0]?.entityId).toBe("sensor.wc_fra");
-    expect(result[0]?.opponentSpecial).toBeUndefined();
   });
 
-  it("prefers home sensor when deduplicating", () => {
+  it("keeps whichever sensor is first-seen when neither side is special", () => {
+    // no home/away preference left: which sensor "wins" a plain duplicate is now
+    // just list order, since both report the same game symmetrically either way
     const date = "2024-03-15";
     const states: HassStates = {
       "sensor.wc_fra": s({ team_homeaway: "away", date, team_abbr: "fra", opponent_abbr: "bra" }),
@@ -187,6 +187,6 @@ describe("deduplicate", () => {
     };
     const list = [{ entityId: "sensor.wc_fra" }, { entityId: "sensor.wc_bra" }];
     const result = deduplicate(list, states);
-    expect(result[0]?.entityId).toBe("sensor.wc_bra");
+    expect(result[0]?.entityId).toBe("sensor.wc_fra");
   });
 });

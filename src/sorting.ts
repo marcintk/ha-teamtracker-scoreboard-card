@@ -8,10 +8,15 @@ export function sortKeyFor(attr: GameAttr | null | undefined, now: number = Date
   return Number.isNaN(parsed) ? now : parsed;
 }
 
-// One row per game — deduplicate by (date, team pair), preferring home sensor.
-// Uses a two-pass approach to preserve the original date order: re-sorting the whole list by
-// home/away would push away-only games (whose home-team sensor is missing) to the end where they
-// get cut off by the limit slice even though a valid sensor is available.
+// One row per game — the same game is often reported by more than one sensor (each
+// team's own sensor describes the game from its own perspective), so dedup keeps
+// exactly one per (date, team pair). Which sensor survives doesn't affect what's
+// rendered — display.ts derives home/away column placement from the surviving
+// sensor's own `team_homeaway`, not from which one won — except for `special`: a
+// favourite-team highlight is scoped to that team's own sensor id, so the special
+// sensor (if any) has to be the one kept, or the highlight is silently lost (this
+// was a real bug — see git history for `fadbb0e`). Otherwise, first-seen wins,
+// preserving the (already date-sorted) list's order.
 export function deduplicate(list: SortItem[], states: HassStates): SortItem[] {
   const gameKey = (entityId: string): string => {
     const { date, team_abbr, opponent_abbr } = states[entityId]?.attributes ?? {};
@@ -19,43 +24,18 @@ export function deduplicate(list: SortItem[], states: HassStates): SortItem[] {
     return `${date}_${[team_abbr, opponent_abbr].sort().join("_")}`;
   };
 
-  const keyMap = new Map(list.map(({ entityId }) => [entityId, gameKey(entityId)]));
-
-  // First pass: find which game keys have at least one home-side and/or special sensor.
-  const homeKeys = new Set<string | undefined>();
-  const specialKeys = new Set<string | undefined>();
-  const specialAwayKeys = new Set<string | undefined>();
-  for (const { entityId, special } of list) {
-    const key = keyMap.get(entityId);
-    if (states[entityId]?.attributes?.team_homeaway === "home") homeKeys.add(key);
-    if (special) {
-      specialKeys.add(key);
-      if (states[entityId]?.attributes?.team_homeaway !== "home") specialAwayKeys.add(key);
-    }
+  const groups = new Map<string, SortItem[]>();
+  for (const item of list) {
+    const key = gameKey(item.entityId);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
   }
 
-  // Second pass: filter the original (date-sorted) list in place, then annotate.
-  // Precedence policy — prefer the home sensor, with two carve-outs for a special team:
-  //   1. special plays away AND a home sensor exists → keep home, defer to it
-  //   2. special plays away with NO home counterpart → keep the special (away) sensor
-  // Everything else falls through to "keep home over a non-special away duplicate".
-  const seen = new Set<string | undefined>();
-  const preferHomeSensor = ({ entityId, special }: SortItem): boolean => {
-    const key = keyMap.get(entityId);
-    if (seen.has(key)) return false;
-    const isHome = states[entityId]?.attributes?.team_homeaway === "home";
-    if (special && !isHome && homeKeys.has(key)) return false; // carve-out 1: defer to home
-    if (specialKeys.has(key) && !special && (!specialAwayKeys.has(key) || !homeKeys.has(key)))
-      return false; // a special sensor exists for this game elsewhere in the list
-    if (!specialKeys.has(key) && homeKeys.has(key) && !isHome) return false; // plain home-over-away
-    seen.add(key);
-    return true;
-  };
+  const winners = new Set<SortItem>();
+  for (const group of groups.values()) {
+    winners.add(group.find((item) => item.special) ?? (group[0] as SortItem));
+  }
 
-  return list.filter(preferHomeSensor).map((item) => {
-    const key = keyMap.get(item.entityId);
-    if (states[item.entityId]?.attributes?.team_homeaway === "home" && specialAwayKeys.has(key))
-      return { ...item, opponentSpecial: true };
-    return item;
-  });
+  return list.filter((item) => winners.has(item));
 }

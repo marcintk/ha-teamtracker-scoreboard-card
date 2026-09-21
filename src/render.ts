@@ -1,4 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { sectionMatches } from "./config-match.js";
 import { CSS_VARS } from "./css-vars.js";
 import {
@@ -15,6 +16,7 @@ import {
 } from "./display.js";
 import { isBlinkFresh } from "./runtime/blink.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
+import { CARD_STYLES } from "./styles.js";
 import type {
   ColorsConfig,
   GameState,
@@ -31,6 +33,8 @@ import {
 } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
+const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
+
 // live (IN) games always sit above everything else. Every other state — PRE /
 // BYE / POST — shares one band, ordered by distance from now (see the sort),
 // so an imminent fixture and a just-finished game interleave.
@@ -40,7 +44,6 @@ const scheduleGroup = (state: string | undefined): number => (state === "IN" ? 0
  *  `{ freshHome, freshAway }` can't be silently transposed the way two adjacent
  *  positional booleans can. */
 export interface RowFlags {
-  opponentSpecial?: boolean;
   freshHome?: boolean;
   freshAway?: boolean;
   highlightWinner?: boolean;
@@ -54,7 +57,6 @@ export function rowHtml(
   flags: RowFlags = {}
 ): TemplateResult {
   const {
-    opponentSpecial = false,
     freshHome = false,
     freshAway = false,
     highlightWinner = true,
@@ -72,8 +74,10 @@ export function rowHtml(
     CSS_VARS.nameSpecialColor,
     "#2196F3"
   ); /* Material Blue */
-  const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;
-  const awaySpecial = isTeamSide("away", attr) ? special : opponentSpecial;
+  // `special` is scoped to this row's own entity — whichever visual side that entity's
+  // own perspective (team_homeaway) puts it on is the side that gets highlighted.
+  const homeSpecial = isTeamSide("home", attr) && special;
+  const awaySpecial = isTeamSide("away", attr) && special;
   const homeAhead =
     highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("home", gs, attr);
   const awayAhead =
@@ -183,7 +187,7 @@ export function sectionHtml(
 
   const rows = deduplicate(items, states)
     .slice(0, limit)
-    .map(({ entityId, special = false, opponentSpecial = false }) => {
+    .map(({ entityId, special = false }) => {
       const entry = scoreChangedAt.get(entityId);
       // entities was filtered above to ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
@@ -202,7 +206,6 @@ export function sectionHtml(
         now
       );
       return rowHtml(entity, special, colors, {
-        opponentSpecial,
         freshHome,
         freshAway,
         highlightWinner,
@@ -212,4 +215,72 @@ export function sectionHtml(
 
   if (!rows.length) return carousel ? emptyHtml() : nothing;
   return html`${header}${rows}`;
+}
+
+/** Everything `sectionHtml` needs to build every visible section, plus the card-level
+ *  chrome (version badge, debug overlay) that sits alongside them. Grouped behind one
+ *  object for the same reason as `RowFlags`/`SectionFlags`: a call site this wide reads
+ *  as labeled fields, not a run of same-typed positional args. */
+export interface CardTemplateInput {
+  states: HassStates;
+  trackedBySection: ReadonlyMap<number, string[]> | null;
+  colors: ColorsConfig;
+  blinkEntries: ReadonlyMap<string, ScoreBlinkEntry>;
+  blinkMsFor: (entityId: string) => number;
+  carousel: boolean;
+  visibleSections: Array<[number, SectionConfig]>;
+  slideControls: TemplateResult | typeof nothing;
+  highlightWinner: boolean;
+  tvBadge: number;
+  haCardStyle: string;
+  versionBadge: TemplateResult | typeof nothing;
+  /** pre-rendered debug-overlay table HTML, or null when `debug` is off. */
+  debugTableHtml: string | null;
+}
+
+/** Builds the whole card's template — every visible section plus the card-level chrome
+ *  — without touching the DOM. The caller (`index.ts`) owns mounting the result with
+ *  lit's `render()`; this function owns none of that, so it's testable with a plain
+ *  object in, a `TemplateResult` out. */
+export function buildCardTemplate(input: CardTemplateInput): {
+  template: TemplateResult;
+  hasContent: boolean;
+} {
+  const sectionTemplates = input.visibleSections.map(([i, section]) =>
+    sectionHtml(
+      section,
+      input.states,
+      input.trackedBySection?.get(i),
+      input.colors,
+      input.blinkEntries,
+      {
+        carousel: input.carousel,
+        controls: input.slideControls,
+        highlightWinner: input.highlightWinner,
+        tvBadge: input.tvBadge,
+        blinkMsFor: input.blinkMsFor,
+      }
+    )
+  );
+  const hasContent = sectionTemplates.some((t) => t !== nothing);
+
+  const template = html`
+    ${STYLE_BLOCK}
+    <ha-card style=${input.haCardStyle || nothing}>
+      ${input.versionBadge}
+      ${
+        input.debugTableHtml !== null
+          ? unsafeHTML(
+              `<div id="sc-debug" style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:rgba(0,0,0,0.5);color:#00e676;font-family:monospace;font-size:11px;line-height:1;padding:2px 6px;pointer-events:none;">${input.debugTableHtml}</div>`
+            )
+          : nothing
+      }
+      ${
+        hasContent
+          ? sectionTemplates
+          : html`<div class="empty">No games found — check your section prefixes.</div>`
+      }
+    </ha-card>
+  `;
+  return { template, hasContent };
 }
