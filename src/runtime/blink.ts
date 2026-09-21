@@ -3,6 +3,14 @@ import type { HassStates, ScoreBlinkEntry } from "../types.js";
 /** Resolves how long (ms) an id should keep blinking; the caller owns config/section lookup. */
 export type BlinkMsFor = (id: string) => number;
 
+/** Whether a single per-side blink timestamp is still inside its window. The one place this
+ *  rule is written — both `BlinkTracker.prune` (below) and `render.ts`'s row-freshness check
+ *  call it, so a row's "is this blinking right now" can never drift from when the tracker
+ *  itself considers that side's window closed. */
+export function isBlinkFresh(at: number | undefined, blinkMs: number, now: number): boolean {
+  return blinkMs > 0 && at !== undefined && now - at < blinkMs;
+}
+
 /** Tracks per-side score-change timestamps for live (IN) games and the single timer that
  *  wakes a render once the last open blink window closes. Detection, expiry and timer
  *  arming are one cohesive concern — kept behind this seam so a caller only ever needs
@@ -54,10 +62,10 @@ export class BlinkTracker {
     for (const [id, entry] of this._scoreChangedAt) {
       const blinkMs = blinkMsFor(id);
       const next: ScoreBlinkEntry = {};
-      if (blinkMs > 0 && entry.team !== undefined && now - entry.team < blinkMs) {
+      if (isBlinkFresh(entry.team, blinkMs, now)) {
         next.team = entry.team;
       }
-      if (blinkMs > 0 && entry.opponent !== undefined && now - entry.opponent < blinkMs) {
+      if (isBlinkFresh(entry.opponent, blinkMs, now)) {
         next.opponent = entry.opponent;
       }
       if (next.team === undefined && next.opponent === undefined) {

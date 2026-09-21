@@ -1,4 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
+import { sectionMatches } from "./config-match.js";
 import { CSS_VARS } from "./css-vars.js";
 import {
   colonColor,
@@ -12,6 +13,7 @@ import {
   scoreText,
   teamColor,
 } from "./display.js";
+import { isBlinkFresh } from "./runtime/blink.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
 import type {
   ColorsConfig,
@@ -25,7 +27,6 @@ import {
   DEFAULT_LIMIT,
   DEFAULT_SCORE_BLINK,
   DEFAULT_TV_BADGE_CHARS,
-  sectionMatches,
   VALID_STATES,
 } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
@@ -113,7 +114,7 @@ export function rowHtml(
 /** Same-typed flags grouped behind one object, mirroring `RowFlags` — `sectionHtml` had
  *  the same 9-positional-param shallowness `rowHtml` was already fixed for. `blinkMsFor`
  *  defaults to this section's own `score_blink`, but a caller tracking blink windows
- *  across every section an id matches (see `blinkMsForId` in utils.ts) should pass its
+ *  across every section an id matches (see `blinkMsForId` in config-match.ts) should pass its
  *  own resolver so the row-freshness check agrees with wherever else that window is used. */
 export interface SectionFlags {
   carousel?: boolean;
@@ -190,10 +191,16 @@ export function sectionHtml(
       const blinkMs = blinkMsFor(entityId);
       // each side's own timestamp gates its own window independently — a change on one
       // side must not cut the other side's blink short
-      const isFresh = (at: number | undefined): boolean =>
-        blinkMs > 0 && at !== undefined && now - at < blinkMs;
-      const freshHome = isFresh(isTeamSide("home", attr) ? entry?.team : entry?.opponent);
-      const freshAway = isFresh(isTeamSide("away", attr) ? entry?.team : entry?.opponent);
+      const freshHome = isBlinkFresh(
+        isTeamSide("home", attr) ? entry?.team : entry?.opponent,
+        blinkMs,
+        now
+      );
+      const freshAway = isBlinkFresh(
+        isTeamSide("away", attr) ? entry?.team : entry?.opponent,
+        blinkMs,
+        now
+      );
       return rowHtml(entity, special, colors, {
         opponentSpecial,
         freshHome,
