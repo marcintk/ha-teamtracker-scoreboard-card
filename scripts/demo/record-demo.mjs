@@ -127,13 +127,19 @@ async function main() {
   const proxyUrl = process.env.HTTPS_PROXY ?? process.env.https_proxy;
   let proxy;
   if (proxyUrl) {
-    const u = new URL(proxyUrl);
-    proxy = {
-      server: `${u.protocol}//${u.host}`,
-      username: decodeURIComponent(u.username) || undefined,
-      password: decodeURIComponent(u.password) || undefined,
-      bypass: "localhost,127.0.0.1",
-    };
+    try {
+      const u = new URL(proxyUrl);
+      proxy = {
+        server: `${u.protocol}//${u.host}`,
+        username: decodeURIComponent(u.username) || undefined,
+        password: decodeURIComponent(u.password) || undefined,
+        bypass: "localhost,127.0.0.1",
+      };
+    } catch {
+      // a scheme-less or otherwise malformed proxy value (e.g. "localhost:3128") shouldn't
+      // crash the recording — fall back to no proxy, same as if it were unset
+      console.warn(`ignoring unparseable HTTPS_PROXY: ${proxyUrl}`);
+    }
   }
   const browser = await chromium.launch(proxy ? { proxy } : undefined);
   const context = await browser.newContext({

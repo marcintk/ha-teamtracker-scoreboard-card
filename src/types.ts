@@ -1,5 +1,12 @@
 export type GameState = "PRE" | "IN" | "POST" | "BYE";
 
+// per-side score-blink timestamps for one game's entity — a side's key is present only
+// while its own blink window is still open, so the two sides can blink independently
+export interface ScoreBlinkEntry {
+  team?: number;
+  opponent?: number;
+}
+
 export interface GameAttr {
   state?: string;
   season?: string;
