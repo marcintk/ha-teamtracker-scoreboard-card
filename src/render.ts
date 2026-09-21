@@ -31,14 +31,16 @@ export function rowHtml(
   special: boolean,
   colors: ColorsConfig = {},
   opponentSpecial = false,
-  isFresh = false,
+  freshHome = false,
+  freshAway = false,
   highlightWinner = true,
   tvBadge: number = DEFAULT_TV_BADGE_CHARS
 ): TemplateResult {
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
   const bg = scoreBg(gs);
-  const freshClass = isFresh ? " score-fresh" : "";
+  const freshClassHome = freshHome ? " score-fresh" : "";
+  const freshClassAway = freshAway ? " score-fresh" : "";
 
   const opponentColor = colorVar(
     colors.name_default,
@@ -76,9 +78,9 @@ export function rowHtml(
     <div class="team-rank" style="color:${opponentColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
-  <div class="score score-a${freshClass}" style="background:${bg};color:${scoreColor("home", gs, attr, colors)}">${scoreText("home", gs, attr)}</div>
-  <div class="colon${freshClass}" style="background:${bg};color:${colonColor(gs)}">${gs ? ":" : ""}</div>
-  <div class="score score-b${freshClass}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}">${scoreText("away", gs, attr)}</div>
+  <div class="score score-a${freshClassHome}" style="background:${bg};color:${scoreColor("home", gs, attr, colors)}"><span class="score-value">${scoreText("home", gs, attr)}</span></div>
+  <div class="colon" style="background:${bg};color:${colonColor(gs)}">${gs ? ":" : ""}</div>
+  <div class="score score-b${freshClassAway}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}"><span class="score-value">${scoreText("away", gs, attr)}</span></div>
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
     <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr)}</div>
@@ -94,7 +96,7 @@ export function sectionHtml(
   states: HassStates,
   entityIds?: string[],
   colors: ColorsConfig = {},
-  scoreChangedAt: Map<string, number> = new Map(),
+  scoreChangedAt: Map<string, { at: number; team: boolean; opponent: boolean }> = new Map(),
   carousel = false,
   controls: TemplateResult | typeof nothing = nothing,
   highlightWinner = true,
@@ -157,13 +159,22 @@ export function sectionHtml(
   const rows = deduplicate(items, states)
     .slice(0, limit)
     .map(({ entityId, special = false, opponentSpecial = false }) => {
-      const isFresh = blinkMs > 0 && now - (scoreChangedAt.get(entityId) ?? -Infinity) < blinkMs;
+      const entry = scoreChangedAt.get(entityId);
+      const withinWindow = blinkMs > 0 && now - (entry?.at ?? -Infinity) < blinkMs;
+      // entities was filtered above to ids present in states with a valid state, so this is defined
+      const entity = states[entityId] as HassEntity;
+      const attr = entity.attributes;
+      const freshHome =
+        withinWindow && Boolean(isTeamSide("home", attr) ? entry?.team : entry?.opponent);
+      const freshAway =
+        withinWindow && Boolean(isTeamSide("away", attr) ? entry?.team : entry?.opponent);
       return rowHtml(
-        states[entityId] as HassEntity,
+        entity,
         special,
         colors,
         opponentSpecial,
-        isFresh,
+        freshHome,
+        freshAway,
         highlightWinner,
         tvBadge
       );

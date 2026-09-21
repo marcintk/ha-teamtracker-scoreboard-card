@@ -75,9 +75,13 @@ Durable behavioral/UX constraints. Preserve unless the user explicitly changes t
   `""`; once `entities` is set without a `prefix`, that "match everything" default no longer
   applies. `_trackedBySection` (keyed by section **index**, not prefix string) hands each section
   its resolved entity list; keying by prefix would collide once more than one section can have an
-  empty/absent prefix (any `entities`-only section).
+  empty/absent prefix (any `entities`-only section). An id matching more than one section's
+  `prefix`/`entities` is tracked by **every** matching section, not just the first — a game can
+  legitimately appear in more than one section at once (e.g. a league-prefix section and a
+  hand-picked "My teams" section).
 - **Deduplication**: two-pass — pass 1 builds home/special key sets, pass 2 keeps home sensor over
-  away sensor per game key.
+  away sensor per game key. Deduplication runs per-section on that section's own tracked list, so it
+  never suppresses a game from one section because another section is also showing it.
 - **View state** (`mode: slide` only): `_slideIndex` / `_slidePaused` are instance fields, not
   derived from `hass`; reset in `setConfig` beside the score caches. The rotation timer is one
   idempotent `_syncSlideTimer()` (arms/stops to match state), called from `_render`, `setConfig` and

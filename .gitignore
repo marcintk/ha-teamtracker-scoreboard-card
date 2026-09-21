@@ -1,11 +1,11 @@
 .claude/
 !.claude/agents/
 .serena/
-node_modules/
-coverage/
 .vitest/
+.work/
 dist/
-docs/design-notes/.work/
+coverage/
+node_modules/
 
 # Stray shell/editor/tooling dotfiles that land in the working tree
 .bash_profile

@@ -234,6 +234,19 @@ describe("SportScoreboardCard core", () => {
       expect(card._trackedIds?.has("sensor.nba_bos")).toBe(true);
       expect(card._trackedIds?.has("sensor.nba_lal")).toBe(false);
     });
+
+    it("assigns an id to every matching section, not just the first", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [
+          { name: "NBA", prefix: "sensor.nba_" },
+          { name: "My teams", entities: ["sensor.nba_lal"] },
+        ],
+      };
+      card._buildTrackedIds(["sensor.nba_lal", "sensor.nba_bos"]);
+      expect(card._trackedBySection?.get(0)).toEqual(["sensor.nba_lal", "sensor.nba_bos"]);
+      expect(card._trackedBySection?.get(1)).toEqual(["sensor.nba_lal"]);
+    });
   });
 
   describe("setConfig", () => {
@@ -350,6 +363,22 @@ describe("SportScoreboardCard core", () => {
       card._render();
       expect(card.shadowRoot?.innerHTML).toContain("ha-card");
       expect(card.shadowRoot?.innerHTML).toContain("Lakers");
+    });
+
+    it("renders an entity in every section that matches it, not just the first", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [
+          { name: "NBA", prefix: "sensor.nba_" },
+          { name: "My teams", entities: ["sensor.nba_lal"] },
+        ],
+      };
+      card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
+      card._render();
+      const headers = card.shadowRoot?.querySelectorAll(".section-title");
+      expect(headers?.[0]?.textContent).toBe("NBA");
+      expect(headers?.[1]?.textContent).toBe("My teams");
+      expect(card.shadowRoot?.querySelectorAll(".game-row").length).toBe(2);
     });
 
     it("shows no-games message when no entities match the prefix", () => {

@@ -65,7 +65,7 @@ export class SportScoreboardCard extends HTMLElement {
   _trackedBySection: Map<number, string[]> | null;
   _subscription: SubscriptionManager;
   _debug: DebugMetrics;
-  _scoreChangedAt: Map<string, number>;
+  _scoreChangedAt: Map<string, { at: number; team: boolean; opponent: boolean }>;
   _prevScores: Map<string, { t: number; o: number }>;
 
   constructor() {
@@ -280,7 +280,11 @@ export class SportScoreboardCard extends HTMLElement {
         const o = Number(attr?.opponent_score ?? 0);
         const prev = this._prevScores.get(id);
         if (prev && (prev.t !== t || prev.o !== o)) {
-          this._scoreChangedAt.set(id, Date.now());
+          this._scoreChangedAt.set(id, {
+            at: Date.now(),
+            team: prev.t !== t,
+            opponent: prev.o !== o,
+          });
         }
         this._prevScores.set(id, { t, o });
       } else {
@@ -294,10 +298,10 @@ export class SportScoreboardCard extends HTMLElement {
     if (!this._scoreChangedAt.size) return;
     const now = Date.now();
     const sections = this._config?.sections ?? [];
-    for (const [id, changedAt] of this._scoreChangedAt) {
+    for (const [id, entry] of this._scoreChangedAt) {
       const section = sections.find((s) => sectionMatches(s, id));
       const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
-      if (blinkMs <= 0 || now - changedAt >= blinkMs) {
+      if (blinkMs <= 0 || now - entry.at >= blinkMs) {
         this._scoreChangedAt.delete(id);
       }
     }
@@ -308,10 +312,10 @@ export class SportScoreboardCard extends HTMLElement {
     const sections = this._config?.sections ?? [];
     const now = Date.now();
     let minExpiry = Infinity;
-    for (const [id, changedAt] of this._scoreChangedAt) {
+    for (const [id, entry] of this._scoreChangedAt) {
       const section = sections.find((s) => sectionMatches(s, id));
       const blinkMs = (section?.score_blink ?? DEFAULT_SCORE_BLINK) * 1000;
-      if (blinkMs > 0) minExpiry = Math.min(minExpiry, changedAt + blinkMs);
+      if (blinkMs > 0) minExpiry = Math.min(minExpiry, entry.at + blinkMs);
     }
     if (minExpiry === Infinity) return;
     this._blinkTimer = setTimeout(
@@ -323,6 +327,9 @@ export class SportScoreboardCard extends HTMLElement {
     );
   }
 
+  // an id can match more than one section (e.g. a team's prefix-based league section
+  // and a hand-picked "My teams" section) — every match gets the id, not just the first,
+  // so the same game can legitimately appear in more than one section at once.
   _buildTrackedIds(stateKeys: string[]): void {
     const sections = this._config?.sections ?? [];
     this._trackedIds = new Set();
@@ -332,7 +339,6 @@ export class SportScoreboardCard extends HTMLElement {
         if (sectionMatches(section, id)) {
           this._trackedIds.add(id);
           this._trackedBySection.get(i)?.push(id);
-          break;
         }
       }
     }

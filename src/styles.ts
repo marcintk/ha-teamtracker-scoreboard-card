@@ -275,11 +275,14 @@ export const CARD_STYLES = `
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
-  .score-fresh {
+  /* the animation targets the digits only (.score-value), not the .score cell
+     itself — the cell's own inline background must stay solid, or the fade
+     reads as the background flashing rather than the number that changed */
+  .score-fresh .score-value {
     animation: score-flash 0.5s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
-    .score-fresh {
+    .score-fresh .score-value {
       animation: none;
     }
   }

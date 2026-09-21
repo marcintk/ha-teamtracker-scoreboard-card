@@ -99,7 +99,7 @@ describe("CARD_STYLES", () => {
 
   it("disables the score-fresh blink animation under prefers-reduced-motion", () => {
     expect(CARD_STYLES).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.score-fresh\s*\{\s*animation:\s*none;/
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.score-fresh \.score-value\s*\{\s*animation:\s*none;/
     );
   });
 
