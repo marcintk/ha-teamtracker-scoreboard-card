@@ -43,7 +43,7 @@ export interface HassEntity {
 
 export type HassStates = Record<string, HassEntity>;
 
-import type { HasSubscribeEvents } from "./runtime/subscription.js";
+import type { HasSubscribeEvents } from "./lifecycle/subscription.js";
 export type HassConnection = HasSubscribeEvents;
 
 export interface HomeAssistant {
@@ -94,6 +94,9 @@ export interface SortItem {
   teamName?: string;
   special?: boolean;
   key?: number;
+  /** the discarded duplicate sensor for this game was also in special_teams — see
+   *  sorting.ts's deduplicate() for why this can't just be derived from `special`. */
+  opponentSpecial?: boolean;
 }
 
 export interface CardConfig {

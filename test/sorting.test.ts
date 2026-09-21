@@ -177,6 +177,25 @@ describe("deduplicate", () => {
     expect(result[0]?.entityId).toBe("sensor.wc_fra");
   });
 
+  it("marks opponentSpecial when both duplicate sensors are independently special", () => {
+    // both teams in the matchup are in special_teams — only one row can survive, so
+    // the discarded sensor's own specialness has to carry over onto the winner
+    const date = "2024-03-15";
+    const states: HassStates = {
+      "sensor.wc_fra": s({ team_homeaway: "home", date, team_abbr: "fra", opponent_abbr: "bra" }),
+      "sensor.wc_bra": s({ team_homeaway: "away", date, team_abbr: "bra", opponent_abbr: "fra" }),
+    };
+    const list = [
+      { entityId: "sensor.wc_fra", special: true },
+      { entityId: "sensor.wc_bra", special: true },
+    ];
+    const result = deduplicate(list, states);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.entityId).toBe("sensor.wc_fra");
+    expect(result[0]?.special).toBe(true);
+    expect(result[0]?.opponentSpecial).toBe(true);
+  });
+
   it("keeps whichever sensor is first-seen when neither side is special", () => {
     // no home/away preference left: which sensor "wins" a plain duplicate is now
     // just list order, since both report the same game symmetrically either way

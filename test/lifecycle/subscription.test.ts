@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { SubscriptionManager } from "../../src/runtime/subscription.js";
+import { SubscriptionManager } from "../../src/lifecycle/subscription.js";
 
 type SubscribeCallback = (event: { data: { entity_id: string } }) => void;
 const getCallback = (fn: ReturnType<typeof vi.fn>): SubscribeCallback =>

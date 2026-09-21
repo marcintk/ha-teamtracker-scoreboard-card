@@ -7,14 +7,18 @@ Install [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) via HACS fi
 entry creates one entity; its `name` becomes the entity ID (`name: nba_bos` → `sensor.nba_bos`), and
 the card's `prefix` field groups every sensor sharing a common prefix (`sensor.nba_`).
 
+> [!WARNING]
+>
+> Each file loads a **full league roster (20–32 sensors)**. It'll work as-is, but loading everything
+> means that many `sensor.teamtracker` entities each polling ESPN on its own schedule — real
+> startup/update load for teams you'll never track. Treat these files as a **source to copy teams
+> from**, not a config to enable wholesale: copy the file, then delete every team you don't follow
+> before restarting. Most setups only need a handful of entities across one or two leagues.
+
 ## League files
 
 All rosters were verified against ESPN in **September 2026** and reflect the **2026/27 season**
 (2026 season for NFL).
-
-Each file loads a full league roster (20–32 sensors). Treat these as a **source to copy teams
-from**, not a config to enable wholesale — most setups only need a handful of entities across one or
-two leagues.
 
 | League                             | `league_id` | File                   | Sensors                              |
 | ---------------------------------- | ----------- | ---------------------- | ------------------------------------ |
@@ -59,9 +63,6 @@ under `sensor:` in `configuration.yaml`.
 
 ## Card config notes
 
-- Loading every team from every league at once means many `sensor.teamtracker` entities each polling
-  ESPN on its own schedule — real startup/update load for teams you'll never track. Only add the
-  leagues you follow, and trim each file to the teams you actually want.
 - A section renders the schedule (date-sorted, live games first). See "Schedule" in the main README.
 - `special_teams` takes the suffix **after** the prefix — e.g. `juv` for `sensor.sera_juv`, not the
   ESPN id.

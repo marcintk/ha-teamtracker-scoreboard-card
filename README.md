@@ -21,7 +21,9 @@ Requires [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) (HACS Inte
 provides the `sensor.<sport>_<team>` entities this card reads.
 
 To help with setup, [`docs/sensors/`][sensors] has example sensor definitions for several leagues
-(NBA, NHL, NFL, Premier League, La Liga, Serie A) you can use as a starting point for your own.
+(NBA, NHL, NFL, Premier League, La Liga, Serie A) you can use as a starting point for your own —
+each file loads a full league roster, so treat it as something to copy teams from and trim, not a
+config to drop in wholesale (see the warning in that folder's README).
 
 ## Installation
 
@@ -90,7 +92,6 @@ The card subscribes to Home Assistant state changes and re-renders when a tracke
 
 ### Section
 
-````yaml
 | Field                   | Type   | Default   | Description                                                                                                                                                            |
 | ----------------------- | ------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |
@@ -119,7 +120,7 @@ layout:
   font_scale: 1.15 # ~15% larger text throughout
 sections:
   - ...
-````
+```
 
 | Key                  | Type   | Default | CSS property                    | Controls                                                                       |
 | -------------------- | ------ | ------- | ------------------------------- | ------------------------------------------------------------------------------ |

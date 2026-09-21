@@ -14,7 +14,7 @@ import {
   scoreText,
   teamColor,
 } from "./display.js";
-import { isBlinkFresh } from "./runtime/blink.js";
+import { isBlinkFresh } from "./lifecycle/blink.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
 import { CARD_STYLES } from "./styles.js";
 import type {
@@ -44,6 +44,7 @@ const scheduleGroup = (state: string | undefined): number => (state === "IN" ? 0
  *  `{ freshHome, freshAway }` can't be silently transposed the way two adjacent
  *  positional booleans can. */
 export interface RowFlags {
+  opponentSpecial?: boolean;
   freshHome?: boolean;
   freshAway?: boolean;
   highlightWinner?: boolean;
@@ -57,6 +58,7 @@ export function rowHtml(
   flags: RowFlags = {}
 ): TemplateResult {
   const {
+    opponentSpecial = false,
     freshHome = false,
     freshAway = false,
     highlightWinner = true,
@@ -76,8 +78,10 @@ export function rowHtml(
   ); /* Material Blue */
   // `special` is scoped to this row's own entity — whichever visual side that entity's
   // own perspective (team_homeaway) puts it on is the side that gets highlighted.
-  const homeSpecial = isTeamSide("home", attr) && special;
-  const awaySpecial = isTeamSide("away", attr) && special;
+  // `opponentSpecial` covers the other side: the discarded duplicate sensor for this
+  // game was independently special too (see sorting.ts's deduplicate()).
+  const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;
+  const awaySpecial = isTeamSide("away", attr) ? special : opponentSpecial;
   const homeAhead =
     highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("home", gs, attr);
   const awayAhead =
@@ -187,7 +191,7 @@ export function sectionHtml(
 
   const rows = deduplicate(items, states)
     .slice(0, limit)
-    .map(({ entityId, special = false }) => {
+    .map(({ entityId, special = false, opponentSpecial = false }) => {
       const entry = scoreChangedAt.get(entityId);
       // entities was filtered above to ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
@@ -206,6 +210,7 @@ export function sectionHtml(
         now
       );
       return rowHtml(entity, special, colors, {
+        opponentSpecial,
         freshHome,
         freshAway,
         highlightWinner,

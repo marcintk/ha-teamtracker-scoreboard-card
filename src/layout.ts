@@ -1,6 +1,6 @@
-import { CSS_VARS } from "../css-vars.js";
-import type { LayoutConfig, SectionConfig } from "../types.js";
-import { DEFAULT_LIMIT, DEFAULT_ROW_HEIGHT, DEFAULT_ROW_PADDING } from "../utils.js";
+import { CSS_VARS } from "./css-vars.js";
+import type { LayoutConfig, SectionConfig } from "./types.js";
+import { DEFAULT_LIMIT, DEFAULT_ROW_HEIGHT, DEFAULT_ROW_PADDING } from "./utils.js";
 
 /** A pixel length ("34px") → its number; anything else (a bare number, rem, %, auto,
  *  undefined) → null, so callers fall back to their own default instead of a wrong number. */
