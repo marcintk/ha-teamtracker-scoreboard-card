@@ -1,104 +1,39 @@
 name: Claude PR Review
 
-# Second-reviewer bot: only ever engages with PRs opened by the repo owner, and only after every
-# other PR workflow (build, CodeQL) has succeeded for that same commit. Triggered by workflow_run
-# instead of pull_request so it always runs last; the gate job re-checks both required workflows'
-# conclusions (not just the one that triggered this run) and skips if a review already landed for
-# this commit, since either upstream workflow finishing can fire this trigger.
+# Second-reviewer bot: only ever engages with PRs opened by the repo owner. Called as a
+# workflow_call step from pr-pipeline.yml, after that orchestrator's `build` and `codeql` jobs have
+# both succeeded (enforced there via `needs:`), so ordering and single-run-per-push are structural
+# instead of hand-rolled here.
 
 on:
-  workflow_run:
-    workflows: ["Card Build and Test", "CodeQL Analysis"]
-    types: [completed]
+  workflow_call:
 
 permissions: {}
 
 jobs:
-  gate:
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-      actions: read
-    outputs:
-      proceed: ${{ steps.check.outputs.proceed }}
-      pr_number: ${{ steps.check.outputs.pr_number }}
-
-    steps:
-      - name: Check required workflows and PR author, guard against duplicate runs
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -e
-
-          pr_number=$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" --jq '.[0].number // empty')
-          if [ -z "$pr_number" ]; then
-            echo "No PR found for $HEAD_SHA; skipping."
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          author=$(gh pr view "$pr_number" --repo "$REPO" --json author --jq '.author.login')
-          if [ "$author" != "marcintk" ]; then
-            echo "PR #$pr_number not opened by marcintk; skipping."
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          declare -A required=(
-            ["Card Build and Test"]="card-build-and-test.yml"
-            ["CodeQL Analysis"]="codeql-analysis.yml"
-          )
-          for name in "${!required[@]}"; do
-            file="${required[$name]}"
-            conclusion=$(gh api "repos/$REPO/actions/workflows/$file/runs?head_sha=$HEAD_SHA&status=completed" --jq '.workflow_runs[0].conclusion // empty')
-            if [ "$conclusion" != "success" ]; then
-              echo "$name has not succeeded yet for $HEAD_SHA (conclusion: ${conclusion:-none}); skipping for now."
-              echo "proceed=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
-
-          already_ran=$(gh api "repos/$REPO/actions/workflows/claude-pr-review.yml/runs?head_sha=$HEAD_SHA&status=completed" --jq '[.workflow_runs[] | select(.conclusion=="success")] | length')
-          if [ "${already_ran:-0}" -gt 0 ]; then
-            echo "Review already completed for $HEAD_SHA; skipping."
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "All required workflows succeeded for $HEAD_SHA; proceeding."
-          echo "proceed=true" >> "$GITHUB_OUTPUT"
-          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
-
   review:
-    needs: gate
-    if: needs.gate.outputs.proceed == 'true'
+    if: github.event.pull_request.user.login == 'marcintk'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
 
     steps:
-      # This checks out the PR's head SHA, which scanners flag as "untrusted code checkout" in a
-      # privileged workflow_run context. It's gated: the `gate` job above already verified the PR
-      # was opened by marcintk and that both required checks passed, so this ref is not attacker-
-      # controlled by the time we get here. Downstream, the checked-out code is never executed —
-      # Claude only Read/Grep/Glob's it and runs a fixed set of `gh pr *` subcommands
-      # (claude_args' --allowedTools), so there's no script-injection path from repo contents into
-      # a privileged shell. `contents: read` on this job also means nothing here can push back.
+      # Deliberately does NOT check out the PR's head SHA: this job holds secrets
+      # (CLAUDE_CODE_OAUTH_TOKEN) and pull-requests:write. Pinning `ref` to the PR's base branch
+      # (rather than omitting it, which under a pull_request-triggered run would resolve to the PR's
+      # merge ref) keeps Read/Grep/Glob on trusted content only — Claude reviews the PR's actual
+      # diff via `gh pr diff` (one of the fixed `--allowedTools` `gh pr *` subcommands) instead.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 1
 
       - name: Load review persona
         id: persona
         env:
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ needs.gate.outputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           {
             echo 'text<<PERSONA_EOF'
