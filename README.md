@@ -48,19 +48,16 @@ Add a **Manual card** to your dashboard and paste:
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 sections:
-  - name: Serie A
-    prefix: sensor.sera_
-    special_teams:
-      - juv
-  - name: Primera Division
-    prefix: sensor.liga_
-    limit: 5
+  - name: My Teams
+    entities:
+      - sensor.nba_lal # LA Lakers
+      - sensor.epl_ars # Arsenal (London)
   - name: NBA Scoreboard
     prefix: sensor.nba_
     limit: 5
 ```
 
-## Schedule
+## Display
 
 A section renders one row per game: live games first, then every other game by nearness to now, so
 the next kick-off and the just-finished game sit near the top; the two sensors for a game are merged
@@ -73,12 +70,12 @@ into one row.
 | Option             | Type    | Default  | Description                                                                                                                                     |
 | ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                                  |
-| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                       |
-| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                   |
-| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain |
+| `tv_badge`         | number  | `4`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                                    |
 | `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls      |
 | `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                         |
-| `tv_badge`         | number  | `3`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                                    |
+| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain |
+| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                       |
+| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                   |
 | `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                     |
 | `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                                 |
 
@@ -94,21 +91,6 @@ The card subscribes to Home Assistant state changes and re-renders when a tracke
 ### Section
 
 ```yaml
-type: custom:ha-teamtracker-scoreboard-card
-sections:
-  - name: Premier League
-    prefix: sensor.epl_
-    limit: 12
-    score_blink: 5
-    special_teams:
-      - liv
-  - name: My Teams
-    prefix: sensor.nba_
-    entities:
-      - sensor.custom_renamed_bos
-  - ...
-```
-
 | Field                   | Type   | Default   | Description                                                                                                                                                            |
 | ----------------------- | ------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |

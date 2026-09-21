@@ -121,10 +121,10 @@ describe("SportScoreboardCard core", () => {
   });
 
   describe("_tvBadge", () => {
-    it("defaults to 3 characters when tv_badge is unset", () => {
+    it("defaults to 4 characters when tv_badge is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection] };
-      expect(card._tvBadge()).toBe(3);
+      expect(card._tvBadge()).toBe(4);
     });
 
     it("passes through 0 to hide the badge instead of falling back to the default", () => {
@@ -142,7 +142,7 @@ describe("SportScoreboardCard core", () => {
     it("falls back to the default when tv_badge is negative", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection], tv_badge: -1 };
-      expect(card._tvBadge()).toBe(3);
+      expect(card._tvBadge()).toBe(4);
     });
   });
 

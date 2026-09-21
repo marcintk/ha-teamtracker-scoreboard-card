@@ -10,7 +10,7 @@ export const DEFAULT_SCORE_BLINK = 5;
 export const DEFAULT_SLIDE_SEC = 45;
 export const DEFAULT_ROW_HEIGHT = 28;
 export const DEFAULT_ROW_PADDING = 5;
-export const DEFAULT_TV_BADGE_CHARS = 3;
+export const DEFAULT_TV_BADGE_CHARS = 4;
 
 export function safeLogoUrl(url: unknown): string {
   if (!url || !String(url).startsWith("https://")) return "";
