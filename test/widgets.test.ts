@@ -66,18 +66,18 @@ describe("tvHtml", () => {
     expect(el.querySelector(".tv-badge")?.getAttribute("style")).toContain("#666");
   });
 
-  it("truncates long network names to 3 chars with > suffix", () => {
+  it("truncates long network names to 4 chars with > suffix", () => {
     const el = doc(tvHtml("PRE", { tv_network: "VERY_LONG_CHANNEL_NAME" }));
-    expect(el.querySelector(".tv-badge")?.textContent).toBe("VER>");
+    expect(el.querySelector(".tv-badge")?.textContent).toBe("VERY>");
     expect(el.textContent).not.toContain("VERY_LONG_CHANNEL_NAME");
   });
 
-  it("shows > suffix for single network name longer than 3 chars", () => {
-    const el = doc(tvHtml("PRE", { tv_network: "ESPN" }));
-    expect(el.querySelector(".tv-badge")?.textContent).toBe("ESP>");
+  it("shows > suffix for single network name longer than 4 chars", () => {
+    const el = doc(tvHtml("PRE", { tv_network: "ESPN2" }));
+    expect(el.querySelector(".tv-badge")?.textContent).toBe("ESPN>");
   });
 
-  it("shows no suffix for short network name (3 chars or fewer)", () => {
+  it("shows no suffix for short network name (4 chars or fewer)", () => {
     const el = doc(tvHtml("PRE", { tv_network: "TNT" }));
     expect(el.querySelector(".tv-badge")?.textContent).toBe("TNT");
   });
