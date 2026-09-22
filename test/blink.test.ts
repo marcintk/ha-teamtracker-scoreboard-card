@@ -4,7 +4,7 @@ import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeState } from "./index.fixtures.js";
 
 // mirrors the config-driven "5s default, 0 disables, longest section wins" rule the
-// caller (SportScoreboardCard._maxBlinkMsFor) applies — kept simple here since
+// caller (blinkMsForId in src/config-match.ts) applies — kept simple here since
 // BlinkTracker only depends on the *result*, not on SectionConfig itself.
 const blinkMsFor = (ms: number) => () => ms;
 

@@ -432,8 +432,8 @@ exports[`widget structural snapshots > messageHtml POST 1`] = `"<!----><span sty
 
 exports[`widget structural snapshots > messageHtml PRE with sub 1`] = `"<!----><span style="color:var(--ttsc-sub-color, darkgray)"><!--?-->2h</span><!--?--><span class="msg-sub"><!--?-->Houston, LAL -3.5</span><!--?-->"`;
 
-exports[`widget structural snapshots > tvHtml IN 1`] = `"<!----><span class="tv-badge" style="background:color-mix(in srgb, var(--ttsc-live-color, indianred) 85%, transparent)"><!--?-->ESPN</span>"`;
+exports[`widget structural snapshots > tvHtml IN 1`] = `"<!----><span class="tv-badge" style="background:color-mix(in srgb, var(--ttsc-live-color, indianred) 75%, transparent)"><!--?-->ESPN</span>"`;
 
-exports[`widget structural snapshots > tvHtml PRE single 1`] = `"<!----><span class="tv-badge" style="background:color-mix(in srgb, #666 85%, transparent)"><!--?-->ESPN</span>"`;
+exports[`widget structural snapshots > tvHtml PRE single 1`] = `"<!----><span class="tv-badge" style="background:color-mix(in srgb, #666 75%, transparent)"><!--?-->ESPN</span>"`;
 
-exports[`widget structural snapshots > tvHtml multi-network 1`] = `"<!----><span class="tv-tooltip" data-tooltip="ESPN · ESPN2 · TNT"><!--?--><span class="tv-badge" style="background:color-mix(in srgb, #666 85%, transparent)"><!--?-->ESPN&gt;</span></span>"`;
+exports[`widget structural snapshots > tvHtml multi-network 1`] = `"<!----><span class="tv-tooltip" data-tooltip="ESPN · ESPN2 · TNT"><!--?--><span class="tv-badge" style="background:color-mix(in srgb, #666 75%, transparent)"><!--?-->ESPN&gt;</span></span>"`;
