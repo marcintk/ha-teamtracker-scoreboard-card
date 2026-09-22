@@ -1,12 +1,13 @@
 /// <reference path="../globals.d.ts" />
 
 import { html, nothing, render, type TemplateResult } from "lit";
+import { BlinkTracker } from "./blink.js";
 import { blinkMsForId, buildTrackedIds, hasRelevantChange } from "./config-match.js";
+import { DebugMetrics } from "./debug.js";
 import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from "./layout.js";
-import { BlinkTracker } from "./lifecycle/blink.js";
-import { DebugMetrics } from "./lifecycle/debug.js";
-import { SubscriptionManager } from "./lifecycle/subscription.js";
 import { buildCardTemplate } from "./render.js";
+import { CancelableSubscription } from "./subscription.js";
+import { CancelableTimer } from "./timer.js";
 import type { CardConfig, HomeAssistant, LayoutConfig } from "./types.js";
 import { DEFAULT_LIMIT, DEFAULT_SLIDE_SEC, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 
@@ -14,15 +15,15 @@ export class SportScoreboardCard extends HTMLElement {
   readonly _root: ShadowRoot;
   _config: CardConfig | null;
   _hass: HomeAssistant | null;
-  _fixedTimer: ReturnType<typeof setInterval> | null;
-  _debugTimer: ReturnType<typeof setInterval> | null;
-  _renderTimer: ReturnType<typeof setTimeout> | null;
-  _slideTimer: ReturnType<typeof setInterval> | null;
+  _fixedTimer: CancelableTimer;
+  _debugTimer: CancelableTimer;
+  _renderTimer: CancelableTimer;
+  _slideTimer: CancelableTimer;
   _slideIndex: number;
   _slidePaused: boolean;
   _trackedIds: Set<string> | null;
   _trackedBySection: Map<number, string[]> | null;
-  _subscription: SubscriptionManager;
+  _subscription: CancelableSubscription;
   _debug: DebugMetrics;
   _blink: BlinkTracker;
 
@@ -31,15 +32,15 @@ export class SportScoreboardCard extends HTMLElement {
     this._root = this.attachShadow({ mode: "open" });
     this._config = null;
     this._hass = null;
-    this._fixedTimer = null;
-    this._debugTimer = null;
-    this._renderTimer = null;
-    this._slideTimer = null;
+    this._fixedTimer = new CancelableTimer();
+    this._debugTimer = new CancelableTimer();
+    this._renderTimer = new CancelableTimer();
+    this._slideTimer = new CancelableTimer();
     this._slideIndex = 0;
     this._slidePaused = false;
     this._trackedIds = null;
     this._trackedBySection = null;
-    this._subscription = new SubscriptionManager();
+    this._subscription = new CancelableSubscription();
     this._debug = new DebugMetrics();
     this._blink = new BlinkTracker();
   }
@@ -84,17 +85,16 @@ export class SportScoreboardCard extends HTMLElement {
   }
 
   _scheduleRender(): void {
-    if (this._renderTimer) return;
+    if (this._renderTimer.active) return;
     if (this._config?.debug) this._debug.track("filtered");
     const lazyMs = (this._config?.lazy_refresh ?? 5) * 1000;
     if (lazyMs === 0) {
       this._render();
       return;
     }
-    this._renderTimer = setTimeout(() => {
-      this._renderTimer = null;
+    this._renderTimer.armOnce(lazyMs, () => {
       if (this._hass && this._config) this._render();
-    }, lazyMs);
+    });
   }
 
   _subscribe(): void {
@@ -107,10 +107,7 @@ export class SportScoreboardCard extends HTMLElement {
 
   _clearSubscription(): void {
     this._subscription.clear();
-    if (this._renderTimer) {
-      clearTimeout(this._renderTimer);
-      this._renderTimer = null;
-    }
+    this._renderTimer.stop();
     this._blink.clearTimer();
   }
 
@@ -118,14 +115,14 @@ export class SportScoreboardCard extends HTMLElement {
     this._stopFixedTimer();
     const fixedMs = (this._config?.fixed_refresh ?? 60) * 1000;
     if (fixedMs > 0) {
-      this._fixedTimer = setInterval(() => {
+      this._fixedTimer.start(fixedMs, () => {
         if (this._hass && this._config) this._render();
-      }, fixedMs);
+      });
     }
     if (this._config?.debug) {
-      this._debugTimer = setInterval(() => {
+      this._debugTimer.start(1000, () => {
         if (this._hass && this._config) this._refreshDebugOverlay();
-      }, 1000);
+      });
     }
   }
 
@@ -148,24 +145,21 @@ export class SportScoreboardCard extends HTMLElement {
 
   _syncSlideTimer(): void {
     const shouldRun = this._isSlideMode() && !this._slidePaused;
-    if (shouldRun && !this._slideTimer) {
-      this._slideTimer = setInterval(() => {
+    if (shouldRun && !this._slideTimer.active) {
+      this._slideTimer.start(this._slideSec() * 1000, () => {
         const n = this._config?.sections?.length ?? 0;
         if (n >= 2) {
           this._slideIndex = (this._slideIndex + 1) % n;
           if (this._hass && this._config) this._render();
         }
-      }, this._slideSec() * 1000);
-    } else if (!shouldRun && this._slideTimer) {
+      });
+    } else if (!shouldRun && this._slideTimer.active) {
       this._stopSlideTimer();
     }
   }
 
   _stopSlideTimer(): void {
-    if (this._slideTimer) {
-      clearInterval(this._slideTimer);
-      this._slideTimer = null;
-    }
+    this._slideTimer.stop();
   }
 
   _slideStep(dir: number): void {
@@ -204,14 +198,8 @@ export class SportScoreboardCard extends HTMLElement {
   }
 
   _stopFixedTimer(): void {
-    if (this._fixedTimer) {
-      clearInterval(this._fixedTimer);
-      this._fixedTimer = null;
-    }
-    if (this._debugTimer) {
-      clearInterval(this._debugTimer);
-      this._debugTimer = null;
-    }
+    this._fixedTimer.stop();
+    this._debugTimer.stop();
   }
 
   disconnectedCallback(): void {

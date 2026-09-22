@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { BlinkTracker } from "../../src/lifecycle/blink.js";
-import { useFakeTimers } from "../helpers.js";
-import { baseAttrs, makeState } from "../index.fixtures.js";
+import { BlinkTracker } from "../src/blink.js";
+import { useFakeTimers } from "./helpers.js";
+import { baseAttrs, makeState } from "./index.fixtures.js";
 
 // mirrors the config-driven "5s default, 0 disables, longest section wins" rule the
 // caller (SportScoreboardCard._maxBlinkMsFor) applies — kept simple here since

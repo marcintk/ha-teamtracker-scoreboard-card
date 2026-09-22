@@ -1,4 +1,5 @@
-import type { HassStates, ScoreBlinkEntry } from "../types.js";
+import { CancelableTimer } from "./timer.js";
+import type { HassStates, ScoreBlinkEntry } from "./types.js";
 
 /** Resolves how long (ms) an id should keep blinking; the caller owns config/section lookup. */
 export type BlinkMsFor = (id: string) => number;
@@ -18,14 +19,14 @@ export function isBlinkFresh(at: number | undefined, blinkMs: number, now: numbe
 export class BlinkTracker {
   private _scoreChangedAt = new Map<string, ScoreBlinkEntry>();
   private _prevScores = new Map<string, { t: number; o: number }>();
-  private _timer: ReturnType<typeof setTimeout> | null = null;
+  private _timer = new CancelableTimer();
 
   get entries(): ReadonlyMap<string, ScoreBlinkEntry> {
     return this._scoreChangedAt;
   }
 
   get timerActive(): boolean {
-    return this._timer !== null;
+    return this._timer.active;
   }
 
   /** Diffs each tracked id's score against its last-seen value and records a fresh
@@ -99,7 +100,7 @@ export class BlinkTracker {
    *  so a render is scheduled exactly once the last blink should stop. No-op while a
    *  timer is already running or nothing is blinking. */
   armTimer(blinkMsFor: BlinkMsFor, onExpire: () => void): void {
-    if (this._timer || !this._scoreChangedAt.size) return;
+    if (this._timer.active || !this._scoreChangedAt.size) return;
     const now = Date.now();
     let minExpiry = Infinity;
     for (const [id, entry] of this._scoreChangedAt) {
@@ -109,20 +110,11 @@ export class BlinkTracker {
       if (entry.opponent !== undefined) minExpiry = Math.min(minExpiry, entry.opponent + blinkMs);
     }
     if (minExpiry === Infinity) return;
-    this._timer = setTimeout(
-      () => {
-        this._timer = null;
-        onExpire();
-      },
-      Math.max(50, minExpiry - now)
-    );
+    this._timer.armOnce(Math.max(50, minExpiry - now), onExpire);
   }
 
   clearTimer(): void {
-    if (this._timer) {
-      clearTimeout(this._timer);
-      this._timer = null;
-    }
+    this._timer.stop();
   }
 
   /** Resets all tracked state and cancels any pending timer. */

@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { sectionMatches } from "./config-match.js";
+import { isBlinkFresh } from "./blink.js";
+import { isSpecialTeam, sectionMatches } from "./config-match.js";
 import { CSS_VARS } from "./css-vars.js";
 import {
   colonColor,
@@ -14,7 +15,6 @@ import {
   scoreText,
   teamColor,
 } from "./display.js";
-import { isBlinkFresh } from "./lifecycle/blink.js";
 import { deduplicate, sortKeyFor } from "./sorting.js";
 import { CARD_STYLES } from "./styles.js";
 import type {
@@ -147,7 +147,7 @@ export function sectionHtml(
     tvBadge = DEFAULT_TV_BADGE_CHARS,
     blinkMsFor = () => (section.score_blink ?? DEFAULT_SCORE_BLINK) * 1000,
   } = flags;
-  const { name, prefix = "", limit = DEFAULT_LIMIT, special_teams = [] } = section;
+  const { name, limit = DEFAULT_LIMIT } = section;
   const resolvedIds = entityIds ?? Object.keys(states).filter((id) => sectionMatches(section, id));
   const entities = resolvedIds.filter((id) =>
     VALID_STATES.has((states[id]?.state ?? "") as GameState)
@@ -170,8 +170,7 @@ export function sectionHtml(
     return {
       entityId,
       teamName: String(attr?.team_name ?? entityId),
-      special:
-        special_teams.includes(entityId) || special_teams.includes(entityId.replace(prefix, "")),
+      special: isSpecialTeam(section, entityId),
       key: sortKeyFor(attr, now),
     };
   });

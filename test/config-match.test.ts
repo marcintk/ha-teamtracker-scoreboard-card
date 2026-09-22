@@ -3,6 +3,7 @@ import {
   blinkMsForId,
   buildTrackedIds,
   hasRelevantChange,
+  isSpecialTeam,
   sectionMatches,
 } from "../src/config-match.js";
 import type { HassStates, SectionConfig } from "../src/types.js";
@@ -33,6 +34,28 @@ describe("sectionMatches", () => {
   it("neither set: matches everything (prefix defaults to empty string)", () => {
     const section: SectionConfig = {};
     expect(sectionMatches(section, "sensor.anything")).toBe(true);
+  });
+});
+
+describe("isSpecialTeam", () => {
+  it("matches by the suffix left after stripping the section's prefix", () => {
+    const section: SectionConfig = { prefix: "sensor.nba_", special_teams: ["lal"] };
+    expect(isSpecialTeam(section, "sensor.nba_lal")).toBe(true);
+    expect(isSpecialTeam(section, "sensor.nba_bos")).toBe(false);
+  });
+
+  it("matches by full entity id even when a prefix is set", () => {
+    const section: SectionConfig = {
+      prefix: "sensor.nba_",
+      entities: ["sensor.custom_bos"],
+      special_teams: ["sensor.custom_bos"],
+    };
+    expect(isSpecialTeam(section, "sensor.custom_bos")).toBe(true);
+  });
+
+  it("returns false when special_teams is unset or empty", () => {
+    expect(isSpecialTeam({}, "sensor.nba_lal")).toBe(false);
+    expect(isSpecialTeam({ special_teams: [] }, "sensor.nba_lal")).toBe(false);
   });
 });
 
