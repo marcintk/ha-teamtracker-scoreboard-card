@@ -512,19 +512,19 @@ describe("SportScoreboardCard core", () => {
     it("starts fixedTimer with default 60-second interval when refresh is omitted", () => {
       const card = makeCard();
       card.setConfig({ sections: [nbaSection] });
-      expect(card._fixedTimer).not.toBeNull();
+      expect(card._fixedTimer.active).toBe(true);
     });
 
     it("fixed_refresh: 0 does not start a fixed timer", () => {
       const card = makeCard();
       card.setConfig({ sections: [nbaSection], fixed_refresh: 0 });
-      expect(card._fixedTimer).toBeNull();
+      expect(card._fixedTimer.active).toBe(false);
     });
 
     it("starts fixedTimer at custom fixed_refresh interval", () => {
       const card = makeCard();
       card.setConfig({ sections: [nbaSection], fixed_refresh: 60 });
-      expect(card._fixedTimer).not.toBeNull();
+      expect(card._fixedTimer.active).toBe(true);
     });
 
     it("fixedTimer calls _render at fixed_refresh interval", () => {
@@ -542,17 +542,22 @@ describe("SportScoreboardCard core", () => {
 
     it("clears the old timer when setConfig is called again", () => {
       const card = makeCard();
+      card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card.setConfig({ sections: [nbaSection], fixed_refresh: 30 });
-      const firstTimer = card._fixedTimer;
       card.setConfig({ sections: [nbaSection], fixed_refresh: 60 });
-      expect(card._fixedTimer).not.toBe(firstTimer);
+      const renderSpy = vi.spyOn(card, "_render");
+      // the old 30s cadence must be cleared, not just superseded — nothing should fire at 30s
+      vi.advanceTimersByTime(30_000);
+      expect(renderSpy).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(30_000);
+      expect(renderSpy).toHaveBeenCalledTimes(1);
     });
 
     it("clears the timer on disconnectedCallback", () => {
       const card = makeCard();
       card.setConfig({ sections: [nbaSection], fixed_refresh: 30 });
       card.disconnectedCallback();
-      expect(card._fixedTimer).toBeNull();
+      expect(card._fixedTimer.active).toBe(false);
     });
 
     it("nulls _trackedIds on disconnectedCallback so subscription re-establishes on re-insertion", () => {
@@ -622,7 +627,7 @@ describe("SportScoreboardCard core", () => {
       await Promise.resolve();
       const callback = getCallback(connection.subscribeEvents);
       callback({ data: { entity_id: "sensor.nba_lal" } });
-      expect(card._renderTimer).not.toBeNull();
+      expect(card._renderTimer.active).toBe(true);
     });
 
     it("WS callback does not schedule render for an untracked entity", async () => {
@@ -635,7 +640,7 @@ describe("SportScoreboardCard core", () => {
       await Promise.resolve();
       const callback = getCallback(connection.subscribeEvents);
       callback({ data: { entity_id: "sensor.weather_london" } });
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("lazy_refresh timer triggers render after configured delay", async () => {
@@ -652,7 +657,7 @@ describe("SportScoreboardCard core", () => {
       expect(renderSpy).not.toHaveBeenCalled();
       vi.advanceTimersByTime(1000);
       expect(renderSpy).toHaveBeenCalledTimes(1);
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("lazy_refresh: 0 renders immediately without starting a timer", async () => {
@@ -667,7 +672,7 @@ describe("SportScoreboardCard core", () => {
       const renderSpy = vi.spyOn(card, "_render");
       callback({ data: { entity_id: "sensor.nba_lal" } });
       expect(renderSpy).toHaveBeenCalledTimes(1);
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("lazy_refresh timer skips render if hass is null when it fires", () => {
@@ -680,7 +685,7 @@ describe("SportScoreboardCard core", () => {
       const renderSpy = vi.spyOn(card, "_render");
       vi.advanceTimersByTime(1000);
       expect(renderSpy).not.toHaveBeenCalled();
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("multiple events within lazy_refresh window trigger only one render", async () => {
@@ -728,11 +733,11 @@ describe("SportScoreboardCard core", () => {
       await Promise.resolve();
       const callback = getCallback(connection.subscribeEvents);
       callback({ data: { entity_id: "sensor.nba_lal" } });
-      expect(card._renderTimer).not.toBeNull();
+      expect(card._renderTimer.active).toBe(true);
       card._clearSubscription();
       expect(unsub).toHaveBeenCalledTimes(1);
       expect(card._subscription.active).toBe(false);
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("stale callback does not schedule render after _clearSubscription", async () => {
@@ -746,7 +751,7 @@ describe("SportScoreboardCard core", () => {
       const staleCallback = getCallback(connection.subscribeEvents);
       card._clearSubscription();
       staleCallback({ data: { entity_id: "sensor.nba_lal" } });
-      expect(card._renderTimer).toBeNull();
+      expect(card._renderTimer.active).toBe(false);
     });
 
     it("disconnectedCallback unsubscribes from WS", async () => {
@@ -967,9 +972,9 @@ describe("SportScoreboardCard core", () => {
     it("clears _debugTimer on disconnectedCallback in debug mode", () => {
       const card = makeCard();
       card.setConfig({ sections: [nbaSection], debug: true });
-      expect(card._debugTimer).not.toBeNull();
+      expect(card._debugTimer.active).toBe(true);
       card.disconnectedCallback();
-      expect(card._debugTimer).toBeNull();
+      expect(card._debugTimer.active).toBe(false);
     });
 
     it("debug pane content updates when _render is called again after tracking", () => {

@@ -5,7 +5,11 @@ export interface HasSubscribeEvents {
   ): Promise<() => void>;
 }
 
-export class SubscriptionManager {
+/** Wraps one WS event subscription: subscribe, replace, and clear, guarding against a
+ *  resolve landing after a newer `subscribe()` or a `clear()` superseded it — mirrors
+ *  `CancelableTimer`'s single-cancelable-lifecycle shape (`subscribe`/`clear`/`active`
+ *  instead of `start`/`stop`/`active`). */
+export class CancelableSubscription {
   private _gen = 0;
   private _unsub: (() => void) | null = null;
 

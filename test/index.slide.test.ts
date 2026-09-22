@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SportScoreboardCard } from "../src/index.js";
+import type { CancelableTimer } from "../src/timer.js";
 import { haCardStyle, useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
@@ -7,11 +8,10 @@ describe("SportScoreboardCard slide mode", () => {
   describe("slide_sec carousel", () => {
     useFakeTimers();
 
-    // slide_sec / _slideIndex / _slideTimer do not exist on the type yet.
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
     type SlideCard = SportScoreboardCard & {
       _slideIndex: number;
-      _slideTimer: ReturnType<typeof setInterval> | null;
+      _slideTimer: CancelableTimer;
     };
     const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
 
@@ -49,7 +49,7 @@ describe("SportScoreboardCard slide mode", () => {
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(headerTexts(card)).toEqual(["NBA"]);
-      expect(asSlide(card)._slideTimer).toBeNull();
+      expect(asSlide(card)._slideTimer.active).toBe(false);
     });
 
     it("with two sections renders only the first section", () => {
@@ -131,7 +131,7 @@ describe("SportScoreboardCard slide mode", () => {
       const renderSpy = vi.spyOn(card, "_render");
 
       card.disconnectedCallback();
-      expect(asSlide(card)._slideTimer).toBeNull();
+      expect(asSlide(card)._slideTimer.active).toBe(false);
 
       vi.advanceTimersByTime(60_000);
       expect(renderSpy).not.toHaveBeenCalled();
@@ -222,7 +222,7 @@ describe("SportScoreboardCard slide mode", () => {
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
     type SlideCard = SportScoreboardCard & {
       _slideIndex: number;
-      _slideTimer: ReturnType<typeof setInterval> | null;
+      _slideTimer: CancelableTimer;
       _slidePaused: boolean;
     };
     const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
@@ -377,7 +377,7 @@ describe("SportScoreboardCard slide mode", () => {
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
     type SlideCard = SportScoreboardCard & {
       _slideIndex: number;
-      _slideTimer: ReturnType<typeof setInterval> | null;
+      _slideTimer: CancelableTimer;
       _slidePaused: boolean;
     };
     const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
@@ -424,7 +424,7 @@ describe("SportScoreboardCard slide mode", () => {
       card._hass = twoSectionHass();
       card.setConfig(carouselConfig());
       expect(asSlide(card)._slidePaused).toBe(true);
-      expect(asSlide(card)._slideTimer).toBeNull();
+      expect(asSlide(card)._slideTimer.active).toBe(false);
     });
 
     it("does not auto-advance when reduced motion is preferred", () => {
@@ -479,7 +479,7 @@ describe("SportScoreboardCard slide mode", () => {
       card._render();
 
       expect(asSlide(card)._slidePaused).toBe(false);
-      expect(asSlide(card)._slideTimer).not.toBeNull();
+      expect(asSlide(card)._slideTimer.active).toBe(true);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -493,7 +493,7 @@ describe("SportScoreboardCard slide mode", () => {
       card._render();
 
       expect(asSlide(card)._slidePaused).toBe(false);
-      expect(asSlide(card)._slideTimer).not.toBeNull();
+      expect(asSlide(card)._slideTimer.active).toBe(true);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -506,7 +506,7 @@ describe("SportScoreboardCard slide mode", () => {
     type SlideCfg = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
     type SlideC = SportScoreboardCard & {
       _slideIndex: number;
-      _slideTimer: ReturnType<typeof setInterval> | null;
+      _slideTimer: CancelableTimer;
       _slidePaused: boolean;
       _slideStep(dir: number): void;
       _syncSlideTimer(): void;
@@ -605,10 +605,13 @@ describe("SportScoreboardCard slide mode", () => {
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
       card._render();
-      const timer = asC(card)._slideTimer;
-      expect(timer).not.toBeNull();
+      expect(asC(card)._slideTimer.active).toBe(true);
+      // a restart would push the next tick out to 30s from *now*; a no-op leaves it due
+      // at the original 30s mark
+      vi.advanceTimersByTime(20_000);
       asC(card)._syncSlideTimer();
-      expect(asC(card)._slideTimer).toBe(timer);
+      vi.advanceTimersByTime(10_000);
+      expect(asC(card)._slideIndex).toBe(1);
     });
 
     it("the rotation interval tolerates the config being torn out from under it", () => {
@@ -642,7 +645,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("_syncSlideTimer tolerates a missing config", () => {
       const card = makeCard();
       expect(() => asC(card)._syncSlideTimer()).not.toThrow();
-      expect(asC(card)._slideTimer).toBeNull();
+      expect(asC(card)._slideTimer.active).toBe(false);
     });
 
     it("defaults to a 45s interval when slide_sec is omitted", () => {

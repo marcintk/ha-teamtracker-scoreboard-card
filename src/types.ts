@@ -43,7 +43,7 @@ export interface HassEntity {
 
 export type HassStates = Record<string, HassEntity>;
 
-import type { HasSubscribeEvents } from "./lifecycle/subscription.js";
+import type { HasSubscribeEvents } from "./subscription.js";
 export type HassConnection = HasSubscribeEvents;
 
 export interface HomeAssistant {

@@ -17,6 +17,16 @@ export function sectionMatches(section: SectionConfig, id: string): boolean {
   return matchesPrefix || (section.entities?.includes(id) ?? false);
 }
 
+// a special team can be listed either by its full entity id, or by the suffix left
+// once the section's own prefix is stripped — so config authors can write "lal" instead
+// of repeating "sensor.nba_lal". Distinct from `sectionMatches`: this checks membership
+// of one specific id already known to be in the section against a plain list, it never
+// decides section membership itself.
+export function isSpecialTeam(section: SectionConfig, id: string): boolean {
+  const { prefix = "", special_teams = [] } = section;
+  return special_teams.includes(id) || special_teams.includes(id.replace(prefix, ""));
+}
+
 // longest score_blink among every section a given id currently matches — an id tracked
 // by more than one section must stay blink-eligible until every matching section's own
 // window has had its chance, not just whichever section happens to be first in config.
