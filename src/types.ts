@@ -115,6 +115,6 @@ export interface CardConfig {
   mode?: "stack" | "slide";
   /** seconds per section while `mode: slide` (default 45; ≤0 falls back to 45) */
   slide_sec?: number;
-  /** characters shown in the TV-network badge before the `>` overflow marker (default 3; `0` hides the badge) */
+  /** characters shown in the TV-network badge before the `>` overflow marker (default 4; `0` hides the badge) */
   tv_badge?: number;
 }
