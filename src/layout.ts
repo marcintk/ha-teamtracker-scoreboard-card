@@ -39,7 +39,7 @@ export function buildHaCardStyle(
   } = layout;
 
   let slideMinH = "";
-  if (carousel && !height) {
+  if (carousel && !height && sections.length) {
     const slideH = rowGeometryPx(row_height, row_padding);
     const maxRows = Math.max(...sections.map((s) => 1 + (s.limit ?? DEFAULT_LIMIT)));
     slideMinH = `min-height:${maxRows * slideH}px;`;
