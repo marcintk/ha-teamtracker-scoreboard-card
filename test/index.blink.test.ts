@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { blinkMsForId } from "../src/config-match.js";
+import { gameKeyFor } from "../src/game-key.js";
 import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
@@ -106,7 +107,7 @@ describe("SportScoreboardCard blink wiring", () => {
       card._render();
       // sections is undefined, not just empty, so blinkMsFor falls back to `[]` and the
       // entry gets the 5s default window rather than being dropped outright
-      expect(card._blink.entries.has("sensor.nba_lal")).toBe(true);
+      expect(card._blink.entries.has(gameKeyFor("sensor.nba_lal", {}))).toBe(true);
     });
   });
 });

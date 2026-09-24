@@ -1,4 +1,4 @@
-import { gameKeyFor } from "./sorting.js";
+import { type GameKey, gameKeyFor } from "./game-key.js";
 import { CancelableTimer } from "./timer.js";
 import type { GameAttr, HassStates, ScoreBlinkEntry } from "./types.js";
 
@@ -33,12 +33,12 @@ export function opponentAbbr(attr: GameAttr | undefined): string {
  *  arming are one cohesive concern — kept behind this seam so a caller only ever needs
  *  `record` / `prune` / `armTimer` / `entries`, never the raw timestamp maps. */
 export class BlinkTracker {
-  private _scoreChangedAt = new Map<string, ScoreBlinkEntry>();
-  private _prevScores = new Map<string, Record<string, number>>();
-  private _liveIds = new Map<string, string[]>();
+  private _scoreChangedAt = new Map<GameKey, ScoreBlinkEntry>();
+  private _prevScores = new Map<GameKey, Record<string, number>>();
+  private _liveIds = new Map<GameKey, string[]>();
   private _timer = new CancelableTimer();
 
-  get entries(): ReadonlyMap<string, ScoreBlinkEntry> {
+  get entries(): ReadonlyMap<GameKey, ScoreBlinkEntry> {
     return this._scoreChangedAt;
   }
 
@@ -48,7 +48,7 @@ export class BlinkTracker {
 
   /** The blink window for one game: the longest `blinkMsFor` across every sensor currently
    *  reporting it — mirrors `blinkMsForId`'s own "longest wins" rule, just one level up. */
-  private _blinkMsForGame(key: string, blinkMsFor: BlinkMsFor): number {
+  private _blinkMsForGame(key: GameKey, blinkMsFor: BlinkMsFor): number {
     // record() only ever sets a _scoreChangedAt entry alongside a _liveIds entry for the
     // same key, and both are cleared together, so a key reaching here always has one
     const ids = this._liveIds.get(key) as string[];
@@ -59,7 +59,7 @@ export class BlinkTracker {
    *  it belongs to, and records a fresh per-team timestamp on change; a game with no sensor
    *  left in IN state is dropped entirely. */
   record(trackedIds: Iterable<string>, states: HassStates): void {
-    const groups = new Map<string, string[]>();
+    const groups = new Map<GameKey, string[]>();
     for (const id of trackedIds) {
       const key = gameKeyFor(id, states);
       const ids = groups.get(key);
@@ -114,7 +114,7 @@ export class BlinkTracker {
     trackedIds: Iterable<string>,
     states: HassStates,
     blinkMsFor: BlinkMsFor
-  ): ReadonlyMap<string, ScoreBlinkEntry> {
+  ): ReadonlyMap<GameKey, ScoreBlinkEntry> {
     this.record(trackedIds, states);
     this.prune(blinkMsFor);
     return this.entries;
