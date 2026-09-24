@@ -1,5 +1,6 @@
+import { gameKeyFor } from "./sorting.js";
 import { CancelableTimer } from "./timer.js";
-import type { HassStates, ScoreBlinkEntry } from "./types.js";
+import type { GameAttr, HassStates, ScoreBlinkEntry } from "./types.js";
 
 /** Resolves how long (ms) an id should keep blinking; the caller owns config/section lookup. */
 export type BlinkMsFor = (id: string) => number;
@@ -12,13 +13,29 @@ export function isBlinkFresh(at: number | undefined, blinkMs: number, now: numbe
   return blinkMs > 0 && at !== undefined && now - at < blinkMs;
 }
 
-/** Tracks per-side score-change timestamps for live (IN) games and the single timer that
- *  wakes a render once the last open blink window closes. Detection, expiry and timer
+/** The two `ScoreBlinkEntry` keys for one sensor's own attributes — its own team's abbr and
+ *  its opponent's, falling back to the literal "team"/"opponent" when a sensor (typically a
+ *  test fixture) has no `team_abbr`. `render.ts` uses the same pair to look a side's
+ *  freshness back up, so a key computed here can never drift from one read out there. */
+export function teamAbbr(attr: GameAttr | undefined): string {
+  return attr?.team_abbr ?? "team";
+}
+export function opponentAbbr(attr: GameAttr | undefined): string {
+  return attr?.opponent_abbr ?? "opponent";
+}
+
+/** Tracks per-game score-change timestamps for live (IN) games and the single timer that
+ *  wakes a render once the last open blink window closes. Keyed by `gameKeyFor` rather than
+ *  by raw sensor id: a game's two sibling sensors (each team's own) can independently flip
+ *  `state` a tick apart, which flips which one wins `sorting.ts`'s dedup and gets displayed
+ *  — keying by the displayed sensor's own id would let a blink armed against the *other*
+ *  sibling vanish into thin air the moment dedup's pick changes. Detection, expiry and timer
  *  arming are one cohesive concern — kept behind this seam so a caller only ever needs
  *  `record` / `prune` / `armTimer` / `entries`, never the raw timestamp maps. */
 export class BlinkTracker {
   private _scoreChangedAt = new Map<string, ScoreBlinkEntry>();
-  private _prevScores = new Map<string, { t: number; o: number }>();
+  private _prevScores = new Map<string, Record<string, number>>();
+  private _liveIds = new Map<string, string[]>();
   private _timer = new CancelableTimer();
 
   get entries(): ReadonlyMap<string, ScoreBlinkEntry> {
@@ -29,30 +46,58 @@ export class BlinkTracker {
     return this._timer.active;
   }
 
-  /** Diffs each tracked id's score against its last-seen value and records a fresh
-   *  per-side timestamp on change; leaving IN state drops the id entirely. */
+  /** The blink window for one game: the longest `blinkMsFor` across every sensor currently
+   *  reporting it — mirrors `blinkMsForId`'s own "longest wins" rule, just one level up. */
+  private _blinkMsForGame(key: string, blinkMsFor: BlinkMsFor): number {
+    // record() only ever sets a _scoreChangedAt entry alongside a _liveIds entry for the
+    // same key, and both are cleared together, so a key reaching here always has one
+    const ids = this._liveIds.get(key) as string[];
+    return Math.max(0, ...ids.map(blinkMsFor));
+  }
+
+  /** Diffs each tracked id's own score against its own last-seen value, grouped by the game
+   *  it belongs to, and records a fresh per-team timestamp on change; a game with no sensor
+   *  left in IN state is dropped entirely. */
   record(trackedIds: Iterable<string>, states: HassStates): void {
+    const groups = new Map<string, string[]>();
     for (const id of trackedIds) {
-      const gs = states[id]?.state;
-      const attr = states[id]?.attributes;
-      if (gs === "IN") {
-        const t = Number(attr?.team_score ?? 0);
-        const o = Number(attr?.opponent_score ?? 0);
-        const prev = this._prevScores.get(id);
-        if (prev && (prev.t !== t || prev.o !== o)) {
-          const now = Date.now();
-          // merge, don't overwrite — a change on one side must not reset/cancel the
-          // other side's own still-running blink window (see prune)
-          const next: ScoreBlinkEntry = { ...this._scoreChangedAt.get(id) };
-          if (prev.t !== t) next.team = now;
-          if (prev.o !== o) next.opponent = now;
-          this._scoreChangedAt.set(id, next);
-        }
-        this._prevScores.set(id, { t, o });
-      } else {
-        this._prevScores.delete(id);
-        this._scoreChangedAt.delete(id);
+      const key = gameKeyFor(id, states);
+      const ids = groups.get(key);
+      if (ids) ids.push(id);
+      else groups.set(key, [id]);
+    }
+
+    for (const [key, ids] of groups) {
+      const liveIds = ids.filter((id) => states[id]?.state === "IN");
+      if (!liveIds.length) {
+        this._prevScores.delete(key);
+        this._scoreChangedAt.delete(key);
+        this._liveIds.delete(key);
+        continue;
       }
+      this._liveIds.set(key, liveIds);
+
+      const prevScores = this._prevScores.get(key) ?? {};
+      const changedAt: ScoreBlinkEntry = { ...this._scoreChangedAt.get(key) };
+      let changed = false;
+      let now: number | undefined;
+      for (const id of liveIds) {
+        const attr = states[id]?.attributes;
+        const pairs: Array<[string, number]> = [
+          [teamAbbr(attr), Number(attr?.team_score ?? 0)],
+          [opponentAbbr(attr), Number(attr?.opponent_score ?? 0)],
+        ];
+        for (const [abbr, score] of pairs) {
+          if (prevScores[abbr] !== undefined && prevScores[abbr] !== score) {
+            now ??= Date.now();
+            changedAt[abbr] = now;
+            changed = true;
+          }
+          prevScores[abbr] = score;
+        }
+      }
+      this._prevScores.set(key, prevScores);
+      if (changed) this._scoreChangedAt.set(key, changedAt);
     }
   }
 
@@ -75,39 +120,38 @@ export class BlinkTracker {
     return this.entries;
   }
 
-  /** Drops any per-side timestamp whose own blink window (from `blinkMsFor`) has closed. */
+  /** Drops any per-team timestamp whose own blink window (from `blinkMsFor`, resolved
+   *  against whichever sensors currently report that game) has closed. */
   prune(blinkMsFor: BlinkMsFor): void {
     if (!this._scoreChangedAt.size) return;
     const now = Date.now();
-    for (const [id, entry] of this._scoreChangedAt) {
-      const blinkMs = blinkMsFor(id);
+    for (const [key, entry] of this._scoreChangedAt) {
+      const blinkMs = this._blinkMsForGame(key, blinkMsFor);
       const next: ScoreBlinkEntry = {};
-      if (isBlinkFresh(entry.team, blinkMs, now)) {
-        next.team = entry.team;
+      for (const [abbr, at] of Object.entries(entry)) {
+        if (isBlinkFresh(at, blinkMs, now)) next[abbr] = at;
       }
-      if (isBlinkFresh(entry.opponent, blinkMs, now)) {
-        next.opponent = entry.opponent;
-      }
-      if (next.team === undefined && next.opponent === undefined) {
-        this._scoreChangedAt.delete(id);
+      if (Object.keys(next).length === 0) {
+        this._scoreChangedAt.delete(key);
       } else {
-        this._scoreChangedAt.set(id, next);
+        this._scoreChangedAt.set(key, next);
       }
     }
   }
 
-  /** Arms a single timer for the earliest-expiring open window across every tracked id,
+  /** Arms a single timer for the earliest-expiring open window across every tracked game,
    *  so a render is scheduled exactly once the last blink should stop. No-op while a
    *  timer is already running or nothing is blinking. */
   armTimer(blinkMsFor: BlinkMsFor, onExpire: () => void): void {
     if (this._timer.active || !this._scoreChangedAt.size) return;
     const now = Date.now();
     let minExpiry = Infinity;
-    for (const [id, entry] of this._scoreChangedAt) {
-      const blinkMs = blinkMsFor(id);
+    for (const [key, entry] of this._scoreChangedAt) {
+      const blinkMs = this._blinkMsForGame(key, blinkMsFor);
       if (blinkMs <= 0) continue;
-      if (entry.team !== undefined) minExpiry = Math.min(minExpiry, entry.team + blinkMs);
-      if (entry.opponent !== undefined) minExpiry = Math.min(minExpiry, entry.opponent + blinkMs);
+      for (const at of Object.values(entry)) {
+        minExpiry = Math.min(minExpiry, at + blinkMs);
+      }
     }
     if (minExpiry === Infinity) return;
     this._timer.armOnce(Math.max(50, minExpiry - now), onExpire);
@@ -121,6 +165,7 @@ export class BlinkTracker {
   clear(): void {
     this._scoreChangedAt.clear();
     this._prevScores.clear();
+    this._liveIds.clear();
     this.clearTimer();
   }
 }

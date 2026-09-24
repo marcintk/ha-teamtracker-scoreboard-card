@@ -8,6 +8,17 @@ export function sortKeyFor(attr: GameAttr | null | undefined, now: number = Date
   return Number.isNaN(parsed) ? now : parsed;
 }
 
+/** Identifies the game a sensor describes (date + sorted team/opponent abbr pair), so the
+ *  two sibling sensors reporting the same game resolve to the same key regardless of which
+ *  one's own perspective (team vs opponent) each attribute is read from. Shared with
+ *  blink.ts, which needs the same game identity to survive dedup's winner picking a
+ *  different sensor between renders. */
+export function gameKeyFor(entityId: string, states: HassStates): string {
+  const { date, team_abbr, opponent_abbr } = states[entityId]?.attributes ?? {};
+  if (date == null) return entityId; // can't identify the game — keep row as unique
+  return `${date}_${[team_abbr, opponent_abbr].sort().join("_")}`;
+}
+
 // One row per game — the same game is often reported by more than one sensor (each
 // team's own sensor describes the game from its own perspective), so dedup keeps
 // exactly one per (date, team pair). Which sensor survives doesn't affect what's
@@ -18,15 +29,9 @@ export function sortKeyFor(attr: GameAttr | null | undefined, now: number = Date
 // was a real bug — see git history for `fadbb0e`). Otherwise, first-seen wins,
 // preserving the (already date-sorted) list's order.
 export function deduplicate(list: SortItem[], states: HassStates): SortItem[] {
-  const gameKey = (entityId: string): string => {
-    const { date, team_abbr, opponent_abbr } = states[entityId]?.attributes ?? {};
-    if (date == null) return entityId; // can't identify the game — keep row as unique
-    return `${date}_${[team_abbr, opponent_abbr].sort().join("_")}`;
-  };
-
   const groups = new Map<string, SortItem[]>();
   for (const item of list) {
-    const key = gameKey(item.entityId);
+    const key = gameKeyFor(item.entityId, states);
     const group = groups.get(key);
     if (group) group.push(item);
     else groups.set(key, [item]);

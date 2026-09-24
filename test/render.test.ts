@@ -1,6 +1,7 @@
 import { html } from "lit";
 import { describe, expect, it } from "vitest";
 import { rowHtml, sectionHtml } from "../src/render.js";
+import { gameKeyFor } from "../src/sorting.js";
 import type { GameAttr, SectionConfig } from "../src/types.js";
 import { doc } from "./helpers.js";
 
@@ -621,5 +622,28 @@ describe("sectionHtml scoreChangedAt", () => {
     );
     expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
+  });
+
+  it("blinks a row even though the blink was armed against its dedup-discarded sibling sensor", () => {
+    // regression: sorting.ts's dedup can display either team's own sensor for a game, and
+    // which one it picks can flip between renders — a blink armed while the OTHER sensor
+    // was displayed must still surface once this one is. scoreChangedAt is keyed by game
+    // (gameKeyFor) + team_abbr, not by the displayed sensor's own raw id.
+    const date = "2024-03-15";
+    const states = {
+      "sensor.nba_lal": makeState("IN", {
+        ...baseAttrs,
+        team_abbr: "LAL",
+        opponent_abbr: "BOS",
+        date,
+      }),
+    };
+    const key = gameKeyFor("sensor.nba_lal", states);
+    const scoreChangedAt = new Map([[key, { LAL: Date.now() }]]);
+    const el = doc(
+      sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
+    );
+    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
+    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
   });
 });
