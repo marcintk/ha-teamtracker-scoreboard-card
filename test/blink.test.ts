@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { BlinkTracker } from "../src/blink.js";
-import { gameKeyFor } from "../src/sorting.js";
+import { gameKeyFor } from "../src/game-key.js";
 import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeState } from "./index.fixtures.js";
 
@@ -8,6 +8,10 @@ import { baseAttrs, makeState } from "./index.fixtures.js";
 // caller (blinkMsForId in src/config-match.ts) applies — kept simple here since
 // BlinkTracker only depends on the *result*, not on SectionConfig itself.
 const blinkMsFor = (ms: number) => () => ms;
+
+// baseAttrs has no `date`, so gameKeyFor falls back to the entityId itself — this is
+// that same key, computed through gameKeyFor so it types as GameKey.
+const LAL = gameKeyFor("sensor.nba_lal", {});
 
 describe("BlinkTracker", () => {
   describe("record", () => {
@@ -19,7 +23,7 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       expect(typeof entry?.team).toBe("number");
       expect(entry?.opponent).toBeUndefined();
     });
@@ -32,7 +36,7 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       expect(entry?.team).toBeUndefined();
       expect(typeof entry?.opponent).toBe("number");
     });
@@ -45,7 +49,7 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       expect(typeof entry?.team).toBe("number");
       expect(typeof entry?.opponent).toBe("number");
     });
@@ -58,13 +62,13 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("does not record on first observation (no prev scores)", () => {
       const tracker = new BlinkTracker();
       tracker.record(["sensor.nba_lal"], { "sensor.nba_lal": makeState("IN", baseAttrs) });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("clears blink entry when game leaves IN state", () => {
@@ -75,9 +79,9 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(true);
+      expect(tracker.entries.has(LAL)).toBe(true);
       tracker.record(["sensor.nba_lal"], { "sensor.nba_lal": makeState("POST", baseAttrs) });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("does nothing for an empty tracked-id list", () => {
@@ -89,7 +93,7 @@ describe("BlinkTracker", () => {
       const tracker = new BlinkTracker();
       // entity in IN state with no score fields — attr?.team_score ?? 0 hits the 0 fallback
       tracker.record(["sensor.nba_lal"], { "sensor.nba_lal": makeState("IN", {}) });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("merges a new side's timestamp instead of overwriting the other side's still-running one", () => {
@@ -102,11 +106,11 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "88" }),
       });
-      const opponentAt = tracker.entries.get("sensor.nba_lal")?.opponent;
+      const opponentAt = tracker.entries.get(LAL)?.opponent;
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "88" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       expect(entry?.opponent).toBe(opponentAt);
       expect(typeof entry?.team).toBe("number");
     });
@@ -163,10 +167,10 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       if (entry) entry.team = Date.now() - 6_000;
       tracker.prune(blinkMsFor(5000));
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("keeps entries within the blink window", () => {
@@ -178,7 +182,7 @@ describe("BlinkTracker", () => {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
       tracker.prune(blinkMsFor(5000));
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(true);
+      expect(tracker.entries.has(LAL)).toBe(true);
     });
 
     it("removes entries when score_blink is 0", () => {
@@ -190,7 +194,7 @@ describe("BlinkTracker", () => {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
       tracker.prune(blinkMsFor(0));
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
 
     it("does nothing when there are no entries", () => {
@@ -208,13 +212,13 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      const entry = tracker.entries.get("sensor.nba_lal");
+      const entry = tracker.entries.get(LAL);
       if (entry) {
         entry.team = Date.now() - 6_000; // expired
         entry.opponent = Date.now() - 1_000; // still within window
       }
       tracker.prune(blinkMsFor(5000));
-      const pruned = tracker.entries.get("sensor.nba_lal");
+      const pruned = tracker.entries.get(LAL);
       expect(pruned?.team).toBeUndefined();
       expect(pruned?.opponent).toBeDefined();
     });
@@ -238,7 +242,7 @@ describe("BlinkTracker", () => {
         blinkMsFor(5000)
       );
       expect(entries).toBe(tracker.entries);
-      expect(typeof entries.get("sensor.nba_lal")?.team).toBe("number");
+      expect(typeof entries.get(LAL)?.team).toBe("number");
     });
 
     it("prunes what it just recorded when the window is already closed", () => {
@@ -257,7 +261,7 @@ describe("BlinkTracker", () => {
         },
         blinkMsFor(0)
       );
-      expect(entries.has("sensor.nba_lal")).toBe(false);
+      expect(entries.has(LAL)).toBe(false);
     });
   });
 
@@ -368,7 +372,7 @@ describe("BlinkTracker", () => {
       tracker.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      expect(tracker.entries.has("sensor.nba_lal")).toBe(false);
+      expect(tracker.entries.has(LAL)).toBe(false);
     });
   });
 });

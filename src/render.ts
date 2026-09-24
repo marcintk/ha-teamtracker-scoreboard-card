@@ -15,7 +15,8 @@ import {
   scoreText,
   teamColor,
 } from "./display.js";
-import { deduplicate, gameKeyFor, sortKeyFor } from "./sorting.js";
+import { type GameKey, gameKeyFor } from "./game-key.js";
+import { deduplicate, sortKeyFor } from "./sorting.js";
 import { CARD_STYLES } from "./styles.js";
 import type {
   ColorsConfig,
@@ -137,7 +138,7 @@ export function sectionHtml(
   states: HassStates,
   entityIds?: string[],
   colors: ColorsConfig = {},
-  scoreChangedAt: ReadonlyMap<string, ScoreBlinkEntry> = new Map(),
+  scoreChangedAt: ReadonlyMap<GameKey, ScoreBlinkEntry> = new Map(),
   flags: SectionFlags = {}
 ): TemplateResult | typeof nothing {
   const {
@@ -225,7 +226,7 @@ export interface CardTemplateInput {
   states: HassStates;
   trackedBySection: ReadonlyMap<number, string[]> | null;
   colors: ColorsConfig;
-  blinkEntries: ReadonlyMap<string, ScoreBlinkEntry>;
+  blinkEntries: ReadonlyMap<GameKey, ScoreBlinkEntry>;
   blinkMsFor: (entityId: string) => number;
   carousel: boolean;
   visibleSections: Array<[number, SectionConfig]>;

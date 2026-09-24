@@ -1,7 +1,7 @@
 import { html } from "lit";
 import { describe, expect, it } from "vitest";
+import { gameKeyFor } from "../src/game-key.js";
 import { rowHtml, sectionHtml } from "../src/render.js";
-import { gameKeyFor } from "../src/sorting.js";
 import type { GameAttr, SectionConfig } from "../src/types.js";
 import { doc } from "./helpers.js";
 
@@ -577,7 +577,7 @@ describe("sectionHtml scoreChangedAt", () => {
 
   it("marks the home score cell as fresh when the team side changed", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", { team: Date.now() }]]);
+    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
     const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
     expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
@@ -586,7 +586,7 @@ describe("sectionHtml scoreChangedAt", () => {
   it("marks the away score cell as fresh when the tracked entity plays away and its side changed", () => {
     const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" };
     const states = { "sensor.nba_lal": makeState("IN", awayAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", { team: Date.now() }]]);
+    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
     const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
     expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(false);
@@ -594,7 +594,9 @@ describe("sectionHtml scoreChangedAt", () => {
 
   it("does not mark as fresh when scoreChangedAt is past the blink window", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", { team: Date.now() - 10_000 }]]);
+    const scoreChangedAt = new Map([
+      [gameKeyFor("sensor.nba_lal", states), { team: Date.now() - 10_000 }],
+    ]);
     const el = doc(
       sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
     );
@@ -603,7 +605,7 @@ describe("sectionHtml scoreChangedAt", () => {
 
   it("does not mark as fresh when score_blink is 0", () => {
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([["sensor.nba_lal", { team: Date.now() }]]);
+    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
     const el = doc(
       sectionHtml({ ...section, score_blink: 0 }, states, Object.keys(states), {}, scoreChangedAt)
     );
@@ -615,7 +617,7 @@ describe("sectionHtml scoreChangedAt", () => {
     // each side's freshness is gated by its own timestamp, not a shared one
     const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
     const scoreChangedAt = new Map([
-      ["sensor.nba_lal", { team: Date.now() - 1000, opponent: Date.now() }],
+      [gameKeyFor("sensor.nba_lal", states), { team: Date.now() - 1000, opponent: Date.now() }],
     ]);
     const el = doc(
       sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
