@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { BlinkTracker } from "../src/blink.js";
+import { gameKeyFor } from "../src/sorting.js";
 import { useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeState } from "./index.fixtures.js";
 
@@ -108,6 +109,48 @@ describe("BlinkTracker", () => {
       const entry = tracker.entries.get("sensor.nba_lal");
       expect(entry?.opponent).toBe(opponentAt);
       expect(typeof entry?.team).toBe("number");
+    });
+
+    it("merges a score change from either sibling sensor into one shared per-game entry", () => {
+      // regression: sorting.ts's dedup can display either team's own sensor for a game,
+      // and which one it picks can flip between renders (see sorting.ts's gameKeyFor
+      // callers) — blink state has to survive that flip, so it's keyed by game + team_abbr
+      // instead of by whichever sensor happens to be the raw tracked id.
+      const date = "2024-03-15";
+      const tracker = new BlinkTracker();
+      const before = {
+        "sensor.wc_fra": makeState("IN", {
+          date,
+          team_abbr: "fra",
+          opponent_abbr: "bra",
+          team_score: "0",
+          opponent_score: "0",
+        }),
+        "sensor.wc_bra": makeState("IN", {
+          date,
+          team_abbr: "bra",
+          opponent_abbr: "fra",
+          team_score: "0",
+          opponent_score: "0",
+        }),
+      };
+      tracker.record(["sensor.wc_fra", "sensor.wc_bra"], before);
+      // France scores — its own sensor reflects the new score; Brazil's sibling sensor
+      // (which could be the one currently displayed) hasn't caught up yet.
+      const after = {
+        "sensor.wc_fra": makeState("IN", {
+          date,
+          team_abbr: "fra",
+          opponent_abbr: "bra",
+          team_score: "1",
+          opponent_score: "0",
+        }),
+        "sensor.wc_bra": before["sensor.wc_bra"],
+      };
+      tracker.record(["sensor.wc_fra", "sensor.wc_bra"], after);
+      const key = gameKeyFor("sensor.wc_bra", after);
+      expect(key).toBe(gameKeyFor("sensor.wc_fra", after));
+      expect(typeof tracker.entries.get(key)?.fra).toBe("number");
     });
   });
 

@@ -1,11 +1,12 @@
 export type GameState = "PRE" | "IN" | "POST" | "BYE";
 
-// per-side score-blink timestamps for one game's entity — a side's key is present only
-// while its own blink window is still open, so the two sides can blink independently
-export interface ScoreBlinkEntry {
-  team?: number;
-  opponent?: number;
-}
+// Per-game score-blink timestamps, keyed by each side's own team_abbr (falling back to
+// the literal "team"/"opponent" when a sensor has no team_abbr) rather than by whichever
+// sensor currently wins sorting.ts's dedup — a game's two sibling sensors can flip which
+// one is "displayed" between renders, so keying by the raw survivor id would let a blink
+// armed on the other sensor silently vanish. A key is present only while its own blink
+// window is still open, so sides blink independently of each other.
+export type ScoreBlinkEntry = Record<string, number>;
 
 export interface GameAttr {
   state?: string;

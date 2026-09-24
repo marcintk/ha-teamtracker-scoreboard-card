@@ -1,6 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { isBlinkFresh } from "./blink.js";
+import { isBlinkFresh, opponentAbbr, teamAbbr } from "./blink.js";
 import { isSpecialTeam, sectionMatches } from "./config-match.js";
 import { CSS_VARS } from "./css-vars.js";
 import {
@@ -15,7 +15,7 @@ import {
   scoreText,
   teamColor,
 } from "./display.js";
-import { deduplicate, sortKeyFor } from "./sorting.js";
+import { deduplicate, gameKeyFor, sortKeyFor } from "./sorting.js";
 import { CARD_STYLES } from "./styles.js";
 import type {
   ColorsConfig,
@@ -191,23 +191,19 @@ export function sectionHtml(
   const rows = deduplicate(items, states)
     .slice(0, limit)
     .map(({ entityId, special = false, opponentSpecial = false }) => {
-      const entry = scoreChangedAt.get(entityId);
+      // keyed by game, not by this survivor's own raw id — see blink.ts — so a blink
+      // armed against the dedup-discarded sibling sensor still surfaces here
+      const entry = scoreChangedAt.get(gameKeyFor(entityId, states));
       // entities was filtered above to ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
       const attr = entity.attributes;
       const blinkMs = blinkMsFor(entityId);
+      const homeAbbr = isTeamSide("home", attr) ? teamAbbr(attr) : opponentAbbr(attr);
+      const awayAbbr = isTeamSide("away", attr) ? teamAbbr(attr) : opponentAbbr(attr);
       // each side's own timestamp gates its own window independently — a change on one
       // side must not cut the other side's blink short
-      const freshHome = isBlinkFresh(
-        isTeamSide("home", attr) ? entry?.team : entry?.opponent,
-        blinkMs,
-        now
-      );
-      const freshAway = isBlinkFresh(
-        isTeamSide("away", attr) ? entry?.team : entry?.opponent,
-        blinkMs,
-        now
-      );
+      const freshHome = isBlinkFresh(entry?.[homeAbbr], blinkMs, now);
+      const freshAway = isBlinkFresh(entry?.[awayAbbr], blinkMs, now);
       return rowHtml(entity, special, colors, {
         opponentSpecial,
         freshHome,
