@@ -86,13 +86,14 @@ jobs:
             --bundle dist/card.js.sigstore.json \
             dist/card.js
 
-      - name: Rename provenance attestation for OSSF Scorecard detection
+      - name: Extract provenance DSSE envelope for OSSF Scorecard detection
         # Scorecard's Signed-Releases check greps release asset filenames for known signature
         # (.sigstore.json, etc.) and provenance (.intoto.jsonl) suffixes — it doesn't query
         # GitHub's Artifact Attestations API, so the attestation above is invisible to it under
-        # its real filename. Copy the same GitHub-issued bundle under the suffix it expects; the
-        # content is unchanged, only the filename Scorecard keys off of.
-        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/card.js.intoto.jsonl
+        # its real filename. The attest-build-provenance bundle wraps a DSSE-enveloped in-toto
+        # statement plus verification material; pull out just the envelope (the actual in-toto
+        # attestation) as JSON Lines, rather than renaming the whole bundle.
+        run: jq -ec .dsseEnvelope "${{ steps.attest.outputs.bundle-path }}" > dist/card.js.intoto.jsonl
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
