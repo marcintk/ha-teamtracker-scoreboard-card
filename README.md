@@ -52,8 +52,8 @@ type: custom:ha-teamtracker-scoreboard-card
 sections:
   - name: My Teams
     entities:
-      - sensor.nba_lal # LA Lakers
-      - sensor.epl_ars # Arsenal (London)
+      - sensor.nba_lal
+      - sensor.epl_ars
   - name: NBA Scoreboard
     prefix: sensor.nba_
     limit: 5
@@ -111,13 +111,13 @@ first.
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 layout:
-  height: 600px # fixed card box (else fits content)
-  row_height: 34px # roomier rows; the logo scales with it
+  height: 600px
+  row_height: 34px
   logo_width: 40px
-  score_width: 42px # room for 3-digit basketball totals
-  team_width: 130px # widen both team-name columns
-  row_padding: 8px # space above and below each game row (default 5px)
-  font_scale: 1.15 # ~15% larger text throughout
+  score_width: 42px
+  team_width: 130px
+  row_padding: 8px
+  font_scale: 1.15
 sections:
   - ...
 ```
@@ -138,15 +138,15 @@ sections:
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
 colors:
-  header: "#2196F3" # Material Blue
+  header: "#2196F3"
   live: indianred
-  score_leading: brown
-  name_leading: var(--primary-text-color)
-  score_winner: orange
-  name_winner: var(--primary-text-color)
-  score_loser: darkgray
   name_default: gray
-  name_special: "#2196F3" # Material Blue
+  name_special: "#2196F3"
+  name_leading: var(--primary-text-color)
+  name_winner: var(--primary-text-color)
+  score_leading: brown
+  score_winner: orange
+  score_loser: darkgray
 sections:
   - ...
 ```
