@@ -140,13 +140,13 @@ type: custom:ha-teamtracker-scoreboard-card
 colors:
   header: "#2196F3"
   live: indianred
-  score_leading: brown
-  name_leading: var(--primary-text-color)
-  score_winner: orange
-  name_winner: var(--primary-text-color)
-  score_loser: darkgray
   name_default: gray
   name_special: "#2196F3"
+  name_leading: var(--primary-text-color)
+  name_winner: var(--primary-text-color)
+  score_leading: brown
+  score_winner: orange
+  score_loser: darkgray
 sections:
   - ...
 ```
