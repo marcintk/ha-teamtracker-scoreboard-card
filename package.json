@@ -28,7 +28,7 @@
     "@vitest/coverage-v8": "^5.0.1",
     "jsdom": "^30.0.1",
     "playwright": "^1.62.1",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.8",
     "rollup": "^4.63.3",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3",
