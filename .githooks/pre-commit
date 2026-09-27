@@ -13,7 +13,14 @@ if [ -n "$(git diff --name-only)" ]; then
   exit 1
 fi
 
+# Known accepted gap: the fixers below run against the whole tree, not just this commit's files,
+# so a file that already matches HEAD but not the *current* formatter's opinion (e.g. right after a
+# biome/prettier version bump nobody's reformatted for yet) gets dirtied here, after the guard above
+# already passed, and swept in by `git add -u` regardless. Accepted because CI's `check:ci` still
+# enforces correct formatting on `main` either way, so the worst case is an incidental reformat
+# riding along in an unrelated commit, not a slipped formatting bug — and it's easy to spot in the
+# commit's own diff before pushing.
 npm run check                    # biome: lint + auto-fix formatting in src/, test/
 npm run --if-present format:md   # prettier: auto-fix markdown (skipped if script absent)
-git add -u                       # safe now — nothing unstaged exists to sweep in
+git add -u                       # safe now — nothing was unstaged before the fixers ran
 npm run typecheck                # tsc --noEmit: fail if types don't compile
