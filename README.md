@@ -5,15 +5,17 @@
 Home Assistant custom Lovelace card displaying live scores, pre-game odds, win probability, TV
 network, and series info — one row per game.
 
+[![hacs_badge][hacs-shield]][hacs] [![GitHub Release][releases-shield]][releases]
+[![License][license-shield]][license] [![Downloads][downloads-shield]][releases]
+[![Issues][issues-shield]][issues] [![PRs][prs-shield]][prs]
+[![Last Commit][last-commit-shield]][commits]
+
+[![Build and Test][ci-shield]][ci] [![Coverage][coverage-shield]][ci]
+[![CodeQL][codeql-shield]][codeql] [![OpenSSF][scorecard-shield]][scorecard]
+[![Socket.dev][socket-shield]][socket]
+
 Bug or feature request? [Open an issue][new-issue]. Idea, question, or setup to share? [Start a
 discussion][discussions].
-
-[![hacs_badge][hacs-shield]][hacs] [![GitHub Release][releases-shield]][releases]
-[![License][license-shield]][license] ![Maintenance][maintenance-shield]
-[![Coverage][coverage-shield]][ci] [![Downloads][downloads-shield]][releases]
-
-[![CI][ci-shield]][ci] [![CodeQL][codeql-shield]][codeql]
-[![OpenSSF Scorecard][scorecard-shield]][scorecard] [![Socket.dev][socket-shield]][socket]
 
 ## Requirements
 
@@ -165,32 +167,38 @@ sections:
 
 <!-- Reference links -->
 
-[repo]: https://github.com/marcintk/ha-teamtracker-scoreboard-card
-[new-issue]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/issues/new
-[discussions]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/discussions
-[sensors]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/tree/main/docs/sensors
-[hacs]: https://hacs.xyz
-[hacs-shield]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
-[releases]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/releases
-[releases-shield]: https://img.shields.io/github/release/marcintk/ha-teamtracker-scoreboard-card.svg
-[license]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/blob/main/LICENSE
-[license-shield]: https://img.shields.io/github/license/marcintk/ha-teamtracker-scoreboard-card.svg
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2026
 [ci]:
   https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml
 [ci-shield]:
   https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml/badge.svg
-[coverage-shield]: https://img.shields.io/badge/coverage-100%25-brightgreen
-[downloads-shield]:
-  https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/total?label=downloads
 [codeql]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/security/code-scanning
 [codeql-shield]:
   https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql-analysis.yml?branch=main&label=CodeQL
+[commits]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/commits/main
+[coverage-shield]: https://img.shields.io/badge/coverage-100%25-brightgreen
+[demo-img]:
+  https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
+[discussions]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/discussions
+[downloads-shield]:
+  https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/total?label=downloads
+[hacs]: https://hacs.xyz
+[hacs-shield]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
+[issues]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/issues
+[issues-shield]: https://img.shields.io/github/issues/marcintk/ha-teamtracker-scoreboard-card
+[last-commit-shield]:
+  https://img.shields.io/github/last-commit/marcintk/ha-teamtracker-scoreboard-card
+[license]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/blob/main/LICENSE
+[license-shield]: https://img.shields.io/github/license/marcintk/ha-teamtracker-scoreboard-card.svg
+[new-issue]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/issues/new
+[prs]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/pulls
+[prs-shield]: https://img.shields.io/github/issues-pr/marcintk/ha-teamtracker-scoreboard-card
+[releases]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/releases
+[releases-shield]: https://img.shields.io/github/release/marcintk/ha-teamtracker-scoreboard-card.svg
+[repo]: https://github.com/marcintk/ha-teamtracker-scoreboard-card
 [scorecard]:
   https://securityscorecards.dev/viewer/?uri=github.com/marcintk/ha-teamtracker-scoreboard-card
 [scorecard-shield]:
   https://img.shields.io/ossf-scorecard/github.com/marcintk/ha-teamtracker-scoreboard-card?label=OpenSSF&style=flat
+[sensors]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/tree/main/docs/sensors
 [socket]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/blob/main/socket.yml
 [socket-shield]: https://img.shields.io/badge/Socket.dev-Firewall%20%2B%20Scanning-fb3387.svg
-[demo-img]:
-  https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
