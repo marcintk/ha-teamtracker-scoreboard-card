@@ -180,7 +180,7 @@ sections:
   https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
 [discussions]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/discussions
 [downloads-shield]:
-  https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/latest/card.js?label=downloads%40latest
+  https://img.shields.io/github/downloads/marcintk/ha-teamtracker-scoreboard-card/latest/card.js?label=downloads
 [hacs]: https://hacs.xyz
 [hacs-shield]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
 [issues]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/issues
