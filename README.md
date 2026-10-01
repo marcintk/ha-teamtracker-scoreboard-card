@@ -170,7 +170,7 @@ sections:
 [ci]:
   https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml
 [ci-shield]:
-  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml/badge.svg
+  https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/card-build-and-test.yml?branch=main&label=Build%20and%20Test
 [codeql]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/security/code-scanning
 [codeql-shield]:
   https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql-analysis.yml?branch=main&label=CodeQL
