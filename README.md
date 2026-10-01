@@ -10,7 +10,7 @@ network, and series info — one row per game.
 [![Issues][issues-shield]][issues] [![PRs][prs-shield]][prs]
 [![Last Commit][last-commit-shield]][commits]
 
-[![Build and Test][ci-shield]][ci] [![Coverage][coverage-shield]][ci]
+[![Build and Test][ci-shield]][ci] [![Coverage][coverage-shield]][codecov]
 [![CodeQL][codeql-shield]][codeql] [![OpenSSF][scorecard-shield]][scorecard]
 [![Socket.dev][socket-shield]][socket]
 
@@ -170,12 +170,14 @@ sections:
 [ci]:
   https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml
 [ci-shield]:
-  https://github.com/marcintk/ha-teamtracker-scoreboard-card/actions/workflows/card-build-and-test.yml/badge.svg
+  https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/card-build-and-test.yml?branch=main&label=Build%20and%20Test
+[codecov]: https://codecov.io/gh/marcintk/ha-teamtracker-scoreboard-card
 [codeql]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/security/code-scanning
 [codeql-shield]:
   https://img.shields.io/github/actions/workflow/status/marcintk/ha-teamtracker-scoreboard-card/codeql-analysis.yml?branch=main&label=CodeQL
 [commits]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/commits/main
-[coverage-shield]: https://img.shields.io/badge/coverage-100%25-brightgreen
+[coverage-shield]:
+  https://img.shields.io/codecov/c/github/marcintk/ha-teamtracker-scoreboard-card?label=coverage
 [demo-img]:
   https://raw.githubusercontent.com/marcintk/ha-teamtracker-scoreboard-card/main/docs/demo.gif
 [discussions]: https://github.com/marcintk/ha-teamtracker-scoreboard-card/discussions
