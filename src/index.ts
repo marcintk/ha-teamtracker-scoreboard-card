@@ -8,7 +8,7 @@ import { asPx, buildHaCardStyle, resolveVisibleSections, rowGeometryPx } from ".
 import { buildCardTemplate } from "./render.js";
 import { CancelableSubscription } from "./subscription.js";
 import { CancelableTimer } from "./timer.js";
-import type { CardConfig, HomeAssistant, LayoutConfig } from "./types.js";
+import type { CardConfig, HomeAssistant, LayoutConfig, NameFormat } from "./types.js";
 import { DEFAULT_LIMIT, DEFAULT_SLIDE_SEC, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 
 export class SportScoreboardCard extends HTMLElement {
@@ -141,6 +141,12 @@ export class SportScoreboardCard extends HTMLElement {
   _tvBadge(): number {
     const n = this._config?.tv_badge;
     return typeof n === "number" && n >= 0 ? n : DEFAULT_TV_BADGE_CHARS;
+  }
+
+  /** team-name attribute to show; anything but `long_name` / `abbr` falls back to `name`. */
+  _nameFormat(): NameFormat {
+    const f = this._config?.name_format;
+    return f === "long_name" || f === "abbr" ? f : "name";
   }
 
   _syncSlideTimer(): void {
@@ -288,6 +294,7 @@ export class SportScoreboardCard extends HTMLElement {
         slideControls,
         highlightWinner: highlight_winner,
         tvBadge,
+        nameFormat: this._nameFormat(),
         haCardStyle,
         versionBadge,
         debugTableHtml: debug ? this._debug.tableHtml() : null,

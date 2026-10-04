@@ -649,3 +649,41 @@ describe("sectionHtml scoreChangedAt", () => {
     expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
   });
 });
+
+describe("nameFormat", () => {
+  const attrs: GameAttr = {
+    ...baseAttrs,
+    team_long_name: "Los Angeles Lakers",
+    opponent_long_name: "Boston Celtics",
+    team_abbr: "LAL",
+    opponent_abbr: "BOS",
+  };
+  const names = (nameFormat: "name" | "long_name" | "abbr") =>
+    [
+      ...doc(rowHtml(makeState("PRE", attrs), false, {}, { nameFormat })).querySelectorAll(
+        ".team-name"
+      ),
+    ].map((e) => e.textContent?.trim());
+
+  it("rowHtml renders long_name on both sides", () => {
+    expect(names("long_name")).toEqual(["Los Angeles Lakers", "Boston Celtics"]);
+  });
+
+  it("rowHtml renders abbr on both sides", () => {
+    expect(names("abbr")).toEqual(["LAL", "BOS"]);
+  });
+
+  it("sectionHtml sorts on team_name even when abbr is displayed", () => {
+    const states = {
+      "sensor.nba_1": makeState("PRE", { ...attrs, team_name: "Alphas", team_abbr: "ZZZ" }),
+      "sensor.nba_2": makeState("PRE", { ...attrs, team_name: "Betas", team_abbr: "AAA" }),
+    };
+    const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
+    const shown = [
+      ...doc(
+        sectionHtml(s, states, undefined, {}, undefined, { nameFormat: "abbr" })
+      ).querySelectorAll(".game-row .team-name:first-of-type"),
+    ].map((e) => e.textContent?.trim());
+    expect(shown.indexOf("ZZZ")).toBeLessThan(shown.indexOf("AAA"));
+  });
+});

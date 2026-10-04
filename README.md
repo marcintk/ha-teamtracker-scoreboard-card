@@ -71,17 +71,18 @@ into one row.
 
 ### Card
 
-| Option             | Type    | Default  | Description                                                                                                                                     |
-| ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                                  |
-| `tv_badge`         | number  | `4`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                                    |
-| `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls      |
-| `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                         |
-| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain |
-| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                       |
-| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                   |
-| `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                     |
-| `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                                 |
+| Option             | Type    | Default  | Description                                                                                                                                                                                                                                                                |
+| ------------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sections`         | list    | required | One entry per league — see [Section](#section)                                                                                                                                                                                                                             |
+| `tv_badge`         | number  | `4`      | Characters shown in the TV-network badge before the `>` overflow marker; `0` hides the badge                                                                                                                                                                               |
+| `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls                                                                                                                                 |
+| `name_format`      | string  | `name`   | Which team identity is shown: `name` (e.g. Seahawks), `long_name` (Seattle Seahawks) or `abbr` (SEA). Falls back to `name` when the chosen attribute is missing or empty; does not affect sort order. Long names may truncate with an ellipsis — widen `layout.team_width` |
+| `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                                                                                                                                                    |
+| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain                                                                                                                            |
+| `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                                                                                                                                                  |
+| `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                                                                                                                                              |
+| `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                                                                                                                                                |
+| `show_version`     | boolean | `false`  | Show the card version badge, centred at the top                                                                                                                                                                                                                            |
 
 ### Refresh
 
