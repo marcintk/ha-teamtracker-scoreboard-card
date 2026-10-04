@@ -146,6 +146,47 @@ describe("SportScoreboardCard core", () => {
     });
   });
 
+  describe("_nameFormat", () => {
+    const nameAttrs = {
+      ...baseAttrs,
+      team_long_name: "Los Angeles Lakers",
+      opponent_long_name: "Boston Celtics",
+      team_abbr: "LAL",
+      opponent_abbr: "BOS",
+    };
+    const renderedNames = (nameFormat?: unknown) => {
+      const card = makeCard();
+      card._config = { sections: [nbaSection], name_format: nameFormat } as never;
+      card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", nameAttrs) });
+      card._render();
+      return Array.from(card.shadowRoot?.querySelectorAll(".team-name") ?? []).map((e) =>
+        e.textContent?.trim()
+      );
+    };
+
+    it("defaults to name when name_format is unset", () => {
+      expect(renderedNames(undefined)).toEqual(["Lakers", "Celtics"]);
+    });
+
+    it("renders long_name on both sides", () => {
+      expect(renderedNames("long_name")).toEqual(["Los Angeles Lakers", "Boston Celtics"]);
+    });
+
+    it("renders abbr on both sides", () => {
+      expect(renderedNames("abbr")).toEqual(["LAL", "BOS"]);
+    });
+
+    it("falls back to name for an invalid value", () => {
+      expect(renderedNames("bogus")).toEqual(["Lakers", "Celtics"]);
+    });
+
+    it("returns name when _config is undefined", () => {
+      const card = makeCard();
+      card._config = undefined as never;
+      expect(card._nameFormat()).toBe("name");
+    });
+  });
+
   describe("_hasRelevantChange", () => {
     it("returns true when prevHass is null (no prior state to compare)", () => {
       const card = makeCard();

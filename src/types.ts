@@ -15,6 +15,7 @@ export interface GameAttr {
   team_homeaway?: "home" | "away";
   team_abbr?: string;
   team_name?: string;
+  team_long_name?: string;
   team_score?: string | number;
   team_winner?: boolean;
   team_record?: string;
@@ -22,6 +23,7 @@ export interface GameAttr {
   team_rank?: string | number;
   opponent_abbr?: string;
   opponent_name?: string;
+  opponent_long_name?: string;
   opponent_score?: string | number;
   opponent_winner?: boolean;
   opponent_record?: string;
@@ -100,6 +102,9 @@ export interface SortItem {
   opponentSpecial?: boolean;
 }
 
+/** Which team attribute is shown as each side's name. */
+export type NameFormat = "name" | "long_name" | "abbr";
+
 export interface CardConfig {
   sections?: SectionConfig[];
   /** size / spacing / text-scale knobs */
@@ -118,4 +123,6 @@ export interface CardConfig {
   slide_sec?: number;
   /** characters shown in the TV-network badge before the `>` overflow marker (default 4; `0` hides the badge) */
   tv_badge?: number;
+  /** team-name attribute shown on both sides: `name` (default), `long_name` or `abbr`; falls back to `name` when empty */
+  name_format?: NameFormat;
 }

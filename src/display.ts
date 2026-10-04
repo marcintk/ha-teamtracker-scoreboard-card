@@ -1,5 +1,5 @@
 import { CSS_VARS } from "./css-vars.js";
-import type { ColorsConfig, GameAttr, GameState } from "./types.js";
+import type { ColorsConfig, GameAttr, GameState, NameFormat } from "./types.js";
 
 export function isTeamSide(side: "home" | "away", attr: GameAttr): boolean {
   return side === "home" ? attr?.team_homeaway === "home" : attr?.team_homeaway !== "home";
@@ -108,8 +108,14 @@ export function scoreText(side: "home" | "away", gs: GameState, attr: GameAttr):
   return String(isTeamSide(side, attr) ? (attr.team_score ?? "") : (attr.opponent_score ?? ""));
 }
 
-export function nameText(side: "home" | "away", attr: GameAttr): string {
-  return String(isTeamSide(side, attr) ? (attr.team_name ?? "") : (attr.opponent_name ?? ""));
+export function nameText(
+  side: "home" | "away",
+  attr: GameAttr,
+  format: NameFormat = "name"
+): string {
+  const prefix = isTeamSide(side, attr) ? "team" : "opponent";
+  const chosen = attr[`${prefix}_${format}`];
+  return String(String(chosen ?? "").trim() ? chosen : (attr[`${prefix}_name`] ?? ""));
 }
 
 export function rankText(side: "home" | "away", attr: GameAttr): string {

@@ -261,6 +261,24 @@ describe("nameText", () => {
     expect(nameText("home", attr)).toBe("");
     expect(nameText("away", attr)).toBe("");
   });
+
+  it("honors the format argument on both sides and falls back to name", () => {
+    const attr = {
+      ...homeAttr,
+      team_long_name: "Los Angeles Lakers",
+      opponent_long_name: "Boston Celtics",
+      team_abbr: "LAL",
+      opponent_abbr: "BOS",
+    } as GameAttr;
+    expect(nameText("home", attr, "name")).toBe("Lakers");
+    expect(nameText("home", attr, "long_name")).toBe("Los Angeles Lakers");
+    expect(nameText("away", attr, "long_name")).toBe("Boston Celtics");
+    expect(nameText("home", attr, "abbr")).toBe("LAL");
+    expect(nameText("away", attr, "abbr")).toBe("BOS");
+    const sparse = { ...attr, team_long_name: "", opponent_abbr: undefined } as GameAttr;
+    expect(nameText("home", sparse, "long_name")).toBe("Lakers");
+    expect(nameText("away", sparse, "abbr")).toBe("Celtics");
+  });
 });
 
 describe("rankText", () => {

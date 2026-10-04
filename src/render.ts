@@ -23,6 +23,7 @@ import type {
   GameState,
   HassEntity,
   HassStates,
+  NameFormat,
   ScoreBlinkEntry,
   SectionConfig,
 } from "./types.js";
@@ -50,6 +51,7 @@ export interface RowFlags {
   freshAway?: boolean;
   highlightWinner?: boolean;
   tvBadge?: number;
+  nameFormat?: NameFormat;
 }
 
 export function rowHtml(
@@ -64,6 +66,7 @@ export function rowHtml(
     freshAway = false,
     highlightWinner = true,
     tvBadge = DEFAULT_TV_BADGE_CHARS,
+    nameFormat = "name",
   } = flags;
   const gs = (stateObj?.state ?? "") as GameState;
   const attr = stateObj?.attributes ?? {};
@@ -103,7 +106,7 @@ export function rowHtml(
   return html`
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr)}</div>
+    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr, nameFormat)}</div>
     <div class="team-rank" style="color:${opponentColor}">${rankText("home", attr)}</div>
   </div>
   <div class="logo logo-a">${logoHtml("home", attr)}</div>
@@ -112,7 +115,7 @@ export function rowHtml(
   <div class="score score-b${freshClassAway}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}"><span class="score-value">${scoreText("away", gs, attr)}</span></div>
   <div class="logo logo-b">${logoHtml("away", attr)}</div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr)}</div>
+    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr, nameFormat)}</div>
     <div class="team-rank" style="color:${opponentColor}">${rankText("away", attr)}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>
@@ -130,6 +133,7 @@ export interface SectionFlags {
   controls?: TemplateResult | typeof nothing;
   highlightWinner?: boolean;
   tvBadge?: number;
+  nameFormat?: NameFormat;
   blinkMsFor?: (entityId: string) => number;
 }
 
@@ -146,6 +150,7 @@ export function sectionHtml(
     controls = nothing,
     highlightWinner = true,
     tvBadge = DEFAULT_TV_BADGE_CHARS,
+    nameFormat = "name",
     blinkMsFor = () => (section.score_blink ?? DEFAULT_SCORE_BLINK) * 1000,
   } = flags;
   const { name, limit = DEFAULT_LIMIT } = section;
@@ -211,6 +216,7 @@ export function sectionHtml(
         freshAway,
         highlightWinner,
         tvBadge,
+        nameFormat,
       });
     });
 
@@ -233,6 +239,7 @@ export interface CardTemplateInput {
   slideControls: TemplateResult | typeof nothing;
   highlightWinner: boolean;
   tvBadge: number;
+  nameFormat: NameFormat;
   haCardStyle: string;
   versionBadge: TemplateResult | typeof nothing;
   /** pre-rendered debug-overlay table HTML, or null when `debug` is off. */
@@ -259,6 +266,7 @@ export function buildCardTemplate(input: CardTemplateInput): {
         controls: input.slideControls,
         highlightWinner: input.highlightWinner,
         tvBadge: input.tvBadge,
+        nameFormat: input.nameFormat,
         blinkMsFor: input.blinkMsFor,
       }
     )
