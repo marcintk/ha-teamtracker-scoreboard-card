@@ -256,6 +256,23 @@ exports[`CARD_STYLES > matches snapshot 1`] = `
     line-height: 1.1;
     padding-left: 4px;
   }
+  /* the row has a fixed height, so a long line must never wrap onto a second one:
+     cut it with an ellipsis instead. The tooltip variant keeps overflow visible (its
+     ::after bubble would be clipped) and ellipsises the inner .msg-text instead. */
+  .message > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .message > .tv-tooltip {
+    overflow: visible;
+  }
+  .msg-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .msg-sub {
     font-size: calc(10px * var(--ttsc-font-scale, 1));
     font-weight: normal;
@@ -277,7 +294,7 @@ exports[`CARD_STYLES > matches snapshot 1`] = `
      itself — the cell's own inline background must stay solid, or the fade
      reads as the background flashing rather than the number that changed */
   .score-fresh .score-value {
-    animation: score-flash 0.5s ease-in-out infinite;
+    animation: score-flash 0.25s ease-in-out 4; /* 4 blinks inside the fixed 1s BLINK_MS window */
   }
   @media (prefers-reduced-motion: reduce) {
     .score-fresh .score-value {
@@ -293,16 +310,16 @@ exports[`rowHtml structural snapshots > renders BYE markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:transparent;color:black"><span class="score-value"><!--?-->95</span></div>
+  <div class="score score-a" style="background:transparent;color:black"><!--?--><span class="score-value"><!--?-->95</span></div>
   <div class="colon" style="background:transparent;color:transparent"><!--?-->:</div>
-  <div class="score score-b" style="background:transparent;color:black"><span class="score-value"><!--?-->90</span></div>
+  <div class="score score-b" style="background:transparent;color:black"><!--?--><span class="score-value"><!--?-->90</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-sub-color, darkgray)">Bye</span></div>
@@ -314,16 +331,16 @@ exports[`rowHtml structural snapshots > renders IN markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-leading-color, var(--primary-text-color));font-weight:bold"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-leading-color, var(--primary-text-color))"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><span class="score-value"><!--?-->95</span></div>
+  <div class="score score-a" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><!--?--><span class="score-value"><!--?-->95</span></div>
   <div class="colon" style="background:lightgray;color:black"><!--?-->:</div>
-  <div class="score score-b" style="background:lightgray;color:black"><span class="score-value"><!--?-->90</span></div>
+  <div class="score score-b" style="background:lightgray;color:black"><!--?--><span class="score-value"><!--?-->90</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-live-color, indianred)"><!--?--></span><!--?--><!--?--></div>
@@ -335,16 +352,16 @@ exports[`rowHtml structural snapshots > renders IN with fresh score 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-leading-color, var(--primary-text-color));font-weight:bold"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-leading-color, var(--primary-text-color))"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a score-fresh" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><span class="score-value"><!--?-->95</span></div>
+  <div class="score score-a score-fresh" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><!--?--><span class="score-value"><!--?-->95</span></div>
   <div class="colon" style="background:lightgray;color:black"><!--?-->:</div>
-  <div class="score score-b" style="background:lightgray;color:black"><span class="score-value"><!--?-->90</span></div>
+  <div class="score score-b" style="background:lightgray;color:black"><!--?--><span class="score-value"><!--?-->90</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-live-color, indianred)"><!--?--></span><!--?--><!--?--></div>
@@ -356,16 +373,16 @@ exports[`rowHtml structural snapshots > renders POST markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-winner-color, var(--primary-text-color));font-weight:bold"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-winner-color, var(--primary-text-color))"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:transparent;color:var(--ttsc-score-winner-color, orange)"><span class="score-value"><!--?-->95</span></div>
+  <div class="score score-a" style="background:transparent;color:var(--ttsc-score-winner-color, orange)"><!--?--><span class="score-value"><!--?-->95</span></div>
   <div class="colon" style="background:transparent;color:#777"><!--?-->:</div>
-  <div class="score score-b" style="background:transparent;color:var(--ttsc-score-loser-color, darkgray)"><span class="score-value"><!--?-->90</span></div>
+  <div class="score score-b" style="background:transparent;color:var(--ttsc-score-loser-color, darkgray)"><!--?--><span class="score-value"><!--?-->90</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-score-winner-color, orange)"><!--?--></span><!--?--><!--?--></div>
@@ -377,16 +394,16 @@ exports[`rowHtml structural snapshots > renders PRE markup 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:#303030;color:black"><span class="score-value"><!--?-->–</span></div>
+  <div class="score score-a" style="background:#303030;color:black"><!--?--><span class="score-value"><!--?-->–</span></div>
   <div class="colon" style="background:#303030;color:black"><!--?-->:</div>
-  <div class="score score-b" style="background:#303030;color:black"><span class="score-value"><!--?-->–</span></div>
+  <div class="score score-b" style="background:#303030;color:black"><!--?--><span class="score-value"><!--?-->–</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-sub-color, darkgray)"><!--?--></span><!--?--><!--?--></div>
@@ -398,16 +415,16 @@ exports[`rowHtml structural snapshots > renders with showLogos enabled 1`] = `
 "<!---->
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:var(--ttsc-name-special-color, #2196F3);font-weight:bold"><!--?-->Lakers</div>
+    <div class="team-name" style="color:var(--ttsc-name-special-color, #2196F3)"><!--?-->Lakers</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->20-10</div>
   </div>
   <div class="logo logo-a"><!--?--><img alt="" src="https://cdn.example.com/lal.png"></div>
-  <div class="score score-a" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><span class="score-value"><!--?-->95</span></div>
+  <div class="score score-a" style="background:lightgray;color:var(--ttsc-score-leading-color, brown)"><!--?--><span class="score-value"><!--?-->95</span></div>
   <div class="colon" style="background:lightgray;color:black"><!--?-->:</div>
-  <div class="score score-b" style="background:lightgray;color:black"><span class="score-value"><!--?-->90</span></div>
+  <div class="score score-b" style="background:lightgray;color:black"><!--?--><span class="score-value"><!--?-->90</span></div>
   <div class="logo logo-b"><!--?--><img alt="" src="https://cdn.example.com/bos.png"></div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:var(--ttsc-name-default-color, #777);font-weight:normal"><!--?-->Celtics</div>
+    <div class="team-name" style="color:var(--ttsc-name-default-color, #777)"><!--?-->Celtics</div>
     <div class="team-rank" style="color:var(--ttsc-name-default-color, #777)"><!--?-->18-12</div>
   </div>
   <div class="message"><!--?--><span style="color:var(--ttsc-live-color, indianred)"><!--?--></span><!--?--><!--?--></div>
@@ -421,7 +438,7 @@ exports[`widget structural snapshots > messageHtml BYE 1`] = `"<!----><span styl
 
 exports[`widget structural snapshots > messageHtml IN short 1`] = `"<!----><span style="color:var(--ttsc-live-color, indianred)"><!--?-->Q3 5:00</span><!--?--><span class="msg-sub"><!--?-->Touchdown - LAL</span><!--?-->"`;
 
-exports[`widget structural snapshots > messageHtml IN truncated 1`] = `"<!----><span style="color:var(--ttsc-live-color, indianred)"><!--?-->Q3 5:00</span><!--?--><span class="msg-sub tv-tooltip" data-tooltip="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"><!--?-->AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&gt;</span><!--?-->"`;
+exports[`widget structural snapshots > messageHtml IN truncated 1`] = `"<!----><span style="color:var(--ttsc-live-color, indianred)"><!--?-->Q3 5:00</span><!--?--><span class="msg-sub tv-tooltip" data-tooltip="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"><span class="msg-text"><!--?-->AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span></span><!--?-->"`;
 
 exports[`widget structural snapshots > messageHtml POST 1`] = `"<!----><span style="color:var(--ttsc-score-winner-color, orange)"><!--?-->Final</span><!--?--><span class="msg-sub"><!--?-->LAL leads 2-1</span><!--?-->"`;
 

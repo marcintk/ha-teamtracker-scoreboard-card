@@ -41,3 +41,9 @@ MITM'ing sandbox proxy to Chromium (which doesn't read HTTP_PROXY/HTTPS_PROXY it
 the proxy's TLS-interception CA, and can lose the race to authenticate ~30 parallel logo requests
 before any of them succeeds) — no extra setup needed beyond allowing the domain.
 </important>
+
+<important if="you are reviewing or changing how `section.limit`, sorting, or dedup interact">
+`limit` intentionally takes the first N rows of the single chronological (optionally live-first)
+order — NOT the N games nearest to now. This was a deliberate decision (the old nearest-to-now
+`byDistance` pass was removed on purpose); do not flag it as a bug or reintroduce it.
+</important>

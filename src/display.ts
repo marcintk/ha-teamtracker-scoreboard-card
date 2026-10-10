@@ -1,9 +1,7 @@
 import { CSS_VARS } from "./css-vars.js";
-import type { ColorsConfig, GameAttr, GameState, NameFormat } from "./types.js";
-
-export function isTeamSide(side: "home" | "away", attr: GameAttr): boolean {
-  return side === "home" ? attr?.team_homeaway === "home" : attr?.team_homeaway !== "home";
-}
+import type { Side } from "./game-view.js";
+import type { ColorsConfig, GameState, NameFormat } from "./types.js";
+import { GAME_STATE } from "./utils.js";
 
 /** `colors.<key>` config override, or the `--ttsc-*` custom property with its default —
  *  the single source of truth for every colour's fallback chain. */
@@ -18,79 +16,68 @@ export function colorVar(override: string | undefined, cssVar: string, fallback:
  *  ahead/winning checks below, so they can't silently diverge on the tie case. */
 export type SideRelation = "ahead" | "trailing" | "tied";
 
-export function sideRelation(side: "home" | "away", gs: GameState, attr: GameAttr): SideRelation {
-  const isSide = isTeamSide(side, attr);
-  if (gs === "IN") {
-    const ts = parseFloat(String(attr.team_score ?? 0));
-    const os = parseFloat(String(attr.opponent_score ?? 0));
-    const mine = isSide ? ts : os;
-    const other = isSide ? os : ts;
-    return mine > other ? "ahead" : mine < other ? "trailing" : "tied";
+export function sideRelation(self: Side, other: Side, gs: GameState): SideRelation {
+  if (gs === GAME_STATE.IN) {
+    const mine = parseFloat(String(self.score ?? 0));
+    const theirs = parseFloat(String(other.score ?? 0));
+    return mine > theirs ? "ahead" : mine < theirs ? "trailing" : "tied";
   }
-  return (isSide ? attr.team_winner : attr.opponent_winner) ? "ahead" : "trailing";
+  return self.winner ? "ahead" : "trailing";
 }
 
 /** Shared leading/winner side-check used by `scoreColor()` — a tied score during IN
  *  counts as "ahead" here, matching the score cell's own always-colored-somehow look. */
-export function isSideAheadOrWinning(
-  side: "home" | "away",
-  gs: GameState,
-  attr: GameAttr
-): boolean {
-  return sideRelation(side, gs, attr) !== "trailing";
+export function isSideAheadOrWinning(self: Side, other: Side, gs: GameState): boolean {
+  return sideRelation(self, other, gs) !== "trailing";
 }
 
 /** Like `isSideAheadOrWinning()`, but a tied score during IN counts as neither
  *  side leading — matching how a POST draw (no `team_winner`/`opponent_winner`)
  *  already highlights neither side. Used for the `.team-name` highlight, which
  *  should only call out a side with a clear edge, not the score cell. */
-export function isSideOutrightWinning(
-  side: "home" | "away",
-  gs: GameState,
-  attr: GameAttr
-): boolean {
-  return sideRelation(side, gs, attr) === "ahead";
+export function isSideOutrightWinning(self: Side, other: Side, gs: GameState): boolean {
+  return sideRelation(self, other, gs) === "ahead";
 }
 
 // Both names fall back to the default gray by default; the outright leading
 // (IN) side takes the leading colour and the outright winning (POST) side
 // takes the winner colour — both theme-primary by default, independently
 // overridable. A tie/draw highlights neither side. A section.special_teams
-// entry overrides this with the special colour instead — see render.ts's
-// rowHtml, which applies it regardless of leading/winning state.
+// entry overrides this with the special colour instead — see row-view.ts's
+// buildRowView, which applies it regardless of leading/winning state.
 export function teamColor(
-  side: "home" | "away",
+  self: Side,
+  other: Side,
   gs: GameState,
-  attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  if (gs === "IN" && isSideOutrightWinning(side, gs, attr))
+  if (gs === GAME_STATE.IN && isSideOutrightWinning(self, other, gs))
     return colorVar(colors.name_leading, CSS_VARS.nameLeadingColor, "var(--primary-text-color)");
-  if (gs === "POST" && isSideOutrightWinning(side, gs, attr))
+  if (gs === GAME_STATE.POST && isSideOutrightWinning(self, other, gs))
     return colorVar(colors.name_winner, CSS_VARS.nameWinnerColor, "var(--primary-text-color)");
   return colorVar(colors.name_default, CSS_VARS.nameDefaultColor, "#777"); /* gray */
 }
 
 export function scoreBg(gs: GameState): string {
-  if (gs === "PRE") return "#303030"; /* near-black */
-  if (gs === "IN") return "lightgray";
+  if (gs === GAME_STATE.PRE) return "#303030"; /* near-black */
+  if (gs === GAME_STATE.IN) return "lightgray";
   return "transparent";
 }
 
 export function scoreColor(
-  side: "home" | "away",
+  self: Side,
+  other: Side,
   gs: GameState,
-  attr: GameAttr,
   colors: ColorsConfig = {}
 ): string {
-  if (gs === "PRE") return "black";
-  if (gs === "IN") {
-    return isSideAheadOrWinning(side, gs, attr)
+  if (gs === GAME_STATE.PRE) return "black";
+  if (gs === GAME_STATE.IN) {
+    return isSideAheadOrWinning(self, other, gs)
       ? colorVar(colors.score_leading, CSS_VARS.scoreLeadingColor, "brown")
       : "black";
   }
-  if (gs === "POST") {
-    return isSideAheadOrWinning(side, gs, attr)
+  if (gs === GAME_STATE.POST) {
+    return isSideAheadOrWinning(self, other, gs)
       ? colorVar(colors.score_winner, CSS_VARS.scoreWinnerColor, "orange")
       : colorVar(colors.score_loser, CSS_VARS.scoreLoserColor, "darkgray");
   }
@@ -98,26 +85,21 @@ export function scoreColor(
 }
 
 export function colonColor(gs: GameState): string {
-  if (gs === "PRE" || gs === "IN") return "black";
-  if (gs === "POST") return "#777"; /* gray */
+  if (gs === GAME_STATE.PRE || gs === GAME_STATE.IN) return "black";
+  if (gs === GAME_STATE.POST) return "#777"; /* gray */
   return "transparent";
 }
 
-export function scoreText(side: "home" | "away", gs: GameState, attr: GameAttr): string {
-  if (gs === "PRE") return "–";
-  return String(isTeamSide(side, attr) ? (attr.team_score ?? "") : (attr.opponent_score ?? ""));
+export function scoreText(self: Side, gs: GameState): string {
+  if (gs === GAME_STATE.PRE) return "–";
+  return String(self.score ?? "");
 }
 
-export function nameText(
-  side: "home" | "away",
-  attr: GameAttr,
-  format: NameFormat = "name"
-): string {
-  const prefix = isTeamSide(side, attr) ? "team" : "opponent";
-  const chosen = attr[`${prefix}_${format}`];
-  return String(String(chosen ?? "").trim() ? chosen : (attr[`${prefix}_name`] ?? ""));
+export function nameText(self: Side, format: NameFormat = "name"): string {
+  const chosen = self.names[format];
+  return String(String(chosen ?? "").trim() ? chosen : (self.names.name ?? ""));
 }
 
-export function rankText(side: "home" | "away", attr: GameAttr): string {
-  return String(isTeamSide(side, attr) ? (attr.team_record ?? "") : (attr.opponent_record ?? ""));
+export function rankText(self: Side): string {
+  return String(self.record ?? "");
 }

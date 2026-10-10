@@ -1,4 +1,4 @@
-// Single source of truth for every `--ttsc-*` custom property name. `index.ts`'s `_render`
+// Single source of truth for every `--ttsc-*` custom property name. `layout.ts`'s `buildHaCardStyle`
 // is the sole producer (it writes these onto `ha-card`'s inline style); `styles.ts`,
 // `display.ts`, `render.ts` and `widgets.ts` are the consumers (CSS defaults / `colorVar`
 // fallback chains). Renaming a var here is then a single edit instead of a silent runtime
