@@ -79,8 +79,10 @@ describe("CARD_STYLES", () => {
     expect(matches).toHaveLength(2);
   });
 
-  it("keeps a 60px shrink floor on the team columns", () => {
-    expect(CARD_STYLES).toMatch(/\.team-col\s*\{[^}]*min-width:\s*60px/);
+  it("ties the team column min-width to the configured width", () => {
+    expect(CARD_STYLES).toMatch(
+      /\.team-col\s*\{[^}]*min-width:\s*var\(--ttsc-team-col-width,\s*99px\)/
+    );
   });
 
   it("wires logo width to the --ttsc-logo-width custom property", () => {
