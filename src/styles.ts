@@ -135,18 +135,13 @@ export const CARD_STYLES = `
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
-    /* the configured width is the preferred size; keep a 60px floor so a narrow
-       dashboard column compresses the names rather than overflowing the row */
-    min-width: 60px;
-  }
-  .team-col-a {
-    text-align: right; padding-right: 3px;
+    /* width and min-width share one var, so any configured team_width is honoured
+       exactly (no hidden floor); long names truncate with an ellipsis instead */
     width: var(${CSS_VARS.teamColWidth}, 99px);
+    min-width: var(${CSS_VARS.teamColWidth}, 99px);
   }
-  .team-col-b {
-    text-align: left; padding-left: 3px;
-    width: var(${CSS_VARS.teamColWidth}, 99px);
-  }
+  .team-col-a { text-align: right; padding-right: 3px; }
+  .team-col-b { text-align: left; padding-left: 3px; }
 
   .team-name {
     font-size: calc(13px * var(${CSS_VARS.fontScale}, 1));

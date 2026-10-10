@@ -107,6 +107,8 @@ export type NameFormat = "name" | "long_name" | "abbr";
 
 export interface CardConfig {
   sections?: SectionConfig[];
+  /** pin live (IN) games above the rest of each section; default `false` (oldest → newest) */
+  live_first?: boolean;
   /** size / spacing / text-scale knobs */
   layout?: LayoutConfig;
   colors?: ColorsConfig;

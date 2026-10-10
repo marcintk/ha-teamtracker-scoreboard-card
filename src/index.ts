@@ -295,6 +295,7 @@ export class SportScoreboardCard extends HTMLElement {
         highlightWinner: highlight_winner,
         tvBadge,
         nameFormat: this._nameFormat(),
+        liveFirst: this._config?.live_first === true,
         haCardStyle,
         versionBadge,
         debugTableHtml: debug ? this._debug.tableHtml() : null,

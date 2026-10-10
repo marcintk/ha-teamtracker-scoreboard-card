@@ -63,9 +63,8 @@ sections:
 
 ## Display
 
-A section renders one row per game: live games first, then every other game by nearness to now, so
-the next kick-off and the just-finished game sit near the top; the two sensors for a game are merged
-into one row.
+A section renders one row per game, oldest to newest (games with no date go last); the two sensors
+for a game are merged into one row. Set `live_first: true` to pin live games above the rest.
 
 ## Configuration
 
@@ -78,6 +77,7 @@ into one row.
 | `mode`             | string  | `stack`  | `stack` shows every section; `slide` shows one at a time (needs ≥ 2 sections), auto-advancing with `‹` / stop-resume / `›` header controls                          |
 | `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                                             |
 | `name_format`      | string  | `name`   | Team label: `name` (Seahawks), `long_name` (Seattle Seahawks) or `abbr` (SEA); falls back to `name` if missing. Long names may truncate — widen `layout.team_width` |
+| `live_first`       | boolean | `false`  | Pin live (`IN`) games above the rest of each section; otherwise every row is ordered oldest to newest                                                               |
 | `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain                     |
 | `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                                           |
 | `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                                       |
@@ -100,7 +100,7 @@ The card subscribes to Home Assistant state changes and re-renders when a tracke
 | `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |
 | `section.prefix`        | string | optional* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                   |
 | `section.entities`      | list   | optional* | Explicit list of entity IDs, included in addition to any `prefix` match — for entities renamed away from a shared prefix, or cherry-picked from elsewhere              |
-| `section.limit`         | number | `10`      | Max rows to show                                                                                                                                                       |
+| `section.limit`         | number | `10`      | Max rows to show — keeps the N games nearest to now (live first), then shown in display order                                                                          |
 | `section.score_blink`   | number | `5`       | Seconds to blink the score after a goal/basket; `0` disables                                                                                                           |
 | `section.special_teams` | list   | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |
 

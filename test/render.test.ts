@@ -321,7 +321,7 @@ describe("sectionHtml", () => {
   const H = 3600_000;
   const iso = (ms: number) => new Date(Date.now() + ms).toISOString();
 
-  it("schedule puts live games above everything else", () => {
+  it("live_first puts live games above everything else", () => {
     const states = {
       "sensor.nba_fin": makeState("POST", { ...baseAttrs, team_name: "Finished", date: iso(-H) }),
       "sensor.nba_soon": makeState("PRE", { ...baseAttrs, team_name: "Upcoming", date: iso(H) }),
@@ -329,12 +329,13 @@ describe("sectionHtml", () => {
       "sensor.nba_live": makeState("IN", { ...baseAttrs, team_name: "Live", date: iso(-5 * H) }),
     };
     const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
-    const text = doc(sectionHtml(s, states)).textContent ?? "";
+    const text =
+      doc(sectionHtml(s, states, undefined, {}, new Map(), { liveFirst: true })).textContent ?? "";
     expect(text.indexOf("Live")).toBeLessThan(text.indexOf("Finished"));
     expect(text.indexOf("Live")).toBeLessThan(text.indexOf("Upcoming"));
   });
 
-  it("interleaves PRE and POST by distance from now", () => {
+  it("orders PRE and POST oldest to newest", () => {
     const states = {
       "sensor.nba_recent": makeState("POST", { ...baseAttrs, team_name: "Recent", date: iso(-H) }),
       "sensor.nba_soon": makeState("PRE", { ...baseAttrs, team_name: "Soon", date: iso(3 * H) }),
@@ -343,10 +344,9 @@ describe("sectionHtml", () => {
     };
     const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
     const text = doc(sectionHtml(s, states)).textContent ?? "";
-    // |Δ from now|: Recent 1h, Soon 3h, Far 20h, Old 40h — a POST outranks a PRE here
+    expect(text.indexOf("Old")).toBeLessThan(text.indexOf("Recent"));
     expect(text.indexOf("Recent")).toBeLessThan(text.indexOf("Soon"));
     expect(text.indexOf("Soon")).toBeLessThan(text.indexOf("Far"));
-    expect(text.indexOf("Far")).toBeLessThan(text.indexOf("Old"));
   });
 
   it("renders by-date order with no bold highlight and blank position cells even when every tracked team has a numeric win-loss record", () => {
@@ -539,6 +539,83 @@ describe("sectionHtml", () => {
     );
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");
+  });
+
+  describe("card sort", () => {
+    const H = 3600_000;
+    const at = (ms: number) => new Date(Date.now() + ms).toISOString();
+    const game = (state: string, name: string, abbr: string, date?: string) =>
+      makeState(state, {
+        ...baseAttrs,
+        team_name: name,
+        team_abbr: abbr,
+        opponent_abbr: `x${abbr}`,
+        ...(date ? { date } : {}),
+      });
+    // distance from now: Bye 0, Recent 1h, Soon 3h, Live 5h, Far 20h, Old 40h
+    const states = {
+      "sensor.s_far": game("PRE", "Far", "far", at(20 * H)),
+      "sensor.s_old": game("POST", "Old", "old", at(-40 * H)),
+      "sensor.s_bye": game("BYE", "Bye", "bye"),
+      "sensor.s_live": game("IN", "Live", "liv", at(-5 * H)),
+      "sensor.s_soon": game("PRE", "Soon", "soo", at(3 * H)),
+      "sensor.s_recent": game("POST", "Recent", "rec", at(-1 * H)),
+    };
+    const sec: SectionConfig = { name: "S", prefix: "sensor.s_", limit: 10, special_teams: [] };
+    // home column carries team_name (team_homeaway: "home")
+    const order = (cfg: SectionConfig, liveFirst?: boolean, st: typeof states = states) =>
+      [
+        ...doc(sectionHtml(cfg, st, undefined, {}, new Map(), { liveFirst })).querySelectorAll(
+          ".game-row"
+        ),
+      ].map((r) => r.querySelector(".team-name")?.textContent?.trim() ?? "");
+
+    it("defaults to oldest-to-newest, live not pinned, undated last", () => {
+      const expected = ["Old", "Live", "Recent", "Soon", "Far", "Bye"];
+      expect(order(sec)).toEqual(expected);
+      expect(order(sec, false)).toEqual(expected);
+    });
+
+    it("live_first pins live games, the rest stay oldest-to-newest", () => {
+      expect(order(sec, true)).toEqual(["Live", "Old", "Recent", "Soon", "Far", "Bye"]);
+    });
+
+    it("limit keeps the games nearest to now, then applies the display order", () => {
+      const nearest = ["Live", "Bye", "Recent"];
+      for (const liveFirst of [false, true]) {
+        expect([...order({ ...sec, limit: 3 }, liveFirst)].sort()).toEqual([...nearest].sort());
+      }
+      expect(order({ ...sec, limit: 3 })).toEqual(["Live", "Recent", "Bye"]);
+      // the stale "Old" final never crowds out a live / upcoming game
+      expect(order({ ...sec, limit: 3 })).not.toContain("Old");
+    });
+
+    it("dedups after sorting, before applying limit", () => {
+      // sibling sensor reporting the same Old game from the other side
+      const dupDate = at(-40 * H);
+      const withDup = {
+        ...states,
+        "sensor.s_old": makeState("POST", {
+          ...baseAttrs,
+          team_name: "Old",
+          team_abbr: "old",
+          opponent_abbr: "xold",
+          date: dupDate,
+        }),
+        "sensor.s_old2": makeState("POST", {
+          ...baseAttrs,
+          team_name: "OldMirror",
+          team_abbr: "xold",
+          opponent_abbr: "old",
+          date: dupDate,
+        }),
+      };
+      // the duplicate must not consume a limit slot: Old appears once and the
+      // sixth game still fits within limit 6
+      const rows = order({ ...sec, limit: 6 }, false, withDup);
+      expect(rows.filter((n) => n === "Old" || n === "OldMirror")).toHaveLength(1);
+      expect(rows).toHaveLength(6);
+    });
   });
 });
 
