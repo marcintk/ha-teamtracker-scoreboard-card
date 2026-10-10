@@ -16,7 +16,7 @@ import {
   teamColor,
 } from "./display.js";
 import { type GameKey, gameKeyFor } from "./game-key.js";
-import { deduplicate, sortKeyFor } from "./sorting.js";
+import { comparatorFor, deduplicate, sortKeyFor } from "./sorting.js";
 import { CARD_STYLES } from "./styles.js";
 import type {
   ColorsConfig,
@@ -36,11 +36,6 @@ import {
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
-
-// live (IN) games always sit above everything else. Every other state — PRE /
-// BYE / POST — shares one band, ordered by distance from now (see the sort),
-// so an imminent fixture and a just-finished game interleave.
-const scheduleGroup = (state: string | undefined): number => (state === "IN" ? 0 : 1);
 
 /** Same-typed flags grouped behind one object so a call site reads as labeled fields —
  *  `{ freshHome, freshAway }` can't be silently transposed the way two adjacent
@@ -134,6 +129,7 @@ export interface SectionFlags {
   highlightWinner?: boolean;
   tvBadge?: number;
   nameFormat?: NameFormat;
+  liveFirst?: boolean;
   blinkMsFor?: (entityId: string) => number;
 }
 
@@ -151,6 +147,7 @@ export function sectionHtml(
     highlightWinner = true,
     tvBadge = DEFAULT_TV_BADGE_CHARS,
     nameFormat = "name",
+    liveFirst = false,
     blinkMsFor = () => (section.score_blink ?? DEFAULT_SCORE_BLINK) * 1000,
   } = flags;
   const { name, limit = DEFAULT_LIMIT } = section;
@@ -181,21 +178,13 @@ export function sectionHtml(
     };
   });
 
-  items.sort((a, b) => {
-    // live games first
-    const ga = scheduleGroup(states[a.entityId]?.state);
-    const gb = scheduleGroup(states[b.entityId]?.state);
-    if (ga !== gb) return ga - gb;
-    // then everything else by distance from now — the soonest kickoff and the
-    // most-recent final float to the top, regardless of PRE vs POST
-    const near = Math.abs(a.key - now) - Math.abs(b.key - now);
-    if (near !== 0) return near;
-    const nameDiff = a.teamName.localeCompare(b.teamName);
-    return nameDiff !== 0 ? nameDiff : a.entityId.localeCompare(b.entityId);
-  });
+  // `limit` always keeps the games nearest to now (live pinned) so chronological
+  // order can't fill its slots with stale finals; the display order is applied after
+  items.sort(comparatorFor({ liveFirst: true, byDistance: true }, now, states));
 
   const rows = deduplicate(items, states)
     .slice(0, limit)
+    .sort(comparatorFor({ liveFirst, byDistance: false }, now, states))
     .map(({ entityId, special = false, opponentSpecial = false }) => {
       // keyed by game, not by this survivor's own raw id — see blink.ts — so a blink
       // armed against the dedup-discarded sibling sensor still surfaces here
@@ -240,6 +229,7 @@ export interface CardTemplateInput {
   highlightWinner: boolean;
   tvBadge: number;
   nameFormat: NameFormat;
+  liveFirst?: boolean;
   haCardStyle: string;
   versionBadge: TemplateResult | typeof nothing;
   /** pre-rendered debug-overlay table HTML, or null when `debug` is off. */
@@ -267,6 +257,7 @@ export function buildCardTemplate(input: CardTemplateInput): {
         highlightWinner: input.highlightWinner,
         tvBadge: input.tvBadge,
         nameFormat: input.nameFormat,
+        liveFirst: input.liveFirst,
         blinkMsFor: input.blinkMsFor,
       }
     )
