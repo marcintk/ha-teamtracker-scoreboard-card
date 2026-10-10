@@ -78,32 +78,33 @@ function makeDriver(page, framesDir, clip) {
 }
 
 async function runScenario(page, d) {
-  await d.hold(20); // rest on the first section — long enough to read all 6 rows
+  const set = (id, patch, state) => page.evaluate(([i, p, st]) => window.__set(i, p, st), [id, patch, state]);
+  await d.hold(20); // rest on the full stack of three sections
 
-  // rotation starts paused (prefers-reduced-motion); step through the sections
-  // with the ▸ button, holding on each long enough to read it
-  await d.click(".slide-btn.nav.next");
-  await sleep(200);
-  await d.hold(24);
-  await d.click(".slide-btn.nav.next");
-  await sleep(200);
-  await d.hold(24);
-  await d.click(".slide-btn.nav.next"); // wraps back to the NBA section
-  await sleep(200);
-  await d.hold(16);
-
-  // a live score updates on the visible (NBA) section → the score cell blinks.
-  // the context runs with prefers-reduced-motion: reduce (for deterministic paused
-  // rotation, read once at setConfig), but that also disables the .score-fresh
-  // CSS animation outright — flip to no-preference just for this window so the
-  // blink actually animates on camera; it doesn't retroactively affect rotation.
+  // .score-fresh blink is disabled under prefers-reduced-motion — enable it for the updates
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.evaluate(() => window.__bumpScore());
-  await d.hold(28);
 
-  // start the clock with the ▮▮/▶ toggle and let it auto-advance once (slide_sec 4)
-  await d.click(".slide-btn.toggle");
-  await d.hold(56);
+  // goals land in different sections, one after another
+  await set("sensor.nba_bos", { team_score: 91, clock: "Q3 3:50" });
+  await d.hold(24);
+  await set("sensor.nhl_col", { team_score: 4, clock: "2nd 5:12" });
+  await d.hold(24);
+  await set("sensor.epl_liv", { opponent_score: 2, clock: "71'" });
+  await d.hold(24);
+
+  // lead change: the trailing side scores
+  await set("sensor.nhl_tb", { team_score: 2, clock: "1st 14:20" });
+  await d.hold(24);
+
+  // an upcoming game tips off (PRE → IN), then scores
+  await set("sensor.nba_nyk", { team_score: 0, opponent_score: 0, clock: "Q1 12:00", kickoff_in: undefined }, "IN");
+  await d.hold(20);
+  await set("sensor.nba_nyk", { team_score: 3, clock: "Q1 11:21" });
+  await d.hold(24);
+
+  // a live game ends (IN → POST): winner marked, clock shows Final
+  await set("sensor.epl_liv", { opponent_score: 2, team_score: 3, clock: "FT", team_winner: true }, "POST");
+  await d.hold(30);
 
   await d.hold(12); // resting frames before the loop point
 }

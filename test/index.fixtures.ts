@@ -1,13 +1,8 @@
 // Shared fixtures for the SportScoreboardCard test files (index.core / index.slide /
 // index.layout / index.blink). Importing "../src/index.js" registers the custom element.
-import { vi } from "vitest";
 import "../src/index.js";
 import type { SportScoreboardCard } from "../src/index.js";
 import type { GameAttr, HassStates, HomeAssistant } from "../src/types.js";
-
-export type SubscribeCallback = (event: { data: { entity_id: string } }) => void;
-export const getCallback = (fn: ReturnType<typeof vi.fn>): SubscribeCallback =>
-  (fn.mock.calls as [[SubscribeCallback]])[0][0];
 
 export const makeHass = (states: HassStates = {}): HomeAssistant =>
   ({ states }) as unknown as HomeAssistant;
@@ -37,10 +32,4 @@ export const nbaSection = {
 
 export function makeCard(): SportScoreboardCard {
   return document.createElement("ha-teamtracker-scoreboard-card") as unknown as SportScoreboardCard;
-}
-
-export function makeHassWithConnection(states: HassStates = {}) {
-  const unsub = vi.fn();
-  const connection = { subscribeEvents: vi.fn().mockResolvedValue(unsub) };
-  return { hass: { states, connection } as unknown as HomeAssistant, unsub, connection };
 }

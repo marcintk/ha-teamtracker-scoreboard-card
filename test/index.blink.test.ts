@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { blinkMsForId } from "../src/config-match.js";
 import { gameKeyFor } from "../src/game-key.js";
-import { useFakeTimers } from "./helpers.js";
+import { blinkEntries, useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
 // Score-change detection, expiry and timer-arming themselves live in BlinkTracker
-// (test/blink.test.ts); the "longest score_blink across every matching section"
-// resolution rule itself lives in blinkMsForId (test/config-match.test.ts) — this file
+// (test/blink.test.ts); this file
 // covers only what SportScoreboardCard adds on top: wiring the tracker's lifecycle into
 // setConfig / disconnectedCallback / _render.
 describe("SportScoreboardCard blink wiring", () => {
@@ -21,9 +19,9 @@ describe("SportScoreboardCard blink wiring", () => {
       card._blink.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      expect(card._blink.entries.size).toBe(1);
+      expect(blinkEntries(card._blink).size).toBe(1);
       card.setConfig({ sections: [nbaSection] });
-      expect(card._blink.entries.size).toBe(0);
+      expect(blinkEntries(card._blink).size).toBe(0);
     });
 
     it("clears the blink tracker's timer on disconnectedCallback", () => {
@@ -34,16 +32,25 @@ describe("SportScoreboardCard blink wiring", () => {
       card._blink.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      card._blink.armTimer(
-        (id) => blinkMsForId(card._config?.sections ?? [], id),
-        () => {}
-      );
+      card._blink.update({
+        states: {
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "95",
+            opponent_score: "90",
+          }),
+        },
+        trackedIds: ["sensor.nba_lal"],
+        blinkOnById: new Map(),
+        reducedMotion: false,
+        onExpire: () => {},
+      });
       expect(card._blink.timerActive).toBe(true);
       card.disconnectedCallback();
       expect(card._blink.timerActive).toBe(false);
     });
 
-    it("clears the blink tracker's timer on _clearSubscription", () => {
+    it("clears the blink tracker's timer on setConfig", () => {
       const card = makeCard();
       card._blink.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
@@ -51,11 +58,20 @@ describe("SportScoreboardCard blink wiring", () => {
       card._blink.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      card._blink.armTimer(
-        (id) => blinkMsForId(card._config?.sections ?? [], id),
-        () => {}
-      );
-      card._clearSubscription();
+      card._blink.update({
+        states: {
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "95",
+            opponent_score: "90",
+          }),
+        },
+        trackedIds: ["sensor.nba_lal"],
+        blinkOnById: new Map(),
+        reducedMotion: false,
+        onExpire: () => {},
+      });
+      card.setConfig({ sections: [] });
       expect(card._blink.timerActive).toBe(false);
     });
 
@@ -63,7 +79,7 @@ describe("SportScoreboardCard blink wiring", () => {
       // exercises _render's own armTimer callback (not a hand-rolled stand-in for it),
       // so the timer-driven re-render path is covered end to end
       const card = makeCard();
-      card._config = { sections: [{ ...nbaSection, score_blink: 5 }] };
+      card._config = { sections: [nbaSection] };
       card.hass = makeHass({
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
       });
@@ -79,7 +95,7 @@ describe("SportScoreboardCard blink wiring", () => {
 
     it("does not render again when the real blink timer fires after hass is cleared", () => {
       const card = makeCard();
-      card._config = { sections: [{ ...nbaSection, score_blink: 5 }] };
+      card._config = { sections: [nbaSection] };
       card.hass = makeHass({
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "93", opponent_score: "90" }),
       });
@@ -101,13 +117,49 @@ describe("SportScoreboardCard blink wiring", () => {
       card._blink.record(["sensor.nba_lal"], {
         "sensor.nba_lal": makeState("IN", { ...baseAttrs, team_score: "95", opponent_score: "90" }),
       });
-      expect(card._blink.entries.size).toBe(1);
+      expect(blinkEntries(card._blink).size).toBe(1);
       card._config = {}; // no `sections` key at all
       card._hass = makeHass({});
       card._render();
       // sections is undefined, not just empty, so blinkMsFor falls back to `[]` and the
       // entry gets the 5s default window rather than being dropped outright
-      expect(card._blink.entries.has(gameKeyFor("sensor.nba_lal", {}))).toBe(true);
+      expect(blinkEntries(card._blink).has(gameKeyFor("sensor.nba_lal", {}))).toBe(true);
+    });
+
+    describe("held score display", () => {
+      const scoreA = (card: ReturnType<typeof makeCard>) =>
+        card.shadowRoot?.querySelector(".score-a .score-value")?.textContent;
+      const goal = (card: ReturnType<typeof makeCard>) => {
+        card._config = { sections: [nbaSection] };
+        card.hass = makeHass({
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "93",
+            opponent_score: "90",
+          }),
+        });
+        card.hass = makeHass({
+          "sensor.nba_lal": makeState("IN", {
+            ...baseAttrs,
+            team_score: "95",
+            opponent_score: "90",
+          }),
+        });
+        card._render();
+      };
+
+      it("shows the previous score while the blink window is open", () => {
+        const card = makeCard();
+        goal(card);
+        expect(scoreA(card)).toBe("93");
+      });
+
+      it("shows the new score at once under prefers-reduced-motion", () => {
+        vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q }));
+        const card = makeCard();
+        goal(card);
+        expect(scoreA(card)).toBe("95");
+      });
     });
   });
 });

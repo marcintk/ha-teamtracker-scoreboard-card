@@ -60,7 +60,8 @@ jobs:
         with:
           command: ci
 
-      - run: npm test
+      - run: npm run check:ci
+      - run: npm run test:coverage
 
       - name: Derive version from tag
         id: version

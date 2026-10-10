@@ -15,6 +15,7 @@ The same id can be tracked by more than one section at once. _Avoid_: matched id
 special-team highlight color, listed either as the full entity id or as the suffix left after
 stripping the section's own prefix. _Avoid_: favorite, starred team
 
-**Blink window**: The period after a live game's score changes during which that side's score is
-shown with the fresh/blink visual treatment. Its length comes from the longest `score_blink` among
-every section the id is tracked by. _Avoid_: flash duration, highlight window
+**Blink window**: The fixed 1-second period after a live game's score changes during which that side
+shows its previous score with the blink treatment, before the new score is revealed. Blinking is on
+unless every section the id is tracked by sets `score_blink: false`. _Avoid_: flash duration,
+highlight window

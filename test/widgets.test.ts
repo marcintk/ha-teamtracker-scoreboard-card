@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { gameView } from "../src/game-view.js";
 import type { GameAttr } from "../src/types.js";
 import { logoHtml, messageHtml, tvHtml } from "../src/widgets.js";
 import { doc } from "./helpers.js";
+
+const sidesOf = (attr: GameAttr) => gameView({ state: "IN", attributes: attr });
 
 const homeAttr: GameAttr = {
   team_homeaway: "home",
@@ -18,19 +21,26 @@ const homeAttr: GameAttr = {
 };
 
 describe("logoHtml", () => {
+  it("POST spells out exact FT / HT clocks only", () => {
+    expect(doc(messageHtml("POST", { clock: "FT" })).textContent).toContain("Full Time");
+    expect(doc(messageHtml("POST", { clock: "HT" })).textContent).toContain("Half Time");
+    expect(doc(messageHtml("POST", { clock: "FT (ET)" })).textContent).toContain("FT (ET)");
+    expect(doc(messageHtml("IN", { clock: "FT" })).textContent).toContain("FT");
+  });
+
   it("returns img tag for valid https logo URL", () => {
-    const el = doc(logoHtml("home", homeAttr));
+    const el = doc(logoHtml(sidesOf(homeAttr).home));
     expect(el.querySelector("img")).not.toBeNull();
     expect(el.querySelector("img")?.getAttribute("src")).toBe("https://cdn.example.com/lal.png");
   });
 
   it("rejects non-https logo URLs", () => {
     const attr = { ...homeAttr, team_logo: "http://insecure.example.com/logo.png" };
-    expect(doc(logoHtml("home", attr)).querySelector("img")).toBeNull();
+    expect(doc(logoHtml(sidesOf(attr).home)).querySelector("img")).toBeNull();
   });
 
   it("returns opponent logo for the away side", () => {
-    const el = doc(logoHtml("away", homeAttr));
+    const el = doc(logoHtml(sidesOf(homeAttr).away));
     expect(el.querySelector("img")?.getAttribute("src")).toBe("https://cdn.example.com/bos.png");
   });
 });
@@ -189,10 +199,10 @@ describe("messageHtml", () => {
     expect(el.querySelector(".msg-sub")).toBeNull();
   });
 
-  it("truncates last_play longer than 50 chars and adds > with tooltip", () => {
+  it("truncates last_play longer than 50 chars and with tooltip", () => {
     const long = "A".repeat(51);
     const el = doc(messageHtml("IN", { clock: "Q3 5:00", last_play: long }));
-    expect(el.querySelector(".msg-sub")?.textContent).toBe(`${"A".repeat(50)}>`);
+    expect(el.querySelector(".msg-sub")?.textContent).toBe(`${"A".repeat(50)}`);
     expect(el.querySelector(".tv-tooltip")).not.toBeNull();
     expect(el.querySelector(".tv-tooltip")?.getAttribute("data-tooltip")).toBe(long);
   });

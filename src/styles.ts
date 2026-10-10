@@ -255,6 +255,23 @@ export const CARD_STYLES = `
     line-height: 1.1;
     padding-left: 4px;
   }
+  /* the row has a fixed height, so a long line must never wrap onto a second one:
+     cut it with an ellipsis instead. The tooltip variant keeps overflow visible (its
+     ::after bubble would be clipped) and ellipsises the inner .msg-text instead. */
+  .message > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .message > .tv-tooltip {
+    overflow: visible;
+  }
+  .msg-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .msg-sub {
     font-size: calc(10px * var(${CSS_VARS.fontScale}, 1));
     font-weight: normal;
@@ -276,7 +293,7 @@ export const CARD_STYLES = `
      itself — the cell's own inline background must stay solid, or the fade
      reads as the background flashing rather than the number that changed */
   .score-fresh .score-value {
-    animation: score-flash 0.5s ease-in-out infinite;
+    animation: score-flash 0.25s ease-in-out 4; /* 4 blinks inside the fixed 1s BLINK_MS window */
   }
   @media (prefers-reduced-motion: reduce) {
     .score-fresh .score-value {
