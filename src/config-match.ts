@@ -1,5 +1,4 @@
 import type { HassStates, SectionConfig } from "./types.js";
-import { DEFAULT_SCORE_BLINK } from "./utils.js";
 
 // a section matches an id via `prefix` OR its explicit `entities` list — union, not
 // either/or — so a section can mix a pattern with a few cherry-picked extras. A bare
@@ -27,18 +26,13 @@ export function isSpecialTeam(section: SectionConfig, id: string): boolean {
   return special_teams.includes(id) || special_teams.includes(id.replace(prefix, ""));
 }
 
-// longest score_blink among every section a given id currently matches — an id tracked
-// by more than one section must stay blink-eligible until every matching section's own
-// window has had its chance, not just whichever section happens to be first in config.
-// Single source of truth for both the tracker's prune/timer window (index.ts) and the
-// row-freshness check (render.ts) — they must agree or a row's "is this blinking right
-// now" state can diverge from when the tracker considers its window closed.
-export function blinkMsForId(sections: SectionConfig[], id: string): number {
-  const matching = sections.filter((s) => sectionMatches(s, id));
-  // an id untracked by any section (stray entry, or a momentarily empty config) falls
-  // back to the default rather than going silently unblinkable
-  if (!matching.length) return DEFAULT_SCORE_BLINK * 1000;
-  return Math.max(...matching.map((s) => (s.score_blink ?? DEFAULT_SCORE_BLINK) * 1000));
+// `score_blink` is a boolean: on unless it is `false`, the legacy numeric `0` (the old
+// seconds-based way to disable it) or the string "false" (quoted YAML); any other stray value,
+// including a legacy non-zero number, counts as on. The window length is the fixed BLINK_MS.
+// Single source of truth — the tracker (via buildTrackedIds) and render.ts both use it, so a
+// row's "is this blinking" can't diverge from the tracker's.
+export function sectionBlinkOn(s: SectionConfig): boolean {
+  return ![false, 0, "false"].includes(s.score_blink as unknown as boolean | number | string);
 }
 
 /** Every currently-tracked id, plus which section index(es) it matches. An id can match
@@ -48,34 +42,38 @@ export function blinkMsForId(sections: SectionConfig[], id: string): number {
 export function buildTrackedIds(
   sections: SectionConfig[],
   stateKeys: string[]
-): { trackedIds: Set<string>; trackedBySection: Map<number, string[]> } {
+): {
+  trackedIds: Set<string>;
+  trackedBySection: Map<number, string[]>;
+  blinkOnById: Map<string, boolean>;
+} {
   const trackedIds = new Set<string>();
+  const blinkOnById = new Map<string, boolean>();
   const trackedBySection = new Map<number, string[]>(sections.map((_, i) => [i, []]));
   for (const id of stateKeys) {
     for (const [i, section] of sections.entries()) {
       if (sectionMatches(section, id)) {
         trackedIds.add(id);
         trackedBySection.get(i)?.push(id);
+        blinkOnById.set(id, (blinkOnById.get(id) ?? false) || sectionBlinkOn(section));
       }
     }
   }
-  return { trackedIds, trackedBySection };
+  return { trackedIds, trackedBySection, blinkOnById };
 }
 
-/** Whether any tracked entity's state object actually changed between two hass snapshots —
- *  a missing previous snapshot, a null config, or no tracked ids at all is treated as "yes,
+/** Whether any tracked entity's state object changed between two
+ *  hass snapshots (a brand-new matching entity waits for the next fixed refresh) — a missing previous snapshot or no tracked ids at all is treated as "yes,
  *  something relevant changed" so the caller doesn't suppress a render it should perform. */
 export function hasRelevantChange(
   trackedIds: ReadonlySet<string> | null,
-  config: unknown,
   newStates: HassStates,
   prevStates: HassStates | undefined
 ): boolean {
-  // fail open: no prior snapshot to diff against (first `hass` set), no config yet
-  // (nothing to filter by), or no tracked ids resolved yet — each means "we can't tell
-  // whether anything relevant changed," so render rather than silently suppress one.
+  // fail open: no prior snapshot to diff against (first `hass` set) or no tracked ids resolved
+  // yet — each means "we can't tell whether anything relevant changed," so render rather than
+  // silently suppress one.
   if (!prevStates) return true;
-  if (!config) return true;
   if (!trackedIds) return true;
   for (const id of trackedIds) {
     if (newStates[id] !== prevStates[id]) return true;

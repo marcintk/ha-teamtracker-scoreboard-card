@@ -26,3 +26,16 @@ export function useFakeTimers(): void {
 export function haCardStyle(card: { shadowRoot: ShadowRoot | null }): string {
   return card.shadowRoot?.querySelector("ha-card")?.getAttribute("style") ?? "";
 }
+
+type BlinkGames = Map<string, { changedAt: Record<string, number>; held: Record<string, number> }>;
+const blinkView = (tracker: object, pick: "changedAt" | "held") => {
+  const out = new Map<string, Record<string, number>>();
+  for (const [key, g] of (tracker as { _games: BlinkGames })._games) {
+    if (Object.keys(g.changedAt).length) out.set(key, g[pick]);
+  }
+  return out;
+};
+/** key -> changedAt for games with a recorded change (reads the tracker's private state). */
+export const blinkEntries = (tracker: object) => blinkView(tracker, "changedAt");
+/** key -> held scores for games with a recorded change. */
+export const blinkHeld = (tracker: object) => blinkView(tracker, "held");

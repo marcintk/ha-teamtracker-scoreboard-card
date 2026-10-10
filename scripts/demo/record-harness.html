@@ -226,21 +226,14 @@
       const card = document.createElement("ha-teamtracker-scoreboard-card");
       card.id = "demo-card";
       card.setConfig({
-        mode: "slide",
-        slide_sec: 4,
+        mode: "stack", // every section visible at once
         lazy_refresh: 0, // render immediately — no debounce to fight in the recorder
-        // pin the height so every re-shoot records the same box. 289px shows the
-        // header + 7 rows (each section has 8 games — row 8 is cropped):
-        // header ≈ 23px + 7 × (row_height 28 + 2·row_padding 5). `overflow: hidden`
-        // lands on row 7's bottom edge, so the only card-coloured space under it
-        // is the 5px outer padding — matching the other edges.
-        layout: { height: "289px" },
-        // view: schedule (the default) — one row per game, live games first then
-        // every other game by nearness to now.
+        // four games per section keeps the stacked card compact; each has a mix of
+        // live / final / upcoming so updates have something to change
         sections: [
-          { name: "NBA", prefix: "sensor.nba_", view: "schedule", special_teams: ["bos"] },
-          { name: "NHL", prefix: "sensor.nhl_", view: "schedule", special_teams: ["col"] },
-          { name: "Premier League", prefix: "sensor.epl_", view: "schedule", special_teams: ["liv"] },
+          { name: "NBA", entities: ["sensor.nba_bos", "sensor.nba_den", "sensor.nba_nyk", "sensor.nba_gs"], special_teams: ["bos"] },
+          { name: "NHL", entities: ["sensor.nhl_col", "sensor.nhl_tb", "sensor.nhl_nyr", "sensor.nhl_bos"], special_teams: ["col"] },
+          { name: "Premier League", entities: ["sensor.epl_liv", "sensor.epl_mci", "sensor.epl_tot", "sensor.epl_avl"], special_teams: ["liv"] },
         ],
       });
       document.getElementById("wrap").appendChild(card);
@@ -256,10 +249,10 @@
 
       card.hass = makeHass();
 
-      // expose a hook for the recorder to nudge a live score (drives the blink)
-      window.__bumpScore = () => {
-        const a = { ...states["sensor.nba_bos"].attributes, team_score: 91 };
-        states["sensor.nba_bos"] = { state: "IN", attributes: a };
+      // recorder hook: patch one sensor (and optionally its state) → push a new hass
+      window.__set = (id, patch, state) => {
+        const cur = states[id];
+        states[id] = { state: state ?? cur.state, attributes: { ...cur.attributes, ...patch, ...(state ? { state } : {}) } };
         card.hass = makeHass();
       };
 

@@ -1,12 +1,29 @@
-import type { GameState } from "./types.js";
+import type { GameState, HassStates } from "./types.js";
 
-export const VALID_STATES: ReadonlySet<GameState> = new Set(["PRE", "IN", "POST", "BYE"]);
+export const GAME_STATE = {
+  PRE: "PRE",
+  IN: "IN",
+  POST: "POST",
+  BYE: "BYE",
+} as const satisfies Record<GameState, GameState>;
 
-// shared fallbacks — kept in one place so `section.limit`, `score_blink`, `slide_sec`, and
+export const VALID_STATES: ReadonlySet<GameState> = new Set(Object.values(GAME_STATE));
+
+/** the entity's `state` when it is a known game state, otherwise undefined */
+export function gameStateOf(states: HassStates, entityId: string): GameState | undefined {
+  const state = states[entityId]?.state as GameState;
+  return VALID_STATES.has(state) ? state : undefined;
+}
+
+export const isLive = (states: HassStates, entityId: string): boolean =>
+  gameStateOf(states, entityId) === GAME_STATE.IN;
+
+// shared fallbacks — kept in one place so `section.limit`, `slide_sec`, and
 // the row-geometry math (`layout.row_height` / `row_padding`) can't drift out of sync
 // across index.ts and render.ts.
 export const DEFAULT_LIMIT = 10;
-export const DEFAULT_SCORE_BLINK = 5;
+/** how long (ms) the previous score blinks before the new one is revealed — internal, not configurable */
+export const BLINK_MS = 1000;
 export const DEFAULT_SLIDE_SEC = 45;
 export const DEFAULT_ROW_HEIGHT = 28;
 export const DEFAULT_ROW_PADDING = 5;

@@ -18,6 +18,12 @@ export function rowGeometryPx(
   return (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 }
 
+/** Rows the card occupies: tallest section when carousel, else all sections stacked. */
+export function cardRows(sections: SectionConfig[], carousel: boolean): number {
+  const per = sections.map((s) => 1 + Number(s.limit ?? DEFAULT_LIMIT));
+  return carousel ? Math.max(0, ...per) : per.reduce((a, b) => a + b, 0);
+}
+
 /** Every CSS custom property plus `ha-card`'s own inline style that a layout config and
  *  the current carousel state produce, collapsed into one string — the single place
  *  config → inline style is computed, so it can't drift between `_render`'s own markup
@@ -41,7 +47,7 @@ export function buildHaCardStyle(
   let slideMinH = "";
   if (carousel && !height && sections.length) {
     const slideH = rowGeometryPx(row_height, row_padding);
-    const maxRows = Math.max(...sections.map((s) => 1 + (s.limit ?? DEFAULT_LIMIT)));
+    const maxRows = cardRows(sections, carousel);
     slideMinH = `min-height:${maxRows * slideH}px;`;
   }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import "../src/index.js";
+import { gameView } from "../src/game-view.js";
 import type { SportScoreboardCard } from "../src/index.js";
 import { rowHtml } from "../src/render.js";
 import { CARD_STYLES } from "../src/styles.js";
@@ -155,7 +156,8 @@ describe("rowHtml structural snapshots", () => {
 // ─── widget structural snapshots ─────────────────────────────────────────────
 
 describe("widget structural snapshots", () => {
-  it("logoHtml", () => expect(snap(logoHtml("home", homeAttr))).toMatchSnapshot());
+  it("logoHtml", () =>
+    expect(snap(logoHtml(gameView({ state: "IN", attributes: homeAttr }).home))).toMatchSnapshot());
 
   it("tvHtml PRE single", () =>
     expect(snap(tvHtml("PRE", { tv_network: "ESPN" }))).toMatchSnapshot());

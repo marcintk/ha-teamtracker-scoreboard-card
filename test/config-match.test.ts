@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  blinkMsForId,
   buildTrackedIds,
   hasRelevantChange,
   isSpecialTeam,
+  sectionBlinkOn,
   sectionMatches,
 } from "../src/config-match.js";
 import type { HassStates, SectionConfig } from "../src/types.js";
@@ -59,25 +59,11 @@ describe("isSpecialTeam", () => {
   });
 });
 
-describe("blinkMsForId", () => {
-  it("uses the longer score_blink among every section the id matches", () => {
-    const sections: SectionConfig[] = [
-      { name: "All", score_blink: 0 },
-      { name: "NBA", prefix: "sensor.nba_", score_blink: 5 },
-    ];
-    expect(blinkMsForId(sections, "sensor.nba_lal")).toBe(5000);
-  });
-
-  it("returns 0 when every matching section has blink disabled", () => {
-    expect(blinkMsForId([{ name: "All", score_blink: 0 }], "sensor.nba_lal")).toBe(0);
-  });
-
-  it("uses the 5s default when the id matches no section", () => {
-    expect(blinkMsForId([{ prefix: "sensor.nba_" }], "sensor.unknown_x")).toBe(5000);
-  });
-
-  it("uses the 5s default when there are no sections at all", () => {
-    expect(blinkMsForId([], "sensor.nba_lal")).toBe(5000);
+describe("sectionBlinkOn", () => {
+  it('is on unless false, the legacy 0 or the string "false"; legacy non-zero numbers are on', () => {
+    const on = (v: unknown) => sectionBlinkOn({ score_blink: v } as unknown as SectionConfig);
+    expect([undefined, true, 10].map(on)).toEqual([true, true, true]);
+    expect([false, 0, "false"].map(on)).toEqual([false, false, false]);
   });
 });
 
@@ -97,6 +83,25 @@ describe("buildTrackedIds", () => {
     expect(trackedBySection.get(1)).toEqual(["sensor.nba_lal"]);
   });
 
+  it("blinkOnById is true if any matching section has blink on; unmatched ids are absent", () => {
+    const sections: SectionConfig[] = [
+      { prefix: "sensor.a_", score_blink: false },
+      { prefix: "sensor.n_", score_blink: true },
+      { prefix: "sensor.n_", score_blink: 0 as unknown as boolean },
+      { entities: ["sensor.solo"], score_blink: "false" as unknown as boolean },
+    ];
+    const { blinkOnById } = buildTrackedIds(sections, [
+      "sensor.a_x",
+      "sensor.n_z",
+      "sensor.solo",
+      "other.q",
+    ]);
+    expect(blinkOnById.get("sensor.a_x")).toBe(false);
+    expect(blinkOnById.get("sensor.n_z")).toBe(true);
+    expect(blinkOnById.get("sensor.solo")).toBe(false);
+    expect(blinkOnById.has("other.q")).toBe(false);
+  });
+
   it("produces an empty result when there are no sections", () => {
     const { trackedIds, trackedBySection } = buildTrackedIds([], ["sensor.nba_lal"]);
     expect(trackedIds.size).toBe(0);
@@ -108,23 +113,27 @@ describe("hasRelevantChange", () => {
   const states: HassStates = { "sensor.nba_lal": { state: "PRE", attributes: {} } };
 
   it("returns true when there is no previous snapshot", () => {
-    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), {}, states, undefined)).toBe(true);
-  });
-
-  it("returns true when there is no config", () => {
-    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), null, states, states)).toBe(true);
+    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), states, undefined)).toBe(true);
   });
 
   it("returns true when there are no tracked ids", () => {
-    expect(hasRelevantChange(null, {}, states, states)).toBe(true);
+    expect(hasRelevantChange(null, states, states)).toBe(true);
   });
 
   it("returns false when no tracked entity's state object changed", () => {
-    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), {}, states, states)).toBe(false);
+    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), states, states)).toBe(false);
   });
 
   it("returns true when a tracked entity's state object changed", () => {
     const nextStates: HassStates = { "sensor.nba_lal": { state: "IN", attributes: {} } };
-    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), {}, nextStates, states)).toBe(true);
+    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), nextStates, states)).toBe(true);
+  });
+
+  it("returns false when a new entity appears that is not yet tracked (fixed refresh picks it up)", () => {
+    const nextStates: HassStates = {
+      ...states,
+      "sensor.nba_bos": { state: "PRE", attributes: {} },
+    };
+    expect(hasRelevantChange(new Set(["sensor.nba_lal"]), nextStates, states)).toBe(false);
   });
 });

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SportScoreboardCard } from "../src/index.js";
-import type { CancelableTimer } from "../src/timer.js";
 import { haCardStyle, useFakeTimers } from "./helpers.js";
 import { baseAttrs, makeCard, makeHass, makeState, nbaSection } from "./index.fixtures.js";
 
@@ -9,11 +8,6 @@ describe("SportScoreboardCard slide mode", () => {
     useFakeTimers();
 
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
-    type SlideCard = SportScoreboardCard & {
-      _slideIndex: number;
-      _slideTimer: CancelableTimer;
-    };
-    const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
 
     const nhlSection = {
       name: "NHL",
@@ -38,6 +32,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("renders every section header stacked when slide_sec is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection, nhlSection] };
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       expect(headerTexts(card)).toEqual(["NBA", "NHL"]);
@@ -46,10 +41,10 @@ describe("SportScoreboardCard slide mode", () => {
     it("with a single section renders one header and arms no slide timer", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection], mode: "slide", slide_sec: 30 } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(headerTexts(card)).toEqual(["NBA"]);
-      expect(asSlide(card)._slideTimer.active).toBe(false);
     });
 
     it("with two sections renders only the first section", () => {
@@ -59,6 +54,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       expect(headerTexts(card)).toEqual(["NBA"]);
@@ -71,6 +67,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
 
@@ -85,6 +82,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
 
@@ -101,22 +99,26 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
-      asSlide(card)._slideIndex = 1;
+      card._carousel.step(1);
       card._render();
       expect(headerTexts(card)).toEqual(["NHL"]);
-      expect(asSlide(card)._slideIndex).toBe(1);
+      expect(card._carousel.index).toBe(1);
     });
 
     it("resets _slideIndex to 0 on setConfig", () => {
       const card = makeCard();
-      asSlide(card)._slideIndex = 1;
-      card.setConfig({
+      const cfg = {
         sections: [nbaSection, nhlSection],
         mode: "slide",
         slide_sec: 30,
-      } as SlideConfig);
-      expect(asSlide(card)._slideIndex).toBe(0);
+      } as SlideConfig;
+      card.setConfig(cfg);
+      card._carousel.step(1);
+      expect(card._carousel.index).toBe(1);
+      card.setConfig(cfg);
+      expect(card._carousel.index).toBe(0);
     });
 
     it("clears _slideTimer on disconnectedCallback and it does not fire afterward", () => {
@@ -131,7 +133,6 @@ describe("SportScoreboardCard slide mode", () => {
       const renderSpy = vi.spyOn(card, "_render");
 
       card.disconnectedCallback();
-      expect(asSlide(card)._slideTimer.active).toBe(false);
 
       vi.advanceTimersByTime(60_000);
       expect(renderSpy).not.toHaveBeenCalled();
@@ -147,6 +148,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      carousel._carousel.configure(carousel._config);
       // maxRows = 11; h = 28 + 2*5 gap = 38 => ceil(11 * 38 / 50) = ceil(8.36) = 9
       expect(carousel.getCardSize()).toBe(9);
 
@@ -157,6 +159,7 @@ describe("SportScoreboardCard slide mode", () => {
           { ...nhlSection, limit: 4 },
         ],
       };
+      stacked._carousel.configure(stacked._config);
       // sum: 16 rows * 38 = 608 => ceil(608 / 50) = 13
       expect(stacked.getCardSize()).toBe(13);
       expect(carousel.getCardSize()).toBeLessThan(stacked.getCardSize());
@@ -169,6 +172,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       const style = haCardStyle(card);
@@ -184,6 +188,7 @@ describe("SportScoreboardCard slide mode", () => {
         slide_sec: 30,
         layout: { row_padding: "10px" },
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       const style = haCardStyle(card);
@@ -199,6 +204,7 @@ describe("SportScoreboardCard slide mode", () => {
         slide_sec: 30,
         layout: { height: "400px" },
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       const style = haCardStyle(card);
@@ -209,6 +215,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("adds no carousel min-height when slide_sec is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection, nhlSection] };
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       const style = haCardStyle(card);
@@ -220,12 +227,6 @@ describe("SportScoreboardCard slide mode", () => {
     useFakeTimers();
 
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
-    type SlideCard = SportScoreboardCard & {
-      _slideIndex: number;
-      _slideTimer: CancelableTimer;
-      _slidePaused: boolean;
-    };
-    const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
 
     const nhlSection = {
       name: "NHL",
@@ -247,6 +248,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       return card;
@@ -277,6 +279,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("renders no header buttons when slide_sec is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection, nhlSection] };
+      card._carousel.configure(card._config);
       card._hass = twoSectionHass();
       card._render();
       expect(slideButtons(card)).toHaveLength(0);
@@ -285,6 +288,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("renders no header buttons with a single section even when slide_sec is set", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection], mode: "slide", slide_sec: 30 } as SlideConfig;
+      card._carousel.configure(card._config);
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(slideButtons(card)).toHaveLength(0);
@@ -323,7 +327,7 @@ describe("SportScoreboardCard slide mode", () => {
       expect(toggle).not.toBeNull();
       expect(toggle?.classList.contains("paused")).toBe(true);
       expect(toggle?.textContent?.trim()).toBe("");
-      expect(asSlide(card)._slidePaused).toBe(true);
+      expect(card._carousel.paused).toBe(true);
     });
 
     it("clicking the Stop toggle while rotating stops the timer", () => {
@@ -332,7 +336,7 @@ describe("SportScoreboardCard slide mode", () => {
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NBA");
-      expect(asSlide(card)._slidePaused).toBe(true);
+      expect(card._carousel.paused).toBe(true);
 
       const toggle = ctrl(card, "Resume rotation");
       expect(toggle?.textContent?.trim()).toBe("");
@@ -346,7 +350,7 @@ describe("SportScoreboardCard slide mode", () => {
       expect(headerText(card)).toContain("NBA");
 
       ctrl(card, "Resume rotation")?.click();
-      expect(asSlide(card)._slidePaused).toBe(false);
+      expect(card._carousel.paused).toBe(false);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -360,13 +364,16 @@ describe("SportScoreboardCard slide mode", () => {
 
     it("resets _slidePaused to false on setConfig", () => {
       const card = makeCard();
-      asSlide(card)._slidePaused = true;
-      card.setConfig({
+      const cfg = {
         sections: [nbaSection, nhlSection],
         mode: "slide",
         slide_sec: 30,
-      } as SlideConfig);
-      expect(asSlide(card)._slidePaused).toBe(false);
+      } as SlideConfig;
+      card.setConfig(cfg);
+      card._carousel.step(1);
+      expect(card._carousel.paused).toBe(true);
+      card.setConfig(cfg);
+      expect(card._carousel.paused).toBe(false);
     });
   });
 
@@ -375,12 +382,6 @@ describe("SportScoreboardCard slide mode", () => {
     afterEach(() => vi.unstubAllGlobals());
 
     type SlideConfig = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
-    type SlideCard = SportScoreboardCard & {
-      _slideIndex: number;
-      _slideTimer: CancelableTimer;
-      _slidePaused: boolean;
-    };
-    const asSlide = (c: SportScoreboardCard) => c as unknown as SlideCard;
 
     const nhlSection = {
       name: "NHL",
@@ -423,8 +424,7 @@ describe("SportScoreboardCard slide mode", () => {
       const card = makeCard();
       card._hass = twoSectionHass();
       card.setConfig(carouselConfig());
-      expect(asSlide(card)._slidePaused).toBe(true);
-      expect(asSlide(card)._slideTimer.active).toBe(false);
+      expect(card._carousel.paused).toBe(true);
     });
 
     it("does not auto-advance when reduced motion is preferred", () => {
@@ -465,7 +465,7 @@ describe("SportScoreboardCard slide mode", () => {
       // The reduced-motion paused start must surface a Resume control.
       expect(ctrl(card, "Resume rotation")).toBeTruthy();
       ctrl(card, "Resume rotation")?.click();
-      expect(asSlide(card)._slidePaused).toBe(false);
+      expect(card._carousel.paused).toBe(false);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -478,8 +478,7 @@ describe("SportScoreboardCard slide mode", () => {
       card.setConfig(carouselConfig());
       card._render();
 
-      expect(asSlide(card)._slidePaused).toBe(false);
-      expect(asSlide(card)._slideTimer.active).toBe(true);
+      expect(card._carousel.paused).toBe(false);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -492,8 +491,7 @@ describe("SportScoreboardCard slide mode", () => {
       card.setConfig(carouselConfig());
       card._render();
 
-      expect(asSlide(card)._slidePaused).toBe(false);
-      expect(asSlide(card)._slideTimer.active).toBe(true);
+      expect(card._carousel.paused).toBe(false);
 
       vi.advanceTimersByTime(30_000);
       expect(headerText(card)).toContain("NHL");
@@ -504,20 +502,13 @@ describe("SportScoreboardCard slide mode", () => {
     useFakeTimers();
 
     type SlideCfg = NonNullable<SportScoreboardCard["_config"]> & { slide_sec?: number };
-    type SlideC = SportScoreboardCard & {
-      _slideIndex: number;
-      _slideTimer: CancelableTimer;
-      _slidePaused: boolean;
-      _slideStep(dir: number): void;
-      _syncSlideTimer(): void;
-    };
-    const asC = (c: SportScoreboardCard) => c as unknown as SlideC;
     const nhl = { name: "NHL", prefix: "sensor.nhl_", special_teams: [] as string[] };
     const two = [{ name: "NBA", prefix: "sensor.nba_", special_teams: [] as string[] }, nhl];
 
     it("renders header + empty message + controls for an empty active carousel slide", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: 30 } as SlideCfg;
+      card._carousel.configure(card._config);
       // no matching entities at all → active section is empty
       card._hass = makeHass({ "sensor.other_x": makeState("PRE", baseAttrs) });
       card._render();
@@ -534,6 +525,7 @@ describe("SportScoreboardCard slide mode", () => {
         mode: "slide",
         slide_sec: 30,
       } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({ "sensor.nba_lal": makeState("PRE", baseAttrs) });
       card._render();
       expect(card.shadowRoot?.querySelector(".empty")).not.toBeNull();
@@ -548,6 +540,7 @@ describe("SportScoreboardCard slide mode", () => {
         slide_sec: 30,
         colors: { header: "tomato" },
       } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
@@ -561,15 +554,16 @@ describe("SportScoreboardCard slide mode", () => {
     it("_slideStep is a no-op with fewer than two sections", () => {
       const card = makeCard();
       card._config = { sections: [two[0]], mode: "slide", slide_sec: 30 } as SlideCfg;
-      asC(card)._slideIndex = 0;
-      expect(() => asC(card)._slideStep(1)).not.toThrow();
-      expect(asC(card)._slideIndex).toBe(0);
+      card._carousel.configure(card._config);
+      expect(() => card._carousel.step(1)).not.toThrow();
+      expect(card._carousel.index).toBe(0);
     });
 
     it("_slideStep is a no-op with no config", () => {
       const card = makeCard();
-      expect(() => asC(card)._slideStep(1)).not.toThrow();
-      expect(asC(card)._slideIndex).toBe(0);
+      card._carousel.configure(null);
+      expect(() => card._carousel.step(1)).not.toThrow();
+      expect(card._carousel.index).toBe(0);
     });
 
     it("computes the min-height from a numeric row_height and the default limit", () => {
@@ -581,6 +575,7 @@ describe("SportScoreboardCard slide mode", () => {
         slide_sec: 30,
         layout: { row_height: "40px" },
       } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
@@ -593,6 +588,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("getCardSize uses the default limit for carousel sections without one", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: 30 } as SlideCfg;
+      card._carousel.configure(card._config);
       // maxRows = 11; h = 28 + 2*5 gap = 38 => ceil(11 * 38 / 50) = 9
       expect(card.getCardSize()).toBe(9);
     });
@@ -600,23 +596,24 @@ describe("SportScoreboardCard slide mode", () => {
     it("_syncSlideTimer is a no-op when the timer is already running", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: 30 } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
       card._render();
-      expect(asC(card)._slideTimer.active).toBe(true);
       // a restart would push the next tick out to 30s from *now*; a no-op leaves it due
       // at the original 30s mark
       vi.advanceTimersByTime(20_000);
-      asC(card)._syncSlideTimer();
+      card._carousel.sync();
       vi.advanceTimersByTime(10_000);
-      expect(asC(card)._slideIndex).toBe(1);
+      expect(card._carousel.index).toBe(1);
     });
 
     it("the rotation interval tolerates the config being torn out from under it", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: 30 } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
@@ -629,6 +626,7 @@ describe("SportScoreboardCard slide mode", () => {
     it("the rotation interval skips rendering when hass is gone", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: 30 } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
@@ -638,40 +636,42 @@ describe("SportScoreboardCard slide mode", () => {
       card._hass = null;
       vi.advanceTimersByTime(30_000);
       // index still advanced, but no re-render fired
-      expect(asC(card)._slideIndex).toBe(1);
+      expect(card._carousel.index).toBe(1);
       expect(renderSpy).not.toHaveBeenCalled();
     });
 
     it("_syncSlideTimer tolerates a missing config", () => {
       const card = makeCard();
-      expect(() => asC(card)._syncSlideTimer()).not.toThrow();
-      expect(asC(card)._slideTimer.active).toBe(false);
+      card._carousel.configure(null);
+      expect(() => card._carousel.sync()).not.toThrow();
     });
 
     it("defaults to a 45s interval when slide_sec is omitted", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide" } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
       card._render();
       vi.advanceTimersByTime(44_000);
-      expect(asC(card)._slideIndex).toBe(0);
+      expect(card._carousel.index).toBe(0);
       vi.advanceTimersByTime(1_000);
-      expect(asC(card)._slideIndex).toBe(1);
+      expect(card._carousel.index).toBe(1);
     });
 
     it("falls back to 45s when slide_sec is zero or negative", () => {
       const card = makeCard();
       card._config = { sections: two, mode: "slide", slide_sec: -5 } as SlideCfg;
+      card._carousel.configure(card._config);
       card._hass = makeHass({
         "sensor.nba_lal": makeState("PRE", baseAttrs),
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
       card._render();
       vi.advanceTimersByTime(45_000);
-      expect(asC(card)._slideIndex).toBe(1);
+      expect(card._carousel.index).toBe(1);
     });
   });
 });

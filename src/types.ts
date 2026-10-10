@@ -46,12 +46,8 @@ export interface HassEntity {
 
 export type HassStates = Record<string, HassEntity>;
 
-import type { HasSubscribeEvents } from "./subscription.js";
-export type HassConnection = HasSubscribeEvents;
-
 export interface HomeAssistant {
   states: HassStates;
-  connection: HassConnection;
 }
 
 export interface SectionConfig {
@@ -61,7 +57,8 @@ export interface SectionConfig {
   entities?: string[];
   limit?: number;
   special_teams?: string[];
-  score_blink?: number;
+  /** blink the previous score once before revealing a new one; on unless literally `false` */
+  score_blink?: boolean;
 }
 
 export interface ColorsConfig {
@@ -112,7 +109,7 @@ export interface CardConfig {
   /** size / spacing / text-scale knobs */
   layout?: LayoutConfig;
   colors?: ColorsConfig;
-  /** color + bold the leading (IN) / winning (POST) team's name; on by default, `false` leaves both names plain */
+  /** color the leading (IN) / winning (POST) team's name; on by default, `false` leaves both names plain */
   highlight_winner?: boolean;
   debug?: boolean;
   show_version?: boolean;

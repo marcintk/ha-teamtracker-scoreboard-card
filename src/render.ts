@@ -1,117 +1,53 @@
 import { html, nothing, type TemplateResult } from "lit";
+import { keyed } from "lit/directives/keyed.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { isBlinkFresh, opponentAbbr, teamAbbr } from "./blink.js";
-import { isSpecialTeam, sectionMatches } from "./config-match.js";
-import { CSS_VARS } from "./css-vars.js";
-import {
-  colonColor,
-  colorVar,
-  isSideOutrightWinning,
-  isTeamSide,
-  nameText,
-  rankText,
-  scoreBg,
-  scoreColor,
-  scoreText,
-  teamColor,
-} from "./display.js";
-import { type GameKey, gameKeyFor } from "./game-key.js";
-import { comparatorFor, deduplicate, sortKeyFor } from "./sorting.js";
+import type { BlinkTracker } from "./blink.js";
+import type { RenderOptions } from "./config.js";
+import { sectionBlinkOn } from "./config-match.js";
+import { buildRowView, type RowFlags } from "./row-view.js";
+import { selectRows } from "./section-rows.js";
 import { CARD_STYLES } from "./styles.js";
-import type {
-  ColorsConfig,
-  GameState,
-  HassEntity,
-  HassStates,
-  NameFormat,
-  ScoreBlinkEntry,
-  SectionConfig,
-} from "./types.js";
-import {
-  DEFAULT_LIMIT,
-  DEFAULT_SCORE_BLINK,
-  DEFAULT_TV_BADGE_CHARS,
-  VALID_STATES,
-} from "./utils.js";
+import type { ColorsConfig, HassEntity, HassStates, SectionConfig } from "./types.js";
+import { DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
-
-/** Same-typed flags grouped behind one object so a call site reads as labeled fields —
- *  `{ freshHome, freshAway }` can't be silently transposed the way two adjacent
- *  positional booleans can. */
-export interface RowFlags {
-  opponentSpecial?: boolean;
-  freshHome?: boolean;
-  freshAway?: boolean;
-  highlightWinner?: boolean;
-  tvBadge?: number;
-  nameFormat?: NameFormat;
-}
 
 export function rowHtml(
   stateObj: HassEntity | null,
   special: boolean,
   colors: ColorsConfig = {},
-  flags: RowFlags = {}
+  flags: RowFlags & { tvBadge?: number } = {}
 ): TemplateResult {
+  const { tvBadge = DEFAULT_TV_BADGE_CHARS } = flags;
   const {
-    opponentSpecial = false,
-    freshHome = false,
-    freshAway = false,
-    highlightWinner = true,
-    tvBadge = DEFAULT_TV_BADGE_CHARS,
-    nameFormat = "name",
-  } = flags;
-  const gs = (stateObj?.state ?? "") as GameState;
-  const attr = stateObj?.attributes ?? {};
-  const bg = scoreBg(gs);
-  const freshClassHome = freshHome ? " score-fresh" : "";
-  const freshClassAway = freshAway ? " score-fresh" : "";
-
-  const opponentColor = colorVar(colors.name_default, CSS_VARS.nameDefaultColor, "#777"); /* gray */
-  const specialColor = colorVar(
-    colors.name_special,
-    CSS_VARS.nameSpecialColor,
-    "#2196F3"
-  ); /* Material Blue */
-  // `special` is scoped to this row's own entity — whichever visual side that entity's
-  // own perspective (team_homeaway) puts it on is the side that gets highlighted.
-  // `opponentSpecial` covers the other side: the discarded duplicate sensor for this
-  // game was independently special too (see sorting.ts's deduplicate()).
-  const homeSpecial = isTeamSide("home", attr) ? special : opponentSpecial;
-  const awaySpecial = isTeamSide("away", attr) ? special : opponentSpecial;
-  const homeAhead =
-    highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("home", gs, attr);
-  const awayAhead =
-    highlightWinner && (gs === "IN" || gs === "POST") && isSideOutrightWinning("away", gs, attr);
-  const homeColor = homeSpecial
-    ? specialColor
-    : homeAhead
-      ? teamColor("home", gs, attr, colors)
-      : opponentColor;
-  const awayColor = awaySpecial
-    ? specialColor
-    : awayAhead
-      ? teamColor("away", gs, attr, colors)
-      : opponentColor;
-  const homeWeight = homeAhead ? "bold" : "normal";
-  const awayWeight = awayAhead ? "bold" : "normal";
+    state: gs,
+    attr,
+    bg,
+    colon,
+    rankColor,
+    home,
+    away,
+    homeSide,
+    awaySide,
+  } = buildRowView(stateObj, special, colors, flags);
+  const freshClassHome = home.fresh ? " score-fresh" : "";
+  const freshClassAway = away.fresh ? " score-fresh" : "";
 
   return html`
 <div class="game-row">
   <div class="team-col team-col-a">
-    <div class="team-name" style="color:${homeColor};font-weight:${homeWeight}">${nameText("home", attr, nameFormat)}</div>
-    <div class="team-rank" style="color:${opponentColor}">${rankText("home", attr)}</div>
+    <div class="team-name" style="color:${home.nameColor}">${home.name}</div>
+    <div class="team-rank" style="color:${rankColor}">${home.rank}</div>
   </div>
-  <div class="logo logo-a">${logoHtml("home", attr)}</div>
-  <div class="score score-a${freshClassHome}" style="background:${bg};color:${scoreColor("home", gs, attr, colors)}"><span class="score-value">${scoreText("home", gs, attr)}</span></div>
-  <div class="colon" style="background:${bg};color:${colonColor(gs)}">${gs ? ":" : ""}</div>
-  <div class="score score-b${freshClassAway}" style="background:${bg};color:${scoreColor("away", gs, attr, colors)}"><span class="score-value">${scoreText("away", gs, attr)}</span></div>
-  <div class="logo logo-b">${logoHtml("away", attr)}</div>
+  <div class="logo logo-a">${logoHtml(homeSide)}</div>
+  <div class="score score-a${freshClassHome}" style="background:${bg};color:${home.scoreColor}">${keyed(home.liveScore, html`<span class="score-value">${home.score}</span>`)}</div>
+  <div class="colon" style="background:${bg};color:${colon}">${gs ? ":" : ""}</div>
+  <div class="score score-b${freshClassAway}" style="background:${bg};color:${away.scoreColor}">${keyed(away.liveScore, html`<span class="score-value">${away.score}</span>`)}</div>
+  <div class="logo logo-b">${logoHtml(awaySide)}</div>
   <div class="team-col team-col-b">
-    <div class="team-name" style="color:${awayColor};font-weight:${awayWeight}">${nameText("away", attr, nameFormat)}</div>
-    <div class="team-rank" style="color:${opponentColor}">${rankText("away", attr)}</div>
+    <div class="team-name" style="color:${away.nameColor}">${away.name}</div>
+    <div class="team-rank" style="color:${rankColor}">${away.rank}</div>
   </div>
   <div class="message">${messageHtml(gs, attr, colors)}</div>
   <div class="tv">${tvHtml(gs, attr, colors, tvBadge)}</div>
@@ -119,26 +55,19 @@ export function rowHtml(
 }
 
 /** Same-typed flags grouped behind one object, mirroring `RowFlags` — `sectionHtml` had
- *  the same 9-positional-param shallowness `rowHtml` was already fixed for. `blinkMsFor`
- *  defaults to this section's own `score_blink`, but a caller tracking blink windows
- *  across every section an id matches (see `blinkMsForId` in config-match.ts) should pass its
- *  own resolver so the row-freshness check agrees with wherever else that window is used. */
-export interface SectionFlags {
+ *  the same 9-positional-param shallowness `rowHtml` was already fixed for. */
+export interface SectionFlags extends Partial<Omit<RenderOptions, "colors">> {
   carousel?: boolean;
   controls?: TemplateResult | typeof nothing;
-  highlightWinner?: boolean;
-  tvBadge?: number;
-  nameFormat?: NameFormat;
-  liveFirst?: boolean;
-  blinkMsFor?: (entityId: string) => number;
+  /** per-row blink display; omitted means nothing blinks */
+  blink?: Pick<BlinkTracker, "rowView">;
 }
 
 export function sectionHtml(
   section: SectionConfig,
   states: HassStates,
-  entityIds?: string[],
+  entityIds: string[],
   colors: ColorsConfig = {},
-  scoreChangedAt: ReadonlyMap<GameKey, ScoreBlinkEntry> = new Map(),
   flags: SectionFlags = {}
 ): TemplateResult | typeof nothing {
   const {
@@ -148,13 +77,12 @@ export function sectionHtml(
     tvBadge = DEFAULT_TV_BADGE_CHARS,
     nameFormat = "name",
     liveFirst = false,
-    blinkMsFor = () => (section.score_blink ?? DEFAULT_SCORE_BLINK) * 1000,
+    blink,
   } = flags;
-  const { name, limit = DEFAULT_LIMIT } = section;
-  const resolvedIds = entityIds ?? Object.keys(states).filter((id) => sectionMatches(section, id));
-  const entities = resolvedIds.filter((id) =>
-    VALID_STATES.has((states[id]?.state ?? "") as GameState)
-  );
+  const { name } = section;
+  // per-section: the tracker policy is per-id (any matching section on), so a game shown in a
+  // blink-off section must still not blink there
+  const blinkOn = sectionBlinkOn(section);
   // the name always lives in .section-title, carousel controls or not — a stable
   // node for tests to read, so a future stack-mode control doesn't grow the
   // section's own textContent out from under them
@@ -164,50 +92,22 @@ export function sectionHtml(
       : html`<div class="section-header has-controls" style=${colors.header ? `color:${colors.header}` : nothing}><span class="section-title">${name}</span>${controls}</div>`;
   const emptyHtml = () =>
     html`${header}<div class="empty">No games found — check your section prefixes.</div>`;
-  if (!entities.length) return carousel ? emptyHtml() : nothing;
-
-  const now = Date.now();
-
-  const items = entities.map((entityId) => {
-    const attr = states[entityId]?.attributes;
-    return {
-      entityId,
-      teamName: String(attr?.team_name ?? entityId),
-      special: isSpecialTeam(section, entityId),
-      key: sortKeyFor(attr, now),
-    };
-  });
-
-  // `limit` always keeps the games nearest to now (live pinned) so chronological
-  // order can't fill its slots with stale finals; the display order is applied after
-  items.sort(comparatorFor({ liveFirst: true, byDistance: true }, now, states));
-
-  const rows = deduplicate(items, states)
-    .slice(0, limit)
-    .sort(comparatorFor({ liveFirst, byDistance: false }, now, states))
-    .map(({ entityId, special = false, opponentSpecial = false }) => {
-      // keyed by game, not by this survivor's own raw id — see blink.ts — so a blink
-      // armed against the dedup-discarded sibling sensor still surfaces here
-      const entry = scoreChangedAt.get(gameKeyFor(entityId, states));
-      // entities was filtered above to ids present in states with a valid state, so this is defined
+  const rows = selectRows(section, states, entityIds, { liveFirst }).map(
+    ({ entityId, special, opponentSpecial }) => {
+      // selectRows only returns ids present in states with a valid state, so this is defined
       const entity = states[entityId] as HassEntity;
-      const attr = entity.attributes;
-      const blinkMs = blinkMsFor(entityId);
-      const homeAbbr = isTeamSide("home", attr) ? teamAbbr(attr) : opponentAbbr(attr);
-      const awayAbbr = isTeamSide("away", attr) ? teamAbbr(attr) : opponentAbbr(attr);
-      // each side's own timestamp gates its own window independently — a change on one
-      // side must not cut the other side's blink short
-      const freshHome = isBlinkFresh(entry?.[homeAbbr], blinkMs, now);
-      const freshAway = isBlinkFresh(entry?.[awayAbbr], blinkMs, now);
       return rowHtml(entity, special, colors, {
         opponentSpecial,
-        freshHome,
-        freshAway,
+        ...((blinkOn && blink?.rowView(entityId, states)) || {
+          freshHome: false,
+          freshAway: false,
+        }),
         highlightWinner,
         tvBadge,
         nameFormat,
       });
-    });
+    }
+  );
 
   if (!rows.length) return carousel ? emptyHtml() : nothing;
   return html`${header}${rows}`;
@@ -219,17 +119,12 @@ export function sectionHtml(
  *  as labeled fields, not a run of same-typed positional args. */
 export interface CardTemplateInput {
   states: HassStates;
-  trackedBySection: ReadonlyMap<number, string[]> | null;
-  colors: ColorsConfig;
-  blinkEntries: ReadonlyMap<GameKey, ScoreBlinkEntry>;
-  blinkMsFor: (entityId: string) => number;
+  trackedBySection: ReadonlyMap<number, string[]>;
+  options: RenderOptions;
+  blink: Pick<BlinkTracker, "rowView">;
   carousel: boolean;
   visibleSections: Array<[number, SectionConfig]>;
   slideControls: TemplateResult | typeof nothing;
-  highlightWinner: boolean;
-  tvBadge: number;
-  nameFormat: NameFormat;
-  liveFirst?: boolean;
   haCardStyle: string;
   versionBadge: TemplateResult | typeof nothing;
   /** pre-rendered debug-overlay table HTML, or null when `debug` is off. */
@@ -240,31 +135,24 @@ export interface CardTemplateInput {
  *  — without touching the DOM. The caller (`index.ts`) owns mounting the result with
  *  lit's `render()`; this function owns none of that, so it's testable with a plain
  *  object in, a `TemplateResult` out. */
-export function buildCardTemplate(input: CardTemplateInput): {
-  template: TemplateResult;
-  hasContent: boolean;
-} {
+export function buildCardTemplate(input: CardTemplateInput): TemplateResult {
   const sectionTemplates = input.visibleSections.map(([i, section]) =>
     sectionHtml(
       section,
       input.states,
-      input.trackedBySection?.get(i),
-      input.colors,
-      input.blinkEntries,
+      input.trackedBySection.get(i) as string[],
+      input.options.colors,
       {
+        ...input.options,
         carousel: input.carousel,
         controls: input.slideControls,
-        highlightWinner: input.highlightWinner,
-        tvBadge: input.tvBadge,
-        nameFormat: input.nameFormat,
-        liveFirst: input.liveFirst,
-        blinkMsFor: input.blinkMsFor,
+        blink: input.blink,
       }
     )
   );
   const hasContent = sectionTemplates.some((t) => t !== nothing);
 
-  const template = html`
+  return html`
     ${STYLE_BLOCK}
     <ha-card style=${input.haCardStyle || nothing}>
       ${input.versionBadge}
@@ -282,5 +170,4 @@ export function buildCardTemplate(input: CardTemplateInput): {
       }
     </ha-card>
   `;
-  return { template, hasContent };
 }

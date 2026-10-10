@@ -56,13 +56,6 @@ describe("rowHtml inline styles — score text color", () => {
   });
 });
 
-describe("rowHtml inline styles — team name font-weight", () => {
-  it("uses normal weight for both team names", () => {
-    const html = doc(rowHtml(makeState("PRE", baseAttrs), false)).innerHTML;
-    expect(html.match(/font-weight:normal/g)?.length).toBe(2);
-  });
-});
-
 describe("rowHtml inline styles — colon visibility", () => {
   it("hides the colon for BYE and other non-game states", () => {
     expect(doc(rowHtml(makeState("BYE", baseAttrs), false)).innerHTML).toContain(
