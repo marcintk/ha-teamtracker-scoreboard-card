@@ -1,8 +1,9 @@
-import { html } from "lit";
-import { describe, expect, it } from "vitest";
-import { gameKeyFor } from "../src/game-key.js";
-import { rowHtml, sectionHtml } from "../src/render.js";
-import type { GameAttr, SectionConfig } from "../src/types.js";
+import { html, nothing } from "lit";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { BlinkTracker, type RowBlink } from "../src/blink.js";
+import { buildCardTemplate, rowHtml, type SectionFlags, sectionHtml } from "../src/render.js";
+import type { GameAttr, HassStates, SectionConfig } from "../src/types.js";
+import { BLINK_MS } from "../src/utils.js";
 import { doc } from "./helpers.js";
 
 const makeState = (state: string, attrs: GameAttr) => ({ state, attributes: attrs });
@@ -71,8 +72,6 @@ describe("rowHtml", () => {
   it("drops the tracked-team highlight — both names normal + opponent color", () => {
     const el = doc(rowHtml(makeState("PRE", baseAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
-    expect(home?.style.fontWeight).toBe("normal");
-    expect(away?.style.fontWeight).toBe("normal");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
   });
@@ -81,55 +80,45 @@ describe("rowHtml", () => {
     const el = doc(rowHtml(makeState("PRE", baseAttrs), true));
     const [home] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-special-color");
-    expect(home?.style.fontWeight).toBe("normal");
   });
 
-  it("keeps a special team's name blue and bold when it is also leading during IN", () => {
+  it("keeps a special team's name blue when it is also leading during IN", () => {
     const el = doc(rowHtml(makeState("IN", baseAttrs), true));
     const [home] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-special-color");
-    expect(home?.style.fontWeight).toBe("bold");
   });
 
-  it("colors and bolds the leading name by default (highlightWinner defaults to true)", () => {
+  it("colors the leading name by default (highlightWinner defaults to true)", () => {
     // home leads 95 vs 90
     const el = doc(rowHtml(makeState("IN", baseAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-leading-color");
-    expect(home?.style.fontWeight).toBe("bold");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
-    expect(away?.style.fontWeight).toBe("normal");
   });
 
-  it("does not color or bold the leading name when highlightWinner is explicitly off", () => {
+  it("does not color the leading name when highlightWinner is explicitly off", () => {
     const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, { highlightWinner: false }));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
-    expect(home?.style.fontWeight).toBe("normal");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
-    expect(away?.style.fontWeight).toBe("normal");
   });
 
-  it("colors and bolds the winning name during POST by default", () => {
+  it("colors the winning name during POST by default", () => {
     const el = doc(rowHtml(makeState("POST", baseAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-winner-color");
-    expect(home?.style.fontWeight).toBe("bold");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
-    expect(away?.style.fontWeight).toBe("normal");
   });
 
-  it("colors and bolds the away name when the away side leads/wins", () => {
+  it("colors the away name when the away side leads/wins", () => {
     const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" as const };
     const el = doc(rowHtml(makeState("IN", awayAttrs), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(away?.style.color).toContain("--ttsc-name-leading-color");
-    expect(away?.style.fontWeight).toBe("bold");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
-    expect(home?.style.fontWeight).toBe("normal");
   });
 
-  it("never bolds or colors the record, even when highlightWinner is on", () => {
+  it("never colors the record, even when highlightWinner is on", () => {
     const el = doc(rowHtml(makeState("IN", baseAttrs), false));
     const [homeRank, awayRank] = el.querySelectorAll<HTMLElement>(".team-rank");
     expect(homeRank?.style.color).toContain("--ttsc-name-default-color");
@@ -141,9 +130,7 @@ describe("rowHtml", () => {
     const el = doc(rowHtml(makeState("POST", draw), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
-    expect(home?.style.fontWeight).toBe("normal");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
-    expect(away?.style.fontWeight).toBe("normal");
   });
 
   it("does not highlight either name on an exact tie during IN", () => {
@@ -151,9 +138,7 @@ describe("rowHtml", () => {
     const el = doc(rowHtml(makeState("IN", tied), false));
     const [home, away] = el.querySelectorAll<HTMLElement>(".team-name");
     expect(home?.style.color).toContain("--ttsc-name-default-color");
-    expect(home?.style.fontWeight).toBe("normal");
     expect(away?.style.color).toContain("--ttsc-name-default-color");
-    expect(away?.style.fontWeight).toBe("normal");
   });
 });
 
@@ -166,24 +151,28 @@ describe("sectionHtml", () => {
   };
 
   it("returns empty when no matching entities", () => {
-    expect(doc(sectionHtml(section, {})).querySelector(".section-header")).toBeNull();
+    expect(doc(sectionHtml(section, {}, [])).querySelector(".section-header")).toBeNull();
   });
 
   it("returns empty when entities are in invalid states", () => {
     const states = { "sensor.nba_lal": makeState("UNKNOWN", baseAttrs) };
-    expect(doc(sectionHtml(section, states)).querySelector(".section-header")).toBeNull();
+    expect(
+      doc(sectionHtml(section, states, Object.keys(states))).querySelector(".section-header")
+    ).toBeNull();
   });
 
   it("returns empty when limit produces no rows", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     expect(
-      doc(sectionHtml({ ...section, limit: 0 }, states)).querySelector(".section-header")
+      doc(sectionHtml({ ...section, limit: 0 }, states, Object.keys(states))).querySelector(
+        ".section-header"
+      )
     ).toBeNull();
   });
 
   it("renders section header with name", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml(section, states));
+    const el = doc(sectionHtml(section, states, Object.keys(states)));
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".section-title")?.textContent).toBe("NBA");
   });
@@ -193,7 +182,7 @@ describe("sectionHtml", () => {
       "sensor.nba_lal": makeState("PRE", baseAttrs),
       "sensor.nba_gsw": makeState("IN", { ...baseAttrs, team_name: "Warriors" }),
     };
-    const el = doc(sectionHtml(section, states));
+    const el = doc(sectionHtml(section, states, Object.keys(states)));
     expect(el.textContent).toContain("Lakers");
     expect(el.textContent).toContain("Warriors");
   });
@@ -205,20 +194,22 @@ describe("sectionHtml", () => {
         makeState("PRE", { ...baseAttrs, team_name: `Team${i}`, team_record: `${i}-10` }),
       ])
     );
-    const el = doc(sectionHtml({ ...section, limit: 2 }, states));
+    const el = doc(sectionHtml({ ...section, limit: 2 }, states, Object.keys(states)));
     expect(el.querySelectorAll(".game-row").length).toBe(2);
   });
 
   it("does not inject raw HTML in section name", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml({ ...section, name: "<b>NBA</b>" }, states));
+    const el = doc(sectionHtml({ ...section, name: "<b>NBA</b>" }, states, Object.keys(states)));
     expect(el.querySelector(".section-header b")).toBeNull();
     expect(el.querySelector(".section-title")?.textContent).toBe("<b>NBA</b>");
   });
 
   it("marks special teams with the special color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
+    const el = doc(
+      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states))
+    );
     expect(el.innerHTML).toContain("ttsc-name-special-color");
   });
 
@@ -227,42 +218,16 @@ describe("sectionHtml", () => {
     const el = doc(
       sectionHtml(
         { ...section, entities: ["sensor.nba_lal"], special_teams: ["sensor.nba_lal"] },
-        states
+        states,
+        Object.keys(states)
       )
     );
     expect(el.innerHTML).toContain("ttsc-name-special-color");
   });
 
-  it("resolves only the listed entities when prefix is absent", () => {
-    const states = {
-      "sensor.nba_lal": makeState("PRE", baseAttrs),
-      "sensor.custom_renamed_bos": makeState("PRE", { ...baseAttrs, team_name: "Celtics" }),
-    };
-    const el = doc(
-      sectionHtml(
-        { name: "Custom", special_teams: [], entities: ["sensor.custom_renamed_bos"] },
-        states
-      )
-    );
-    expect(el.textContent).not.toContain("Lakers");
-    expect(el.textContent).toContain("Celtics");
-  });
-
-  it("unions prefix matches with explicit entities when both are set", () => {
-    const states = {
-      "sensor.nba_lal": makeState("PRE", baseAttrs),
-      "sensor.nba_gsw": makeState("PRE", { ...baseAttrs, team_name: "Warriors" }),
-      "sensor.custom_renamed_bos": makeState("PRE", { ...baseAttrs, team_name: "Celtics" }),
-    };
-    const el = doc(sectionHtml({ ...section, entities: ["sensor.custom_renamed_bos"] }, states));
-    expect(el.textContent).toContain("Lakers");
-    expect(el.textContent).toContain("Warriors");
-    expect(el.textContent).toContain("Celtics");
-  });
-
   it("matches all entities when the section has neither prefix nor entities", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml({ name: "All", special_teams: [] }, states));
+    const el = doc(sectionHtml({ name: "All", special_teams: [] }, states, Object.keys(states)));
     expect(el.textContent).toContain("Lakers");
   });
 
@@ -296,7 +261,6 @@ describe("sectionHtml", () => {
     const names = [...el.querySelectorAll<HTMLElement>(".team-name")];
     expect(names).toHaveLength(2);
     for (const n of names) {
-      expect(n.style.fontWeight).toBe("normal");
       expect(n.style.color).toBe("dimgray");
     }
   });
@@ -314,7 +278,7 @@ describe("sectionHtml", () => {
       limit: 10,
       special_teams: [],
     };
-    const text = doc(sectionHtml(wcSection, states)).textContent ?? "";
+    const text = doc(sectionHtml(wcSection, states, Object.keys(states))).textContent ?? "";
     expect(text.indexOf("France")).toBeLessThan(text.indexOf("Brazil"));
   });
 
@@ -330,7 +294,7 @@ describe("sectionHtml", () => {
     };
     const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
     const text =
-      doc(sectionHtml(s, states, undefined, {}, new Map(), { liveFirst: true })).textContent ?? "";
+      doc(sectionHtml(s, states, Object.keys(states), {}, { liveFirst: true })).textContent ?? "";
     expect(text.indexOf("Live")).toBeLessThan(text.indexOf("Finished"));
     expect(text.indexOf("Live")).toBeLessThan(text.indexOf("Upcoming"));
   });
@@ -343,13 +307,13 @@ describe("sectionHtml", () => {
       "sensor.nba_old": makeState("POST", { ...baseAttrs, team_name: "Old", date: iso(-40 * H) }),
     };
     const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
-    const text = doc(sectionHtml(s, states)).textContent ?? "";
+    const text = doc(sectionHtml(s, states, Object.keys(states))).textContent ?? "";
     expect(text.indexOf("Old")).toBeLessThan(text.indexOf("Recent"));
     expect(text.indexOf("Recent")).toBeLessThan(text.indexOf("Soon"));
     expect(text.indexOf("Soon")).toBeLessThan(text.indexOf("Far"));
   });
 
-  it("renders by-date order with no bold highlight and blank position cells even when every tracked team has a numeric win-loss record", () => {
+  it("renders by-date order with no highlight and blank position cells even when every tracked team has a numeric win-loss record", () => {
     // Alphas has the best record but the latest kick-off; Gammas has the worst record but
     // plays soonest. If ranking still existed (old `auto`/`standings` behavior), Alphas would
     // sort first; by-date order instead puts Gammas first.
@@ -379,15 +343,10 @@ describe("sectionHtml", () => {
       limit: 10,
       special_teams: [],
     };
-    const el = doc(sectionHtml(s, states));
+    const el = doc(sectionHtml(s, states, Object.keys(states)));
     const text = el.textContent ?? "";
     expect(text.indexOf("Gammas")).toBeLessThan(text.indexOf("Betas"));
     expect(text.indexOf("Betas")).toBeLessThan(text.indexOf("Alphas"));
-
-    const names = [...el.querySelectorAll<HTMLElement>(".team-name")];
-    for (const n of names) {
-      expect(n.style.fontWeight).toBe("normal");
-    }
   });
 
   it("produces stable order when two teams have the same win ratio", () => {
@@ -395,8 +354,8 @@ describe("sectionHtml", () => {
       "sensor.nba_zzz": makeState("PRE", { ...baseAttrs, team_name: "ZZZ", team_record: "5-5" }),
       "sensor.nba_aaa": makeState("PRE", { ...baseAttrs, team_name: "AAA", team_record: "5-5" }),
     };
-    const el1 = doc(sectionHtml(section, states));
-    const el2 = doc(sectionHtml(section, states));
+    const el1 = doc(sectionHtml(section, states, Object.keys(states)));
+    const el2 = doc(sectionHtml(section, states, Object.keys(states)));
     expect(el1.innerHTML).toBe(el2.innerHTML);
     const text = el1.textContent ?? "";
     expect(text.indexOf("AAA")).toBeLessThan(text.indexOf("ZZZ"));
@@ -428,8 +387,8 @@ describe("sectionHtml", () => {
       limit: 10,
       special_teams: [],
     };
-    const el1 = doc(sectionHtml(wcSection, states));
-    const el2 = doc(sectionHtml(wcSection, states));
+    const el1 = doc(sectionHtml(wcSection, states, Object.keys(states)));
+    const el2 = doc(sectionHtml(wcSection, states, Object.keys(states)));
     expect(el1.innerHTML).toBe(el2.innerHTML);
     const text = el1.textContent ?? "";
     expect(text.indexOf("AAA")).toBeLessThan(text.indexOf("ZZZ"));
@@ -439,8 +398,10 @@ describe("sectionHtml", () => {
     const states = {
       "sensor.nba_lal": makeState("PRE", { ...baseAttrs, team_name: undefined }),
     };
-    expect(() => doc(sectionHtml(section, states))).not.toThrow();
-    expect(doc(sectionHtml(section, states)).querySelector(".game-row")).not.toBeNull();
+    expect(() => doc(sectionHtml(section, states, Object.keys(states)))).not.toThrow();
+    expect(
+      doc(sectionHtml(section, states, Object.keys(states))).querySelector(".game-row")
+    ).not.toBeNull();
   });
 
   it("uses entityId as final tie-breaker when team names and sort keys are equal", () => {
@@ -458,7 +419,7 @@ describe("sectionHtml", () => {
         opponent_name: "Opp-A",
       }),
     };
-    const text = doc(sectionHtml(section, states)).textContent ?? "";
+    const text = doc(sectionHtml(section, states, Object.keys(states))).textContent ?? "";
     expect(text.indexOf("Opp-A")).toBeLessThan(text.indexOf("Opp-Z"));
   });
 
@@ -481,9 +442,11 @@ describe("sectionHtml", () => {
         date,
       }),
     };
-    const el = doc(sectionHtml({ ...section, special_teams: ["lal"] }, states));
+    const el = doc(
+      sectionHtml({ ...section, special_teams: ["lal"] }, states, Object.keys(states))
+    );
     expect(el.innerHTML).toContain("ttsc-name-special-color");
-    // PRE has no leading/winning side, so nothing is bold — special or not
+    // PRE has no leading/winning side, so nothing is highlighted — special or not
     expect(el.innerHTML).not.toContain("font-weight:bold");
   });
 
@@ -495,7 +458,7 @@ describe("sectionHtml", () => {
 
   it("applies the configured header color when no carousel controls are present", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
-    const el = doc(sectionHtml(section, states, undefined, { header: "gold" }, new Map()));
+    const el = doc(sectionHtml(section, states, Object.keys(states), { header: "gold" }));
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(false);
     expect(header?.style.color).toBe("gold");
@@ -504,9 +467,15 @@ describe("sectionHtml", () => {
   it("renders carousel controls in the header with the configured header color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml(section, states, undefined, { header: "gold" }, new Map(), {
-        controls: html`<button class="my-control">•</button>`,
-      })
+      sectionHtml(
+        section,
+        states,
+        Object.keys(states),
+        { header: "gold" },
+        {
+          controls: html`<button class="my-control">•</button>`,
+        }
+      )
     );
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(true);
@@ -517,9 +486,15 @@ describe("sectionHtml", () => {
   it("renders carousel controls in the header without a configured header color", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml(section, states, undefined, {}, new Map(), {
-        controls: html`<button class="my-control">•</button>`,
-      })
+      sectionHtml(
+        section,
+        states,
+        Object.keys(states),
+        {},
+        {
+          controls: html`<button class="my-control">•</button>`,
+        }
+      )
     );
     const header = el.querySelector<HTMLElement>(".section-header");
     expect(header?.classList.contains("has-controls")).toBe(true);
@@ -527,7 +502,7 @@ describe("sectionHtml", () => {
   });
 
   it("renders an empty-state message with the header when carousel is true and no entities match", () => {
-    const el = doc(sectionHtml(section, {}, undefined, {}, new Map(), { carousel: true }));
+    const el = doc(sectionHtml(section, {}, [], {}, { carousel: true }));
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");
   });
@@ -535,7 +510,7 @@ describe("sectionHtml", () => {
   it("renders an empty-state message with the header when carousel is true and the limit yields no rows", () => {
     const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
     const el = doc(
-      sectionHtml({ ...section, limit: 0 }, states, undefined, {}, new Map(), { carousel: true })
+      sectionHtml({ ...section, limit: 0 }, states, Object.keys(states), {}, { carousel: true })
     );
     expect(el.querySelector(".section-header")).not.toBeNull();
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");
@@ -552,7 +527,6 @@ describe("sectionHtml", () => {
         opponent_abbr: `x${abbr}`,
         ...(date ? { date } : {}),
       });
-    // distance from now: Bye 0, Recent 1h, Soon 3h, Live 5h, Far 20h, Old 40h
     const states = {
       "sensor.s_far": game("PRE", "Far", "far", at(20 * H)),
       "sensor.s_old": game("POST", "Old", "old", at(-40 * H)),
@@ -565,7 +539,7 @@ describe("sectionHtml", () => {
     // home column carries team_name (team_homeaway: "home")
     const order = (cfg: SectionConfig, liveFirst?: boolean, st: typeof states = states) =>
       [
-        ...doc(sectionHtml(cfg, st, undefined, {}, new Map(), { liveFirst })).querySelectorAll(
+        ...doc(sectionHtml(cfg, st, Object.keys(st), {}, { liveFirst })).querySelectorAll(
           ".game-row"
         ),
       ].map((r) => r.querySelector(".team-name")?.textContent?.trim() ?? "");
@@ -580,14 +554,9 @@ describe("sectionHtml", () => {
       expect(order(sec, true)).toEqual(["Live", "Old", "Recent", "Soon", "Far", "Bye"]);
     });
 
-    it("limit keeps the games nearest to now, then applies the display order", () => {
-      const nearest = ["Live", "Bye", "Recent"];
-      for (const liveFirst of [false, true]) {
-        expect([...order({ ...sec, limit: 3 }, liveFirst)].sort()).toEqual([...nearest].sort());
-      }
-      expect(order({ ...sec, limit: 3 })).toEqual(["Live", "Recent", "Bye"]);
-      // the stale "Old" final never crowds out a live / upcoming game
-      expect(order({ ...sec, limit: 3 })).not.toContain("Old");
+    it("limit takes the first N rows of the display order", () => {
+      expect(order({ ...sec, limit: 3 })).toEqual(["Old", "Live", "Recent"]);
+      expect(order({ ...sec, limit: 3 }, true)).toEqual(["Live", "Old", "Recent"]);
     });
 
     it("dedups after sorting, before applying limit", () => {
@@ -644,86 +613,175 @@ describe("rowHtml score-fresh class", () => {
   });
 });
 
-describe("sectionHtml scoreChangedAt", () => {
-  const section = {
+describe("sectionHtml blink", () => {
+  const section: SectionConfig = {
     name: "NBA",
     prefix: "sensor.nba_",
     limit: 10,
     special_teams: [] as string[],
   };
+  const ID = "sensor.nba_lal";
+  const fresh = (el: Element, sel: string) =>
+    el.querySelector(sel)?.classList.contains("score-fresh");
+  const noBlink = { freshHome: false, freshAway: false };
+  const stub = (view: Partial<RowBlink>) => ({
+    blink: { rowView: () => ({ ...noBlink, ...view }) },
+  });
+  const render = (states: HassStates, flags: SectionFlags, sec = section) =>
+    doc(sectionHtml(sec, states, Object.keys(states), {}, flags));
+  /** real tracker: baseline score 85 (team) then the live 95 */
+  const changed = (attrs: GameAttr = baseAttrs) => {
+    const tracker = new BlinkTracker();
+    const before = { [ID]: makeState("IN", { ...attrs, team_score: "85" }) };
+    tracker.update({
+      states: before,
+      trackedIds: Object.keys(before),
+      blinkOnById: new Map(),
+      reducedMotion: false,
+      onExpire: vi.fn(),
+    });
+    const states = { [ID]: makeState("IN", attrs) };
+    tracker.update({
+      states,
+      trackedIds: Object.keys(states),
+      blinkOnById: new Map(),
+      reducedMotion: false,
+      onExpire: vi.fn(),
+    });
+    return { tracker, states };
+  };
 
-  it("marks the home score cell as fresh when the team side changed", () => {
-    const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
-    const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
-    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
-    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
+  afterEach(() => vi.useRealTimers());
+
+  it("marks the home score cell as fresh and holds the old score when the team side changed", () => {
+    const { tracker, states } = changed();
+    const el = render(states, { blink: tracker });
+    expect(fresh(el, ".score-a")).toBe(true);
+    expect(fresh(el, ".score-b")).toBe(false);
+    expect(el.querySelector(".score-a .score-value")?.textContent).toBe("85");
   });
 
-  it("marks the away score cell as fresh when the tracked entity plays away and its side changed", () => {
-    const awayAttrs: GameAttr = { ...baseAttrs, team_homeaway: "away" };
-    const states = { "sensor.nba_lal": makeState("IN", awayAttrs) };
-    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
-    const el = doc(sectionHtml(section, states, Object.keys(states), {}, scoreChangedAt));
-    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
-    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(false);
+  it("marks the away score cell as fresh when the tracked entity plays away", () => {
+    const { tracker, states } = changed({ ...baseAttrs, team_homeaway: "away" });
+    const el = render(states, { blink: tracker });
+    expect(fresh(el, ".score-b")).toBe(true);
+    expect(fresh(el, ".score-a")).toBe(false);
   });
 
-  it("does not mark as fresh when scoreChangedAt is past the blink window", () => {
-    const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([
-      [gameKeyFor("sensor.nba_lal", states), { team: Date.now() - 10_000 }],
-    ]);
-    const el = doc(
-      sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
-    );
+  it("reveals the live score once the blink window has passed", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    const { tracker, states } = changed();
+    vi.setSystemTime(1_010_000);
+    const el = render(states, { blink: tracker });
     expect(el.querySelector(".score-fresh")).toBeNull();
+    expect(el.querySelector(".score-a .score-value")?.textContent).toBe("95");
   });
 
-  it("does not mark as fresh when score_blink is 0", () => {
-    const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([[gameKeyFor("sensor.nba_lal", states), { team: Date.now() }]]);
-    const el = doc(
-      sectionHtml({ ...section, score_blink: 0 }, states, Object.keys(states), {}, scoreChangedAt)
-    );
+  it("shows the held score while fresh and the live score when no longer fresh", () => {
+    const states = { [ID]: makeState("IN", baseAttrs) };
+    const held = render(states, stub({ freshHome: true, heldHome: 1 }));
+    expect(held.querySelector(".score-a .score-value")?.textContent).toBe("1");
+    const live = render(states, stub({}));
+    expect(live.querySelector(".score-a .score-value")?.textContent).toBe("95");
+  });
+
+  it("does not mark as fresh or hold the old score when section score_blink is false", () => {
+    const { tracker, states } = changed();
+    // the section's score_blink: false is passed as blinkOnById (off for this id)
+    tracker.update({
+      states,
+      trackedIds: Object.keys(states),
+      blinkOnById: new Map([[ID, false]]),
+      reducedMotion: false,
+      onExpire: vi.fn(),
+    });
+    const el = render(states, { blink: tracker }, { ...section, score_blink: false });
     expect(el.querySelector(".score-fresh")).toBeNull();
+    expect(el.querySelector(".score-a .score-value")?.textContent).toBe("95");
   });
 
-  it("keeps the home side fresh on its own window when only the opponent changes afterward", () => {
-    // a later opponent-side change must not cancel a still-running home-side blink —
-    // each side's freshness is gated by its own timestamp, not a shared one
-    const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
-    const scoreChangedAt = new Map([
-      [gameKeyFor("sensor.nba_lal", states), { team: Date.now() - 1000, opponent: Date.now() }],
-    ]);
-    const el = doc(
-      sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
-    );
-    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
-    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(true);
-  });
-
-  it("blinks a row even though the blink was armed against its dedup-discarded sibling sensor", () => {
-    // regression: sorting.ts's dedup can display either team's own sensor for a game, and
-    // which one it picks can flip between renders — a blink armed while the OTHER sensor
-    // was displayed must still surface once this one is. scoreChangedAt is keyed by game
-    // (gameKeyFor) + team_abbr, not by the displayed sensor's own raw id.
-    const date = "2024-03-15";
-    const states = {
-      "sensor.nba_lal": makeState("IN", {
-        ...baseAttrs,
-        team_abbr: "LAL",
-        opponent_abbr: "BOS",
-        date,
-      }),
+  it("derives the leading-name colour from the held score, not the live one", () => {
+    // live 95-90 means home leads; with home's old score 85 held, away still leads
+    const leaderStyle = (heldHome?: number) => {
+      const el = doc(rowHtml(makeState("IN", baseAttrs), false, {}, { heldHome }));
+      const [home, away] = [...el.querySelectorAll<HTMLElement>(".team-name")];
+      return { home: home?.style.color, away: away?.style.color };
     };
-    const key = gameKeyFor("sensor.nba_lal", states);
-    const scoreChangedAt = new Map([[key, { LAL: Date.now() }]]);
-    const el = doc(
-      sectionHtml({ ...section, score_blink: 5 }, states, Object.keys(states), {}, scoreChangedAt)
-    );
-    expect(el.querySelector(".score-a")?.classList.contains("score-fresh")).toBe(true);
-    expect(el.querySelector(".score-b")?.classList.contains("score-fresh")).toBe(false);
+    const live = leaderStyle();
+    const held = leaderStyle(85);
+    expect(held.home).toBe(live.away);
+    expect(held.away).toBe(live.home);
+  });
+
+  it("shows each side's held score in its own cell, whichever side the tracked team plays", () => {
+    const away: GameAttr = { ...baseAttrs, team_homeaway: "away" };
+    const el = doc(rowHtml(makeState("IN", away), false, {}, { heldHome: 88, heldAway: 70 }));
+    expect(el.querySelector(".score-a .score-value")?.textContent).toBe("88");
+    expect(el.querySelector(".score-b .score-value")?.textContent).toBe("70");
+  });
+
+  it("keeps each side's blink on its own window", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    const tracker = new BlinkTracker();
+    const sync = (team: string, opp: string) => {
+      const states = {
+        [ID]: makeState("IN", { ...baseAttrs, team_score: team, opponent_score: opp }),
+      };
+      tracker.update({
+        states,
+        trackedIds: Object.keys(states),
+        blinkOnById: new Map(),
+        reducedMotion: false,
+        onExpire: vi.fn(),
+      });
+      return states;
+    };
+    sync("85", "80");
+    sync("95", "80"); // home changes at t0
+    vi.setSystemTime(1_000_500);
+    const states = sync("95", "90"); // opponent changes 500ms later
+    const el = render(states, { blink: tracker });
+    expect(fresh(el, ".score-a")).toBe(true);
+    expect(fresh(el, ".score-b")).toBe(true);
+    // once the home window closes the opponent's (opened later) is still running
+    vi.setSystemTime(1_000_000 + BLINK_MS + 100);
+    const later = render(states, { blink: tracker });
+    expect(fresh(later, ".score-a")).toBe(false);
+    expect(fresh(later, ".score-b")).toBe(true);
+  });
+
+  it("blinks the displayed sensor when the change was recorded on its sibling", () => {
+    // regression: dedup can display either team's own sensor for a game; a blink armed while
+    // the OTHER sensor was tracked must still surface (tracker keys by game, not raw id)
+    const mk = (id: string, team: string, opp: string, ts: string, os: string) => ({
+      [id]: makeState("IN", {
+        ...baseAttrs,
+        team_abbr: team,
+        opponent_abbr: opp,
+        team_score: ts,
+        opponent_score: os,
+        date: "2024-03-15",
+      }),
+    });
+    const tracker = new BlinkTracker();
+    const sib = (lal: string, bos: string) => mk("sensor.nba_bos", "BOS", "LAL", bos, lal);
+    const sync = (states: HassStates) =>
+      tracker.update({
+        states,
+        trackedIds: Object.keys(states),
+        blinkOnById: new Map(),
+        reducedMotion: false,
+        onExpire: vi.fn(),
+      });
+    sync(sib("85", "90"));
+    sync(sib("95", "90"));
+    // LAL's own sensor is the one displayed
+    const states = mk(ID, "LAL", "BOS", "95", "90");
+    const el = render(states, { blink: tracker });
+    expect(fresh(el, ".score-a")).toBe(true);
+    expect(fresh(el, ".score-b")).toBe(false);
   });
 });
 
@@ -758,9 +816,27 @@ describe("nameFormat", () => {
     const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
     const shown = [
       ...doc(
-        sectionHtml(s, states, undefined, {}, undefined, { nameFormat: "abbr" })
+        sectionHtml(s, states, Object.keys(states), {}, { nameFormat: "abbr" })
       ).querySelectorAll(".game-row .team-name:first-of-type"),
     ].map((e) => e.textContent?.trim());
     expect(shown.indexOf("ZZZ")).toBeLessThan(shown.indexOf("AAA"));
+  });
+});
+
+describe("buildCardTemplate", () => {
+  it("returns a TemplateResult that renders the card directly", () => {
+    const result = buildCardTemplate({
+      states: {},
+      trackedBySection: new Map(),
+      options: { colors: {} } as never,
+      blink: { rowView: () => undefined } as never,
+      carousel: false,
+      visibleSections: [],
+      slideControls: nothing,
+      haCardStyle: "",
+      versionBadge: nothing,
+      debugTableHtml: null,
+    });
+    expect(doc(result).querySelector("ha-card")).not.toBeNull();
   });
 });

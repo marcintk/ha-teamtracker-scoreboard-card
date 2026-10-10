@@ -78,7 +78,7 @@ for a game are merged into one row. Set `live_first: true` to pin live games abo
 | `slide_sec`        | number  | `45`     | Seconds per section while `mode: slide`                                                                                                                             |
 | `name_format`      | string  | `name`   | Team label: `name` (Seahawks), `long_name` (Seattle Seahawks) or `abbr` (SEA); falls back to `name` if missing. Long names may truncate — widen `layout.team_width` |
 | `live_first`       | boolean | `false`  | Pin live (`IN`) games above the rest of each section; otherwise every row is ordered oldest to newest                                                               |
-| `highlight_winner` | boolean | `true`   | Colour + bold the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain                     |
+| `highlight_winner` | boolean | `true`   | Colour the leading (`IN`) / winning (`POST`) team's name (`colors.name_leading` / `colors.name_winner`); `false` leaves both names plain                            |
 | `layout`           | map     | —        | Size / spacing / text-scale knobs — see [Layout](#layout)                                                                                                           |
 | `colors`           | map     | —        | Team colour overrides — see [Colors](#colors)                                                                                                                       |
 | `debug`            | boolean | `false`  | Pin a live-refresh overlay — **events** / **filtered** / **rendered** counters over 1m–3h windows, every 1s                                                         |
@@ -86,7 +86,7 @@ for a game are merged into one row. Set `live_first: true` to pin live games abo
 
 ### Refresh
 
-The card subscribes to Home Assistant state changes and re-renders when a tracked sensor updates.
+The card re-renders when a tracked sensor's state changes.
 
 | Option          | Type   | Default | Description                                                                    |
 | --------------- | ------ | ------- | ------------------------------------------------------------------------------ |
@@ -95,14 +95,14 @@ The card subscribes to Home Assistant state changes and re-renders when a tracke
 
 ### Section
 
-| Field                   | Type   | Default   | Description                                                                                                                                                            |
-| ----------------------- | ------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `section.name`          | string | required  | Header label shown above the section                                                                                                                                   |
-| `section.prefix`        | string | optional* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                   |
-| `section.entities`      | list   | optional* | Explicit list of entity IDs, included in addition to any `prefix` match — for entities renamed away from a shared prefix, or cherry-picked from elsewhere              |
-| `section.limit`         | number | `10`      | Max rows to show — keeps the N games nearest to now (live first), then shown in display order                                                                          |
-| `section.score_blink`   | number | `5`       | Seconds to blink the score after a goal/basket; `0` disables                                                                                                           |
-| `section.special_teams` | list   | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |
+| Field                   | Type    | Default   | Description                                                                                                                                                            |
+| ----------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `section.name`          | string  | required  | Header label shown above the section                                                                                                                                   |
+| `section.prefix`        | string  | optional* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                   |
+| `section.entities`      | list    | optional* | Explicit list of entity IDs, included in addition to any `prefix` match — for entities renamed away from a shared prefix, or cherry-picked from elsewhere              |
+| `section.limit`         | number  | `10`      | Max rows to show — takes the first N rows of the display order                                                                                                         |
+| `section.score_blink`   | boolean | `true`    | Blink the previous score once after a goal/basket, then reveal the new one; `false` (or a legacy `0`) turns it off; any other value counts as `true`                   |
+| `section.special_teams` | list    | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |
 
 \* `prefix` and `entities` combine (a section's entities are the union of both); a section with
 neither set matches every tracked entity. An entity matching more than one section (e.g. a league

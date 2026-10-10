@@ -10,23 +10,11 @@ describe("sortKeyFor", () => {
     expect(sortKeyFor({ date })).toBe(new Date(date).getTime());
   });
 
-  it("keys a missing or non-parseable date to `now` instead of the epoch", () => {
-    // so it sorts near the top of the schedule band instead of sinking to the
-    // bottom, where a `limit` slice could hide it — see the sort in render.ts
-    const now = Date.parse("2024-03-15T20:00:00Z");
-    expect(sortKeyFor({}, now)).toBe(now);
-    expect(sortKeyFor(undefined, now)).toBe(now);
-    // Empty string and sentinel values must not leak NaN into the sort comparator.
-    expect(sortKeyFor({ date: "" }, now)).toBe(now);
-    expect(sortKeyFor({ date: "TBD" }, now)).toBe(now);
-  });
-
-  it("defaults `now` to the current time when not supplied", () => {
-    const before = Date.now();
-    const key = sortKeyFor({});
-    const after = Date.now();
-    expect(key).toBeGreaterThanOrEqual(before);
-    expect(key).toBeLessThanOrEqual(after);
+  it("keys a missing or non-parseable date to Infinity so it sorts after every dated game", () => {
+    expect(sortKeyFor({})).toBe(Number.POSITIVE_INFINITY);
+    expect(sortKeyFor(undefined)).toBe(Number.POSITIVE_INFINITY);
+    expect(sortKeyFor({ date: "" })).toBe(Number.POSITIVE_INFINITY);
+    expect(sortKeyFor({ date: "TBD" })).toBe(Number.POSITIVE_INFINITY);
   });
 });
 
@@ -214,7 +202,6 @@ describe("comparatorFor", () => {
   const H = 3_600_000;
   const now = Date.parse("2024-03-15T20:00:00Z");
   const st = (state: string): HassStates[string] => ({ state, attributes: {} });
-  // distance from now: bye 0, recent 1h, soon 3h, live 5h, far 20h, old 40h
   const states: HassStates = {
     "sensor.live": st("IN"),
     "sensor.recent": st("POST"),
@@ -226,46 +213,31 @@ describe("comparatorFor", () => {
   const items = [
     { entityId: "sensor.far", teamName: "Far", key: now + 20 * H },
     { entityId: "sensor.old", teamName: "Old", key: now - 40 * H },
-    { entityId: "sensor.bye", teamName: "Bye", key: sortKeyFor({}, now) },
+    { entityId: "sensor.bye", teamName: "Bye", key: sortKeyFor({}) },
     { entityId: "sensor.live", teamName: "Live", key: now - 5 * H },
     { entityId: "sensor.soon", teamName: "Soon", key: now + 3 * H },
     { entityId: "sensor.recent", teamName: "Recent", key: now - 1 * H },
   ];
-  const order = (liveFirst: boolean, byDistance = false) =>
-    [...items].sort(comparatorFor({ liveFirst, byDistance }, now, states)).map((i) => i.teamName);
+  const order = (liveFirst: boolean) =>
+    [...items].sort(comparatorFor({ liveFirst }, states)).map((i) => i.teamName);
 
-  it("liveFirst + byDistance: live first, then by distance from now", () => {
-    expect(order(true, true)).toEqual(["Live", "Bye", "Recent", "Soon", "Far", "Old"]);
+  it("liveFirst: live first, then oldest to newest, undated last", () => {
+    expect(order(true)).toEqual(["Live", "Old", "Recent", "Soon", "Far", "Bye"]);
   });
 
-  it("liveFirst: live first, then oldest to newest", () => {
-    expect(order(true)).toEqual(["Live", "Old", "Recent", "Bye", "Soon", "Far"]);
+  it("neither: pure oldest to newest, live not pinned, undated last", () => {
+    expect(order(false)).toEqual(["Old", "Live", "Recent", "Soon", "Far", "Bye"]);
   });
 
-  it("neither: pure oldest to newest, live not pinned", () => {
-    expect(order(false)).toEqual(["Old", "Live", "Recent", "Bye", "Soon", "Far"]);
-  });
-
-  it("a BYE with no date is keyed to now, so it lands between past and future games", () => {
-    expect(order(false).indexOf("Bye")).toBe(3);
-    expect(order(true).indexOf("Bye")).toBe(3);
-  });
-
-  it.each([
-    [true, true],
-    [true, false],
-    [false, false],
-  ])(
-    "liveFirst=%s byDistance=%s: equal keys tie-break by team name, then entity id",
-    (liveFirst, byDistance) => {
+  it.each([true, false])(
+    "liveFirst=%s: equal keys tie-break by team name, then entity id",
+    (liveFirst) => {
       const tied = [
         { entityId: "sensor.z", teamName: "Same", key: now },
         { entityId: "sensor.a", teamName: "Same", key: now },
         { entityId: "sensor.m", teamName: "Alpha", key: now },
       ];
-      const ids = tied
-        .sort(comparatorFor({ liveFirst, byDistance }, now, {}))
-        .map((i) => i.entityId);
+      const ids = tied.sort(comparatorFor({ liveFirst }, {})).map((i) => i.entityId);
       expect(ids).toEqual(["sensor.m", "sensor.a", "sensor.z"]);
     }
   );
