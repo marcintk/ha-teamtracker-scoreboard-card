@@ -838,5 +838,34 @@ describe("buildCardTemplate", () => {
       debugTableHtml: null,
     });
     expect(doc(result).querySelector("ha-card")).not.toBeNull();
+    expect(doc(result).querySelector(".empty")).not.toBeNull();
+  });
+
+  it("renders visible sections, the card style and the debug overlay", () => {
+    const section: SectionConfig = {
+      name: "NBA",
+      prefix: "sensor.nba_",
+      limit: 10,
+      special_teams: [],
+    };
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+    const el = doc(
+      buildCardTemplate({
+        states,
+        trackedBySection: new Map([[0, Object.keys(states)]]),
+        options: { colors: {} } as never,
+        blink: { rowView: () => undefined } as never,
+        carousel: false,
+        visibleSections: [[0, section]],
+        slideControls: nothing,
+        haCardStyle: "--x:1",
+        versionBadge: nothing,
+        debugTableHtml: "<table></table>",
+      })
+    );
+    expect(el.querySelector(".game-row")).not.toBeNull();
+    expect(el.querySelector(".empty")).toBeNull();
+    expect(el.querySelector("#sc-debug table")).not.toBeNull();
+    expect(el.querySelector("ha-card")?.getAttribute("style")).toBe("--x:1");
   });
 });
