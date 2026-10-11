@@ -6,6 +6,8 @@ import {
   DEFAULT_ROW_PADDING,
   DEFAULT_SLIDE_SEC,
   firstSegment,
+  gameStateOf,
+  isLive,
   safeLogoUrl,
   VALID_STATES,
 } from "../src/utils.js";
@@ -63,5 +65,21 @@ describe("shared defaults", () => {
     expect(DEFAULT_SLIDE_SEC).toBe(45);
     expect(DEFAULT_ROW_HEIGHT).toBe(28);
     expect(DEFAULT_ROW_PADDING).toBe(5);
+  });
+});
+
+describe("gameStateOf / isLive", () => {
+  const states = { a: { state: "IN" }, b: { state: "POST" }, c: { state: "weird" } } as never;
+
+  it("returns known states and undefined for unknown or missing entities", () => {
+    expect(gameStateOf(states, "a")).toBe("IN");
+    expect(gameStateOf(states, "c")).toBeUndefined();
+    expect(gameStateOf(states, "missing")).toBeUndefined();
+  });
+
+  it("isLive is true only for IN", () => {
+    expect(isLive(states, "a")).toBe(true);
+    expect(isLive(states, "b")).toBe(false);
+    expect(isLive(states, "missing")).toBe(false);
   });
 });
