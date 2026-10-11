@@ -137,8 +137,8 @@ export const CARD_STYLES = `
     overflow: hidden;
     /* width and min-width share one var, so any configured team_width is honoured
        exactly (no hidden floor); long names truncate with an ellipsis instead */
-    width: var(${CSS_VARS.teamColWidth}, 99px);
-    min-width: var(${CSS_VARS.teamColWidth}, 99px);
+    width: var(${CSS_VARS.teamWidth}, 99px);
+    min-width: var(${CSS_VARS.teamWidth}, 99px);
   }
   .team-col-a { text-align: right; padding-right: 3px; }
   .team-col-b { text-align: left; padding-left: 3px; }

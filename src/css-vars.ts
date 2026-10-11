@@ -6,7 +6,7 @@
 export const CSS_VARS = {
   // one var for both sides — `layout.team_width` has no per-side counterpart, so a
   // single width has always applied to both .team-col-a and .team-col-b
-  teamColWidth: "--ttsc-team-col-width",
+  teamWidth: "--ttsc-team-width",
   logoWidth: "--ttsc-logo-width",
   scoreWidth: "--ttsc-score-width",
   colonWidth: "--ttsc-colon-width",

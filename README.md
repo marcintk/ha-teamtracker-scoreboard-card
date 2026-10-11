@@ -132,7 +132,7 @@ sections:
 | `layout.logo_width`  | string | `30px`  | `--ttsc-logo-width`             | Logo cell width and the logo image width (aspect ratio preserved)              |
 | `layout.score_width` | string | `34px`  | `--ttsc-score-width`            | Score cell width — widen for 3-digit totals                                    |
 | `layout.colon_width` | string | `9px`   | `--ttsc-colon-width`            | Centre colon cell width                                                        |
-| `layout.team_width`  | string | `99px`  | `--ttsc-team-col-width`         | Team-name column width; one CSS length applied to both sides                   |
+| `layout.team_width`  | string | `99px`  | `--ttsc-team-width`             | Team-name column width; one CSS length applied to both sides                   |
 | `layout.row_padding` | string | `5px`   | `--ttsc-row-padding`            | Padding above **and** below every game row (divider sits centred in the space) |
 | `layout.font_scale`  | number | `1`     | `--ttsc-font-scale`             | Uniform multiplier over every text size; raise `layout.row_height` too         |
 

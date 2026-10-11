@@ -75,14 +75,14 @@ describe("CARD_STYLES", () => {
     expect(CARD_STYLES).toMatchSnapshot();
   });
 
-  it("wires both team columns to the same --ttsc-team-col-width custom property", () => {
-    const matches = CARD_STYLES.match(/var\(--ttsc-team-col-width, 99px\)/g);
+  it("wires both team columns to the same --ttsc-team-width custom property", () => {
+    const matches = CARD_STYLES.match(/var\(--ttsc-team-width, 99px\)/g);
     expect(matches).toHaveLength(2);
   });
 
   it("ties the team column min-width to the configured width", () => {
     expect(CARD_STYLES).toMatch(
-      /\.team-col\s*\{[^}]*min-width:\s*var\(--ttsc-team-col-width,\s*99px\)/
+      /\.team-col\s*\{[^}]*min-width:\s*var\(--ttsc-team-width,\s*99px\)/
     );
   });
 
