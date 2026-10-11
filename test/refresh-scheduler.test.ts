@@ -35,6 +35,23 @@ describe("RefreshScheduler", () => {
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
+  it("a throwing first render does not cause a render per later hass update (lazy_refresh 0)", () => {
+    const onRender = vi.fn(() => {
+      throw new Error("boom");
+    });
+    const s = new RefreshScheduler({ onRender });
+    s.configure({ lazy_refresh: 0, fixed_refresh: 0 } as unknown as CardConfig);
+    expect(() => s.setHass(mk("0"))).toThrow("boom");
+    for (const v of ["1", "2", "3"]) {
+      try {
+        s.setHass(mk(v));
+      } catch {
+        // a re-render attempt throws too; the call count below is what matters
+      }
+    }
+    expect(onRender).toHaveBeenCalledTimes(1);
+  });
+
   it("detach stops a pending renderTimer", async () => {
     const { scheduler, onRender } = setup();
     scheduler.setHass(mk("1"));

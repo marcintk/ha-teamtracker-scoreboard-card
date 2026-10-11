@@ -120,6 +120,10 @@ describe("hasRelevantChange", () => {
     expect(hasRelevantChange(null, states, states)).toBe(true);
   });
 
+  it("returns false for an empty tracked set when nothing changed (fails closed)", () => {
+    expect(hasRelevantChange(new Set(), states, states)).toBe(false);
+  });
+
   it("returns false when no tracked entity's state object changed", () => {
     expect(hasRelevantChange(new Set(["sensor.nba_lal"]), states, states)).toBe(false);
   });
