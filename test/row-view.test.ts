@@ -140,4 +140,10 @@ describe("buildRowView", () => {
       expect(opp.away.nameColor).not.toBe(sp);
     });
   });
+
+  it("null stateObj yields empty state and attributes", () => {
+    const v = buildRowView(null, false);
+    expect(v.state).toBe("");
+    expect(v.attr).toEqual({});
+  });
 });
