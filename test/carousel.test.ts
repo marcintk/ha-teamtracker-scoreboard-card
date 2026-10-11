@@ -1,6 +1,6 @@
 import { render } from "lit";
 import { describe, expect, it, vi } from "vitest";
-import { Carousel } from "../src/carousel.js";
+import { Carousel, prefersReducedMotion } from "../src/carousel.js";
 import type { SectionConfig } from "../src/types.js";
 import { useFakeTimers } from "./helpers.js";
 
@@ -128,10 +128,45 @@ describe("Carousel", () => {
     expect(btns).toHaveLength(3);
     btns[2]?.click();
     expect(c.index).toBe(1);
+    btns[0]?.click();
+    expect(c.index).toBe(0);
     btns[1]?.click();
     expect(c.paused).toBe(false);
-    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange).toHaveBeenCalledTimes(3);
     render(c.controls(), host);
     expect(host.querySelector(".slide-ctrls")?.classList.contains("paused")).toBe(false);
+  });
+
+  it("controls() renders the paused state with a resume button", () => {
+    const { c } = make({ mode: "slide", sections: secs(3) }, true);
+    const host = document.createElement("div");
+    render(c.controls(), host);
+    expect(host.querySelector(".slide-ctrls")?.classList.contains("paused")).toBe(true);
+    expect(host.querySelector(".toggle.paused")?.getAttribute("aria-label")).toBe(
+      "Resume rotation"
+    );
+  });
+
+  it("prefersReducedMotion reads matchMedia, tolerating it being absent or empty", () => {
+    const orig = window.matchMedia;
+    const set = (fn: unknown) => {
+      window.matchMedia = fn as typeof window.matchMedia;
+    };
+    try {
+      set(undefined);
+      expect(prefersReducedMotion()).toBe(false);
+      set(() => undefined);
+      expect(prefersReducedMotion()).toBe(false);
+      set(() => ({ matches: false }));
+      expect(prefersReducedMotion()).toBe(false);
+      set(() => ({ matches: true }));
+      expect(prefersReducedMotion()).toBe(true);
+      // default reducedMotion dependency is prefersReducedMotion
+      const c = new Carousel(() => {});
+      c.configure({ mode: "slide", sections: secs(2) });
+      expect(c.paused).toBe(true);
+    } finally {
+      set(orig);
+    }
   });
 });
