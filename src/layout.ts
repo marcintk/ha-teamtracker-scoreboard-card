@@ -52,7 +52,7 @@ export function buildHaCardStyle(
   }
 
   const cssVars: Record<string, string | undefined> = {
-    [CSS_VARS.teamColWidth]: team_width,
+    [CSS_VARS.teamWidth]: team_width,
     [CSS_VARS.logoWidth]: logo_width,
     [CSS_VARS.scoreWidth]: score_width,
     [CSS_VARS.colonWidth]: colon_width,
