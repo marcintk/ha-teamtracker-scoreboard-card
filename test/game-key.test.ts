@@ -20,4 +20,8 @@ describe("gameKeyFor", () => {
     };
     expect(gameKeyFor("sensor.wc_fra", states)).toBe("sensor.wc_fra");
   });
+
+  it("falls back to the entityId when the entity is absent from states", () => {
+    expect(gameKeyFor("sensor.missing", {})).toBe("sensor.missing");
+  });
 });
