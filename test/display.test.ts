@@ -76,6 +76,12 @@ describe("sideRelation", () => {
     expect(sideRelation(...pair("home", draw), "POST" as GameState)).toBe("trailing");
   });
 
+  it("falls back to the score when a final game's winner flag is unset", () => {
+    const unset: GameAttr = { ...homeAttr, team_winner: undefined, opponent_winner: false };
+    expect(sideRelation(...pair("home", unset), "POST" as GameState)).toBe("ahead");
+    expect(sideRelation(...pair("away", unset), "POST" as GameState)).toBe("trailing");
+  });
+
   it("parses cricket-style scores like '176/5' with parseFloat", () => {
     const a: GameAttr = { ...homeAttr, team_score: "176/5", opponent_score: "150/3" };
     expect(sideRelation(...pair("home", a), "IN" as GameState)).toBe("ahead");

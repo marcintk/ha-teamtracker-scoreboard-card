@@ -17,12 +17,11 @@ export function colorVar(override: string | undefined, cssVar: string, fallback:
 export type SideRelation = "ahead" | "trailing" | "tied";
 
 export function sideRelation(self: Side, other: Side, gs: GameState): SideRelation {
-  if (gs === GAME_STATE.IN) {
-    const mine = parseFloat(String(self.score ?? 0));
-    const theirs = parseFloat(String(other.score ?? 0));
-    return mine > theirs ? "ahead" : mine < theirs ? "trailing" : "tied";
-  }
-  return self.winner ? "ahead" : "trailing";
+  const mine = parseFloat(String(self.score ?? 0));
+  const theirs = parseFloat(String(other.score ?? 0));
+  if (gs === GAME_STATE.IN) return mine > theirs ? "ahead" : mine < theirs ? "trailing" : "tied";
+  // TeamTracker sometimes leaves the winner flag unset on a final game; fall back to the score
+  return (self.winner ?? mine > theirs) ? "ahead" : "trailing";
 }
 
 /** Shared leading/winner side-check used by `scoreColor()` — a tied score during IN

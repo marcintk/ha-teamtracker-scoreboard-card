@@ -62,9 +62,11 @@ export function buildTrackedIds(
   return { trackedIds, trackedBySection, blinkOnById };
 }
 
-/** Whether any tracked entity's state object changed between two
- *  hass snapshots (a brand-new matching entity waits for the next fixed refresh) — a missing previous snapshot or no tracked ids at all is treated as "yes,
- *  something relevant changed" so the caller doesn't suppress a render it should perform. */
+/** Whether any tracked entity's state object changed between two hass snapshots. A brand-new
+ *  matching entity is not detected here: it waits for the next fixed_refresh (never with
+ *  fixed_refresh 0, until setConfig/re-attach). A missing previous snapshot or null tracked set is
+ *  treated as "yes, something relevant changed" so the caller doesn't suppress a render it should
+ *  perform. */
 export function hasRelevantChange(
   trackedIds: ReadonlySet<string> | null,
   newStates: HassStates,

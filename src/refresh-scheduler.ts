@@ -46,20 +46,25 @@ export class RefreshScheduler {
     if (this.detached) return;
     this.startTimers();
     this.opts.onConfigured?.();
-    if (this.hass) this.opts.onRender();
+    if (this.hass) {
+      this.opts.onRender();
+    }
   }
 
   setHass(hass: HomeAssistant): void {
-    const isFirstCall = !this.trackedIds;
     const prevHass = this.hass;
     this.hass = hass;
     if (this.detached) return;
-    if (isFirstCall) {
+    if (!prevHass) {
       if (this.config) this.opts.onRender();
       else this.refreshTracked(Object.keys(hass.states));
       return;
     }
-    if (this.config && hasRelevantChange(this.trackedIds, hass.states, prevHass?.states)) {
+    if (
+      this.trackedIds &&
+      this.config &&
+      hasRelevantChange(this.trackedIds, hass.states, prevHass?.states)
+    ) {
       if (this.config.debug) this.opts.onDebug?.("events");
       this.scheduleRender();
     }
@@ -70,7 +75,9 @@ export class RefreshScheduler {
     if (!this.config) return;
     this.startTimers();
     // detach dropped the tracked ids; HA may not re-assign hass on a re-attach, so rebuild them here
-    if (this.hass && !this.trackedIds) this.opts.onRender();
+    if (this.hass && !this.trackedIds) {
+      this.opts.onRender();
+    }
   }
 
   detach(): void {
