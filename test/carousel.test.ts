@@ -169,4 +169,57 @@ describe("Carousel", () => {
       set(orig);
     }
   });
+
+  it("is unpaused before configure", () => {
+    expect(
+      new Carousel(
+        () => {},
+        () => false
+      ).paused
+    ).toBe(false);
+  });
+
+  it("tolerates null section entries when counting non-pinned sections", () => {
+    const one = [null, { name: "b", pinned: true }] as unknown as SectionConfig[];
+    expect(make({ mode: "slide", sections: one }).c.active).toBe(false);
+    const two = [null, { name: "a" }] as unknown as SectionConfig[];
+    expect(make({ mode: "slide", sections: two }).c.active).toBe(true);
+  });
+
+  it("falls back to 45s for a non-numeric slide_sec", () => {
+    const { c, onChange } = make({
+      mode: "slide",
+      slide_sec: "5" as unknown as number,
+      sections: secs(2),
+    });
+    c.sync();
+    vi.advanceTimersByTime(5000);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("configure stops a running timer", () => {
+    const { c } = make({ mode: "slide", sections: secs(2) });
+    c.sync();
+    expect(vi.getTimerCount()).toBe(1);
+    c.configure({ mode: "slide", sections: secs(2) });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("step stops a running timer immediately", () => {
+    const { c } = make({ mode: "slide", sections: secs(3) });
+    c.sync();
+    c.step(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("controls() buttons carry nav prev/next classes", () => {
+    const { c } = make({ mode: "slide", sections: secs(3) });
+    const host = document.createElement("div");
+    render(c.controls(), host);
+    const btns = host.querySelectorAll(".slide-btn");
+    expect(btns[0]?.classList.contains("nav")).toBe(true);
+    expect(btns[0]?.classList.contains("prev")).toBe(true);
+    expect(btns[2]?.classList.contains("nav")).toBe(true);
+    expect(btns[2]?.classList.contains("next")).toBe(true);
+  });
 });

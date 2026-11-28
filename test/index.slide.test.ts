@@ -29,6 +29,42 @@ describe("SportScoreboardCard slide mode", () => {
         "sensor.nhl_bos": makeState("PRE", baseAttrs),
       });
 
+    it("keeps a pinned section visible and rotates only the others, with controls on the rotating one", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [
+          { ...nbaSection, name: "Pinned", pinned: true },
+          { ...nhlSection, name: "One" },
+          { ...nhlSection, name: "Two" },
+        ],
+        mode: "slide",
+        slide_sec: 30,
+      } as SlideConfig;
+      card._carousel.configure(card._config);
+      card.hass = makeHass({
+        "sensor.nba_lal": makeState("PRE", baseAttrs),
+        "sensor.nhl_bos": makeState("PRE", baseAttrs),
+      });
+      expect(headerTexts(card)).toEqual(["Pinned", "One"]);
+      expect(card.shadowRoot?.querySelectorAll(".slide-ctrls")).toHaveLength(1);
+      expect(card.shadowRoot?.querySelector(".section-header.has-controls")?.textContent).toContain(
+        "One"
+      );
+      card._carousel.step(1);
+      expect(headerTexts(card)).toEqual(["Pinned", "Two"]);
+    });
+
+    it("does not rotate when only one section is left unpinned", () => {
+      const card = makeCard();
+      card._config = {
+        sections: [{ ...nbaSection, pinned: true }, nhlSection],
+        mode: "slide",
+        slide_sec: 30,
+      } as SlideConfig;
+      card._carousel.configure(card._config);
+      expect(card._carousel.active).toBe(false);
+    });
+
     it("renders every section header stacked when slide_sec is unset", () => {
       const card = makeCard();
       card._config = { sections: [nbaSection, nhlSection] };

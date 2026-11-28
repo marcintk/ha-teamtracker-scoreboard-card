@@ -4,11 +4,12 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { BlinkTracker } from "./blink.js";
 import type { RenderOptions } from "./config.js";
 import { sectionBlinkOn } from "./config-match.js";
+import { CSS_VARS } from "./css-vars.js";
 import { buildRowView, type RowFlags } from "./row-view.js";
 import { selectRows } from "./section-rows.js";
 import { CARD_STYLES } from "./styles.js";
 import type { ColorsConfig, HassEntity, HassStates, SectionConfig } from "./types.js";
-import { DEFAULT_TV_BADGE_CHARS } from "./utils.js";
+import { DEFAULT_ROW_HEIGHT, DEFAULT_ROW_PADDING, DEFAULT_TV_BADGE_CHARS } from "./utils.js";
 import { logoHtml, messageHtml, tvHtml } from "./widgets.js";
 
 const STYLE_BLOCK = unsafeHTML(`<style>${CARD_STYLES}</style>`);
@@ -53,6 +54,9 @@ export function rowHtml(
   <div class="tv">${tvHtml(gs, attr, colors, tvBadge)}</div>
 </div>`;
 }
+
+const spacerStyle = (rows: number): string =>
+  `height:calc(${rows} * (var(${CSS_VARS.rowHeight}, ${DEFAULT_ROW_HEIGHT}px) + 2 * var(${CSS_VARS.rowPadding}, ${DEFAULT_ROW_PADDING}px)))`;
 
 /** Same-typed flags grouped behind one object, mirroring `RowFlags` — `sectionHtml` had
  *  the same 9-positional-param shallowness `rowHtml` was already fixed for. */
@@ -109,8 +113,14 @@ export function sectionHtml(
     }
   );
 
-  if (!rows.length) return carousel ? emptyHtml() : nothing;
-  return html`${header}${rows}`;
+  const missingRows = Math.max(0, Number(section.min_rows ?? 0) - rows.length);
+  const spacer = missingRows
+    ? html`<div class="row-spacer" style=${spacerStyle(missingRows)}></div>`
+    : nothing;
+
+  if (!rows.length)
+    return carousel ? emptyHtml() : missingRows ? html`${header}${spacer}` : nothing;
+  return html`${header}${rows}${spacer}`;
 }
 
 /** Everything `sectionHtml` needs to build every visible section, plus the card-level
@@ -144,8 +154,8 @@ export function buildCardTemplate(input: CardTemplateInput): TemplateResult {
       input.options.colors,
       {
         ...input.options,
-        carousel: input.carousel,
-        controls: input.slideControls,
+        carousel: input.carousel && !section.pinned,
+        controls: section.pinned ? nothing : input.slideControls,
         blink: input.blink,
       }
     )

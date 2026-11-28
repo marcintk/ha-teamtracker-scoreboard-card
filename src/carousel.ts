@@ -33,7 +33,7 @@ export class Carousel {
   ) {}
 
   configure(config: CardConfig | null): void {
-    this._count = config?.sections?.length ?? 0;
+    this._count = (config?.sections ?? []).filter((s) => !s?.pinned).length;
     this._slide = config?.mode === "slide";
     const s = config?.slide_sec;
     // a missing / non-positive value falls back to 45
@@ -43,7 +43,7 @@ export class Carousel {
     this.stop();
   }
 
-  /** `mode: "slide"` with at least two sections to rotate through. */
+  /** `mode: "slide"` with at least two non-pinned sections to rotate through. */
   get active(): boolean {
     return this._slide && this._count >= 2;
   }
