@@ -516,6 +516,39 @@ describe("sectionHtml", () => {
     expect(el.querySelector(".empty")?.textContent).toContain("No games found");
   });
 
+  describe("min_rows", () => {
+    const states = { "sensor.nba_lal": makeState("PRE", baseAttrs) };
+
+    it("adds a spacer for the rows missing below min_rows", () => {
+      const el = doc(sectionHtml({ ...section, min_rows: 4 }, states, Object.keys(states)));
+      expect(el.querySelectorAll(".game-row")).toHaveLength(1);
+      const style = el.querySelector<HTMLElement>(".row-spacer")?.getAttribute("style");
+      expect(style).toContain("calc(3 *");
+      expect(style).toContain("--ttsc-row-height, 28px");
+      expect(style).toContain("--ttsc-row-padding, 5px");
+    });
+
+    it("adds no spacer when the games already fill min_rows", () => {
+      const el = doc(sectionHtml({ ...section, min_rows: 1 }, states, Object.keys(states)));
+      expect(el.querySelector(".row-spacer")).toBeNull();
+    });
+
+    it("adds no spacer when min_rows is unset", () => {
+      const el = doc(sectionHtml(section, states, Object.keys(states)));
+      expect(el.querySelector(".row-spacer")).toBeNull();
+    });
+
+    it("keeps the header and reserves every row for an empty stacked section", () => {
+      const el = doc(sectionHtml({ ...section, min_rows: 3 }, {}, []));
+      expect(el.querySelector(".section-header")).not.toBeNull();
+      expect(el.querySelector(".row-spacer")?.getAttribute("style")).toContain("calc(3 *");
+    });
+
+    it("still renders nothing for an empty stacked section without min_rows", () => {
+      expect(doc(sectionHtml(section, {}, [])).innerHTML.trim()).not.toContain("section-header");
+    });
+  });
+
   describe("card sort", () => {
     const H = 3600_000;
     const at = (ms: number) => new Date(Date.now() + ms).toISOString();
@@ -867,5 +900,78 @@ describe("buildCardTemplate", () => {
     expect(el.querySelector(".empty")).toBeNull();
     expect(el.querySelector("#sc-debug table")).not.toBeNull();
     expect(el.querySelector("ha-card")?.getAttribute("style")).toBe("--x:1");
+  });
+
+  describe("empty-state flag per section", () => {
+    const empty: SectionConfig = {
+      name: "NBA",
+      prefix: "sensor.nba_",
+      limit: 10,
+      special_teams: [],
+    };
+    const build = (carousel: boolean, section: SectionConfig) =>
+      doc(
+        buildCardTemplate({
+          states: {},
+          trackedBySection: new Map([[0, []]]),
+          options: { colors: {} } as never,
+          blink: { rowView: () => undefined } as never,
+          carousel,
+          visibleSections: [[0, section]],
+          slideControls: nothing,
+          haCardStyle: "",
+          versionBadge: nothing,
+          debugTableHtml: null,
+        })
+      );
+
+    it("an empty rotating section in carousel mode shows its own header and message", () => {
+      const el = build(true, empty);
+      expect(el.querySelector(".section-header")).not.toBeNull();
+      expect(el.querySelectorAll(".empty")).toHaveLength(1);
+    });
+
+    it("an empty rotating section outside carousel mode renders nothing of its own", () => {
+      const el = build(false, empty);
+      expect(el.querySelector(".section-header")).toBeNull();
+      expect(el.querySelectorAll(".empty")).toHaveLength(1);
+    });
+
+    it("an empty pinned section in carousel mode renders nothing of its own", () => {
+      const el = build(true, { ...empty, pinned: true });
+      expect(el.querySelector(".section-header")).toBeNull();
+      expect(el.querySelectorAll(".empty")).toHaveLength(1);
+    });
+  });
+});
+
+describe("render defaults", () => {
+  it("rowHtml renders an empty colon cell when there is no game state", () => {
+    expect(doc(rowHtml(null, false)).querySelector(".colon")?.textContent).toBe("");
+  });
+
+  const s: SectionConfig = { name: "NBA", prefix: "sensor.nba_", limit: 10, special_teams: [] };
+
+  it("sectionHtml defaults to the short team name", () => {
+    const states = {
+      "sensor.nba_lal": makeState("PRE", {
+        ...baseAttrs,
+        team_long_name: "Los Angeles Lakers",
+        opponent_long_name: "Boston Celtics",
+      }),
+    };
+    const names = [
+      ...doc(sectionHtml(s, states, Object.keys(states))).querySelectorAll(".team-name"),
+    ].map((e) => e.textContent?.trim());
+    expect(names).toEqual(["Lakers", "Celtics"]);
+  });
+
+  it("sectionHtml highlights the winner by default and not when disabled", () => {
+    const states = { "sensor.nba_lal": makeState("IN", baseAttrs) };
+    const color = (flags?: SectionFlags) =>
+      doc(sectionHtml(s, states, Object.keys(states), {}, flags)).querySelector<HTMLElement>(
+        ".team-name"
+      )?.style.color;
+    expect(color()).not.toBe(color({ highlightWinner: false }));
   });
 });

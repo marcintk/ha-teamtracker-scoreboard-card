@@ -51,15 +51,22 @@ Add a **Manual card** to your dashboard and paste:
 
 ```yaml
 type: custom:ha-teamtracker-scoreboard-card
+mode: slide
 sections:
   - name: My Teams
+    pinned: true
     entities:
       - sensor.nba_lal
       - sensor.epl_ars
   - name: NBA Scoreboard
     prefix: sensor.nba_
     limit: 5
+  - name: NHL Scoreboard
+    prefix: sensor.nhl_
+    limit: 5
 ```
+
+`My Teams` stays pinned while the NBA and NHL sections take turns below it (`mode: slide`).
 
 ## Display
 
@@ -100,6 +107,8 @@ The card re-renders when a tracked sensor's state changes.
 | `section.name`          | string  | required  | Header label shown above the section                                                                                                                                   |
 | `section.prefix`        | string  | optional* | Entity ID prefix, e.g. `sensor.nba_`                                                                                                                                   |
 | `section.entities`      | list    | optional* | Explicit list of entity IDs, included in addition to any `prefix` match — for entities renamed away from a shared prefix, or cherry-picked from elsewhere              |
+| `section.pinned`        | boolean | `false`   | With `mode: slide`, keep this section always visible while the other sections rotate (needs ≥ 2 unpinned sections to rotate); ignored in `stack` mode                  |
+| `section.min_rows`      | number  | —         | Always reserve space for at least this many rows, even with fewer games (blank space fills the gap) — e.g. `limit: 5`, `min_rows: 5` keeps a section the same height   |
 | `section.limit`         | number  | `10`      | Max rows to show — takes the first N rows of the display order                                                                                                         |
 | `section.score_blink`   | boolean | `true`    | Blink the previous score once after a goal/basket, then reveal the new one; `false` (or a legacy `0`) turns it off; any other value counts as `true`                   |
 | `section.special_teams` | list    | `[]`      | Teams to highlight — either the full entity ID or the part after `prefix`, e.g. `bos` for `sensor.nba_bos`. Matched teams get their name colored `colors.name_special` |

@@ -18,10 +18,17 @@ export function rowGeometryPx(
   return (asPx(row_height) ?? DEFAULT_ROW_HEIGHT) + 2 * (asPx(row_padding) ?? DEFAULT_ROW_PADDING);
 }
 
-/** Rows the card occupies: tallest section when carousel, else all sections stacked. */
+const sectionRows = (s: SectionConfig): number =>
+  1 + Math.max(Number(s.limit ?? DEFAULT_LIMIT), Number(s.min_rows ?? 0));
+const sum = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
+
+/** Rows the card occupies: all sections stacked, or in carousel mode the pinned
+ *  sections plus the tallest rotating one. */
 export function cardRows(sections: SectionConfig[], carousel: boolean): number {
-  const per = sections.map((s) => 1 + Number(s.limit ?? DEFAULT_LIMIT));
-  return carousel ? Math.max(0, ...per) : per.reduce((a, b) => a + b, 0);
+  if (!carousel) return sum(sections.map(sectionRows));
+  const pinned = sections.filter((s) => s.pinned).map(sectionRows);
+  const rotating = sections.filter((s) => !s.pinned).map(sectionRows);
+  return sum(pinned) + Math.max(0, ...rotating);
 }
 
 /** Every CSS custom property plus `ha-card`'s own inline style that a layout config and
@@ -73,14 +80,15 @@ export function buildHaCardStyle(
 }
 
 /** The section(s) currently visible, paired with their original config index: every
- *  section in stack mode, or just the one at `slideIndex` (wrapped into range) in
- *  carousel mode. */
+ *  section in stack mode, or in carousel mode the pinned sections plus the rotating one
+ *  at `slideIndex` (wrapped into range), all in config order. */
 export function resolveVisibleSections(
   sections: SectionConfig[],
   carousel: boolean,
   slideIndex: number
 ): Array<[number, SectionConfig]> {
   if (!carousel) return Array.from(sections.entries());
-  const idx = ((slideIndex % sections.length) + sections.length) % sections.length;
-  return [[idx, sections[idx] as SectionConfig]];
+  const rotating = [...sections.keys()].filter((i) => !sections[i]?.pinned);
+  const current = rotating[((slideIndex % rotating.length) + rotating.length) % rotating.length];
+  return Array.from(sections.entries()).filter(([i, s]) => s.pinned || i === current);
 }

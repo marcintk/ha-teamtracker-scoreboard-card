@@ -56,6 +56,10 @@ export interface SectionConfig {
   /** explicit entity id list; when set, takes precedence over `prefix` */
   entities?: string[];
   limit?: number;
+  /** `mode: slide` only: keep this section always visible while the others rotate */
+  pinned?: boolean;
+  /** always reserve vertical space for at least this many rows, even with fewer games (default none) */
+  min_rows?: number;
   special_teams?: string[];
   /** blink the previous score once before revealing a new one; on unless literally `false` */
   score_blink?: boolean;
